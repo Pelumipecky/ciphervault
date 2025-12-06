@@ -1,0 +1,295 @@
+import { FormEvent, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
+
+type Status =
+  | { state: 'idle' }
+  | { state: 'loading'; message: string }
+  | { state: 'error'; message: string }
+  | { state: 'success'; message: string }
+
+function Signup() {
+  const [form, setForm] = useState({ 
+    email: '', 
+    fullName: '',
+    userName: '',
+    phoneNumber: '',
+    password: '', 
+    confirmPassword: '', 
+    referralCode: '',
+    isHuman: false,
+    terms: false 
+  })
+  const [status, setStatus] = useState<Status>({ state: 'idle' })
+  const [showPassword, setShowPassword] = useState(false)
+  const { signup } = useAuth()
+  const navigate = useNavigate()
+
+  const createQuickAdmin = async () => {
+    const adminUser = {
+      id: 'USR' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0'),
+      idnum: 'ADMIN001',
+      name: 'Admin User',
+      userName: 'admin',
+      email: 'admin@ciphervault.com',
+      password: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+      balance: 10000,
+      bonus: 500,
+      referralCount: 0,
+      referralCode: 'ADMINREF001',
+      phoneNumber: '+1234567890',
+      country: 'United States',
+      city: 'New York',
+      address: '123 Admin Street',
+      role: 'admin',
+      avatar: '👨‍💼',
+      createdAt: new Date().toISOString()
+    }
+
+    // Save to localStorage for immediate access
+    localStorage.setItem('activeUser', JSON.stringify(adminUser))
+    sessionStorage.setItem('activeUser', JSON.stringify(adminUser))
+    
+    // Also save to users list for future logins
+    try {
+      const existingUsers = JSON.parse(localStorage.getItem('localUsers') || '[]')
+      const adminExists = existingUsers.find((u: any) => u.email === adminUser.email)
+      if (!adminExists) {
+        existingUsers.push(adminUser)
+        localStorage.setItem('localUsers', JSON.stringify(existingUsers))
+      }
+    } catch (e) {
+      console.log('Could not save to local users:', e)
+    }
+
+    setStatus({ state: 'success', message: '✅ Admin account created! Redirecting to admin panel...' })
+    setTimeout(() => navigate('/admin'), 1500)
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    
+    if (form.password !== form.confirmPassword) {
+      setStatus({ state: 'error', message: 'Passwords do not match' })
+      return
+    }
+
+    if (!form.isHuman) {
+      setStatus({ state: 'error', message: 'Please verify that you are human' })
+      return
+    }
+
+    if (!form.terms) {
+      setStatus({ state: 'error', message: 'Please accept the Terms of Service' })
+      return
+    }
+
+    if (form.password.length < 8) {
+      setStatus({ state: 'error', message: 'Password must be at least 8 characters' })
+      return
+    }
+
+    setStatus({ state: 'loading', message: 'Creating your account…' })
+
+    try {
+      // Create account with Supabase
+      await signup(form.email, form.password, {
+        name: form.fullName,
+        userName: form.userName,
+        referredByCode: form.referralCode || undefined,
+      })
+
+      setStatus({ state: 'success', message: 'Account created! Redirecting to dashboard…' })
+      setTimeout(() => navigate('/dashboard'), 1500)
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Account creation failed. Please try again.'
+      setStatus({ state: 'error', message: errorMessage })
+    }
+  }
+
+  return (
+    <div className="binance-auth">
+      <div className="binance-auth__container">
+        <Link to="/" className="binance-auth__logo">
+          <img src="/images/ciphervaultlogobig.svg" alt="CipherVault" />
+        </Link>
+        
+        <div className="binance-auth__header">
+          <h1>Sign Up</h1>
+          <p>Create your account to start investing</p>
+        </div>
+
+        <form className="binance-form" onSubmit={handleSubmit}>
+          <div className="binance-form__group">
+            <label htmlFor="fullName">Full Name</label>
+            <input
+              id="fullName"
+              type="text"
+              placeholder="Enter your full name"
+              value={form.fullName}
+              onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="binance-form__group">
+            <label htmlFor="userName">Username</label>
+            <input
+              id="userName"
+              type="text"
+              placeholder="Choose a username"
+              value={form.userName}
+              onChange={(e) => setForm((prev) => ({ ...prev, userName: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="binance-form__group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={form.email}
+              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="binance-form__group">
+            <label htmlFor="phoneNumber">Phone Number</label>
+            <input
+              id="phoneNumber"
+              type="tel"
+              placeholder="Enter your phone number"
+              value={form.phoneNumber}
+              onChange={(e) => setForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="binance-form__group">
+            <label htmlFor="password">Password</label>
+            <div className="binance-form__password">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                minLength={8}
+                required
+              />
+              <button
+                type="button"
+                className="binance-form__toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
+          </div>
+
+          <div className="binance-form__group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Confirm your password"
+              value={form.confirmPassword}
+              onChange={(e) => setForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+              minLength={8}
+              required
+            />
+          </div>
+
+          <div className="binance-form__group">
+            <label htmlFor="referralCode">Referral Code (Optional)</label>
+            <input
+              id="referralCode"
+              type="text"
+              placeholder="Enter referral code if you have one"
+              value={form.referralCode}
+              onChange={(e) => setForm((prev) => ({ ...prev, referralCode: e.target.value }))}
+            />
+          </div>
+
+          <div className="binance-form__checkbox">
+            <input
+              id="isHuman"
+              type="checkbox"
+              checked={form.isHuman}
+              onChange={(e) => setForm((prev) => ({ ...prev, isHuman: e.target.checked }))}
+              required
+            />
+            <label htmlFor="isHuman">
+              ✓ I am not a robot
+            </label>
+          </div>
+
+          <div className="binance-form__checkbox">
+            <input
+              id="terms"
+              type="checkbox"
+              checked={form.terms}
+              onChange={(e) => setForm((prev) => ({ ...prev, terms: e.target.checked }))}
+              required
+            />
+            <label htmlFor="terms">
+              I agree to CipherVault's <a href="/terms.html" target="_blank">Terms of Service</a> and <a href="/privacy.html" target="_blank">Privacy Policy</a>
+            </label>
+          </div>
+
+          {status.state !== 'idle' && (
+            <div className={`binance-form__status binance-form__status--${status.state}`}>
+              {status.message}
+            </div>
+          )}
+
+          <button 
+            className="binance-form__submit" 
+            type="submit" 
+            disabled={status.state === 'loading'}
+          >
+            {status.state === 'loading' ? 'Creating Account...' : 'Sign Up'}
+          </button>
+
+          <button 
+            type="button"
+            onClick={createQuickAdmin}
+            style={{
+              width: '100%',
+              padding: '12px',
+              marginTop: '12px',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(139,92,246,0.4)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            🚀 Create Quick Admin Account (Test)
+          </button>
+        </form>
+
+        <div className="binance-auth__footer">
+          Already have an account? <Link to="/login">Log In</Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Signup

@@ -1,0 +1,8 @@
+# Ignore local Supabase config with keys
+supabase-config.js
+
+# Node / editor / OS temp files (common)
+node_modules/
+.DS_Store
+thumbs.db
+/.env
