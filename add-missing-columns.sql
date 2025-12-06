@@ -67,8 +67,8 @@ BEGIN
         SELECT 1 FROM information_schema.columns
         WHERE table_name = 'users' AND column_name = 'admin'
     ) THEN
-        -- Set role based on admin boolean
-        UPDATE users SET role = CASE WHEN admin = true THEN 'admin' ELSE 'user' END WHERE role IS NULL;
+        -- Set role based on admin boolean (override the default 'user' value)
+        UPDATE users SET role = CASE WHEN admin = true THEN 'admin' ELSE 'user' END;
 
         -- Drop the old admin column
         ALTER TABLE users DROP COLUMN admin;
