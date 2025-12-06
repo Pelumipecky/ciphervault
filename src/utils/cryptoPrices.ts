@@ -178,6 +178,9 @@ export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
 
 // Format price with appropriate decimal places
 export function formatPrice(price: number): string {
+  if (price == null || isNaN(price)) {
+    return '$0.00';
+  }
   if (price >= 1000) {
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   } else if (price >= 1) {
@@ -189,6 +192,9 @@ export function formatPrice(price: number): string {
 
 // Format market cap
 export function formatMarketCap(marketCap: number): string {
+  if (marketCap == null || isNaN(marketCap)) {
+    return '$0';
+  }
   if (marketCap >= 1e12) {
     return `$${(marketCap / 1e12).toFixed(2)}T`;
   } else if (marketCap >= 1e9) {

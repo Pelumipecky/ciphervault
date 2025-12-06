@@ -96,13 +96,29 @@ function Signup() {
       await signup(form.email, form.password, {
         name: form.fullName,
         userName: form.userName,
+        phoneNumber: form.phoneNumber,
         referredByCode: form.referralCode || undefined,
       })
 
       setStatus({ state: 'success', message: 'Account created! Redirecting to dashboard…' })
       setTimeout(() => navigate('/dashboard'), 1500)
     } catch (error: any) {
-      const errorMessage = error?.message || 'Account creation failed. Please try again.'
+      console.error('Account creation error:', error)
+      let errorMessage = 'Account creation failed. Please try again.'
+      
+      // Handle specific error types
+      if (error?.message) {
+        if (error.message.includes('Email already registered')) {
+          errorMessage = 'This email is already registered. Please login instead.'
+        } else if (error.message.includes('duplicate key')) {
+          errorMessage = 'This email or username is already taken.'
+        } else if (error.message.includes('fetch')) {
+          errorMessage = 'Unable to connect to the server. Please check your internet connection.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
       setStatus({ state: 'error', message: errorMessage })
     }
   }

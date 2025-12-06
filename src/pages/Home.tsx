@@ -53,17 +53,25 @@ function Home() {
   
   // Live crypto prices
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrice[]>([])
+  const [cryptoError, setCryptoError] = useState(false)
   
   useEffect(() => {
     async function loadPrices() {
-      const prices = await fetchDetailedCryptoPrices()
-      setCryptoPrices(prices)
+      try {
+        const prices = await fetchDetailedCryptoPrices()
+        setCryptoPrices(prices)
+        setCryptoError(false)
+      } catch (error) {
+        console.error('Failed to load crypto prices:', error)
+        setCryptoError(true)
+        // Set empty array so ticker doesn't show
+        setCryptoPrices([])
+      }
     }
     loadPrices()
     const interval = setInterval(loadPrices, 60000)
     return () => clearInterval(interval)
   }, [])
-  
   return (
     <div className="home">
       {/* Live Crypto Ticker */}
@@ -90,22 +98,27 @@ function Home() {
               }}>
                 <img 
                   src={crypto.image} 
-                  alt={crypto.symbol} 
+                  alt={crypto.symbol || 'crypto'} 
                   style={{ width: '20px', height: '20px', borderRadius: '50%' }}
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 />
                 <span style={{ color: '#fff', fontWeight: '600', fontSize: '13px' }}>
-                  {crypto.symbol.toUpperCase()}
+                  {crypto.symbol ? crypto.symbol.toUpperCase() : 'N/A'}
                 </span>
                 <span style={{ color: '#fff', fontSize: '13px' }}>
-                  ${formatPrice(crypto.current_price)}
+                  ${crypto.current_price ? formatPrice(crypto.current_price) : 'N/A'}
                 </span>
                 <span style={{ 
-                  color: crypto.price_change_percentage_24h >= 0 ? '#4ade80' : '#f87171',
+                  color: (crypto.price_change_percentage_24h && !isNaN(crypto.price_change_percentage_24h)) 
+                    ? (crypto.price_change_percentage_24h >= 0 ? '#4ade80' : '#f87171') 
+                    : '#64748b',
                   fontSize: '12px',
                   fontWeight: '500'
                 }}>
-                  {crypto.price_change_percentage_24h >= 0 ? '+' : ''}{crypto.price_change_percentage_24h.toFixed(2)}%
+                  {(crypto.price_change_percentage_24h && !isNaN(crypto.price_change_percentage_24h))
+                    ? `${crypto.price_change_percentage_24h >= 0 ? '+' : ''}${crypto.price_change_percentage_24h.toFixed(2)}%`
+                    : 'N/A'
+                  }
                 </span>
               </div>
             ))}

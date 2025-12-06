@@ -42,6 +42,16 @@ Use this file to provide workspace-specific custom instructions to Copilot.
   - Updated database schema to use 'role' column instead of 'admin' boolean
   - Login now redirects users to appropriate dashboard based on their role
 
+- [x] Debug Blank Blue Screen Issue
+  - Identified that app-layout and body backgrounds were set to var(--bg) = #0f172a (blue) in dark theme
+  - Added debugging console.log and test message to Home component
+  - Changed backgrounds to white to test if content was hidden behind blue
+  - Added try-catch error handling to Home component rendering
+  - FIXED: Root cause was null/NaN values in crypto API data causing toLocaleString() errors
+  - Added null/NaN checks to formatPrice() and formatMarketCap() functions
+  - Added null checks in Home component for crypto data access
+  - Restored proper blue background styling
+
 Execution Guidelines
 PROGRESS TRACKING:
 - If any tools are available to manage the above todo list, use them to track progress.
