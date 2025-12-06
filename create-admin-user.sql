@@ -5,30 +5,38 @@
 INSERT INTO users (
   idnum,
   name,
-  username,
+  "userName",
   email,
   password,
+  "phoneNumber",
+  country,
+  city,
+  address,
   balance,
   bonus,
-  referral_count,
-  referral_code,
-  admin,
+  "referralCount",
+  "referralCode",
+  role,
   created_at
 ) VALUES (
   'USR' || LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0'),
   'Admin User',
   'admin',
   'admin@ciphervault.com',
-  '$2a$10$YourHashedPasswordHere', -- You'll need to hash 'Admin123!' with bcrypt
+  '$2b$10$vs15pXQ888HJjriQjzGGZ.Hj7NlARZ2tsSKrg6rylkTbowgXgSgZu', -- Hashed password for 'Admin123!'
+  '+1234567890',
+  'United States',
+  'New York',
+  '123 Admin Street',
   10000.00,
   500.00,
   0,
   'REF' || LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0'),
-  true,
+  'admin',
   NOW()
 );
 
 -- Verify the user was created
-SELECT idnum, name, username, email, balance, admin 
-FROM users 
+SELECT idnum, name, "userName", email, balance, role
+FROM users
 WHERE email = 'admin@ciphervault.com';
