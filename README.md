@@ -180,6 +180,116 @@ Once admin access is enabled:
 - Navigate to `/dashboard/admin` to access the admin dashboard
 - Manage users, approve investments/withdrawals, and review KYC requests
 
+## 🚀 Deployment Guide
+
+This is a Single Page Application (SPA) with client-side routing. The 404 error occurs because deployment servers don't know how to handle routes like `/dashboard` or `/admin` that don't correspond to actual files.
+
+### ✅ Automatic Configuration Added
+
+The following deployment configuration has been added to fix 404 errors:
+
+- **`vercel.json`** - For Vercel deployments (automatically handles SPA routing)
+
+### 🚀 Deploy to Vercel
+
+#### Option 1: Vercel CLI (Recommended)
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+
+# Follow the prompts to connect your GitHub repo
+```
+
+#### Option 2: Vercel Dashboard
+1. Go to [vercel.com](https://vercel.com)
+2. Click "New Project"
+3. Connect your GitHub repository
+4. Vercel will automatically detect `vercel.json` and configure routing
+5. Deploy - all routes will work correctly!
+
+#### Option 3: GitHub Integration
+1. Push your code to GitHub (already done!)
+2. Connect Vercel to your GitHub account
+3. Import the `ciphervault` repository
+4. Deploy automatically
+
+### 🔧 Build Commands
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+### ⚠️ Common Issues & Solutions
+
+**404 on Direct Links:**
+- ✅ **FIXED** - `vercel.json` handles all SPA routes
+- Routes like `/dashboard`, `/admin`, `/login` now work
+
+**Environment Variables:**
+- Set these in Vercel dashboard under Project Settings > Environment Variables:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+
+**Build Errors:**
+- Run `npm run build` locally first to catch issues
+- Check TypeScript errors with `npx tsc --noEmit`
+
+**Database Connection:**
+- Supabase works in production with the provided `.env` config
+- No additional setup needed for the database
+
+### 🎯 Vercel Deployment Checklist
+
+- ✅ Build passes locally (`npm run build`)
+- ✅ `vercel.json` present in root directory
+- ✅ Environment variables configured in Vercel dashboard
+- ✅ Database schema applied in Supabase
+- ✅ GitHub repository connected to Vercel
+- ✅ Test all routes after deployment
+
+### 🔧 Build Commands
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+### ⚠️ Common Issues & Solutions
+
+**404 on Direct Links:**
+- ✅ Fixed with deployment configurations above
+- Routes like `/dashboard`, `/admin`, `/login` now work
+
+**Environment Variables:**
+- Ensure `.env` variables are set in your deployment platform
+- Never commit real credentials to version control
+
+**Build Errors:**
+- Run `npm run build` locally first to catch issues
+- Check TypeScript errors with `npx tsc --noEmit`
+
+**Database Connection:**
+- Supabase works in production with the provided `.env` config
+- No additional setup needed for the database
+
+### 🎯 Deployment Checklist
+
+- ✅ Build passes locally (`npm run build`)
+- ✅ Environment variables configured
+- ✅ Database schema applied in Supabase
+- ✅ Deployment platform configured (Vercel/Netlify auto-detect configs)
+- ✅ Test all routes after deployment
+
 ## 🗄️ Database Schema
 
 The application uses the following Supabase tables:
@@ -514,6 +624,8 @@ Notes:
 - The server exposes these endpoints: `/api/health`, `/api/contact`, `/api/signup` and `/api/login`.
 - Make sure you run the SQL in `sql/schema.sql` to create all necessary tables (including the new `public.contacts` table).
 - Never commit your Supabase service_role key — keep it in environment variables and rotate it if it leaks.
-#   c i p h e r v a u l t  
- #   c i p h e r v a u l t  
+#   c i p h e r v a u l t 
+ 
+ #   c i p h e r v a u l t 
+ 
  
