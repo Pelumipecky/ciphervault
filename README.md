@@ -515,4 +515,5 @@ Notes:
 - Make sure you run the SQL in `sql/schema.sql` to create all necessary tables (including the new `public.contacts` table).
 - Never commit your Supabase service_role key — keep it in environment variables and rotate it if it leaks.
 #   c i p h e r v a u l t  
+ #   c i p h e r v a u l t  
  
