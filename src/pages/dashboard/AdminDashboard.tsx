@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
+import { 
+  sendInvestmentNotification, 
+  sendWithdrawalNotification, 
+  sendKYCNotification, 
+  sendLoanNotification,
+  sendBalanceUpdateNotification,
+  initializeEmailJS 
+} from '@/utils/emailService'
 import '../../styles/dashboard.css'
 import '../../styles/modern-dashboard.css'
 
@@ -166,6 +174,9 @@ function AdminDashboard() {
 
         setCurrentAdmin(userData)
 
+        // Initialize email service
+        initializeEmailJS()
+
         // Fetch all data for admin
         try {
           const [users, investments, withdrawals, kycRequests, loans] = await Promise.all([
@@ -181,6 +192,16 @@ function AdminDashboard() {
             const user = users.find(u => u.idnum === investment.idnum)
             return {
               ...investment,
+              userName: user?.userName || user?.name || 'Unknown User',
+              userEmail: user?.email || ''
+            }
+          })
+
+          // Join withdrawals with user data
+          const withdrawalsWithUsers = withdrawals.map(withdrawal => {
+            const user = users.find(u => u.idnum === withdrawal.idnum)
+            return {
+              ...withdrawal,
               userName: user?.userName || user?.name || 'Unknown User',
               userEmail: user?.email || ''
             }
@@ -208,9 +229,17 @@ function AdminDashboard() {
 
           setAllUsers(users)
           setAllInvestments(investmentsWithUsers)
-          setAllWithdrawals(withdrawals)
+          setAllWithdrawals(withdrawalsWithUsers)
           setAllKycRequests(kycWithUsers)
           setAllLoans(loansWithUsers)
+          
+          console.log('✅ Admin data loaded:', {
+            users: users.length,
+            investments: investmentsWithUsers.length,
+            withdrawals: withdrawalsWithUsers.length,
+            kyc: kycWithUsers.length,
+            loans: loansWithUsers.length
+          })
         } catch (error) {
           console.log('Could not fetch admin data (Supabase may not be configured):', error)
           // Set mock data for demo
@@ -245,28 +274,72 @@ function AdminDashboard() {
     navigate('/login')
   }
 
-  const handleApproveInvestment = (investmentId: number) => {
+  const handleApproveInvestment = async (investmentId: number) => {
+    const investment = allInvestments.find(inv => inv.id === investmentId)
+    if (investment) {
+      // Send email notification
+      await sendInvestmentNotification(
+        investment.userEmail,
+        investment.userName,
+        'approved',
+        investment.capital || 0,
+        investment.plan || 'Investment Plan'
+      )
+    }
     setAllInvestments(prev => 
       prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Active' } : inv)
     )
     showAlert('success', 'Investment Approved', 'Investment has been approved successfully!')
   }
 
-  const handleRejectInvestment = (investmentId: number) => {
+  const handleRejectInvestment = async (investmentId: number) => {
+    const investment = allInvestments.find(inv => inv.id === investmentId)
+    if (investment) {
+      // Send email notification
+      await sendInvestmentNotification(
+        investment.userEmail,
+        investment.userName,
+        'rejected',
+        investment.capital || 0,
+        investment.plan || 'Investment Plan'
+      )
+    }
     setAllInvestments(prev => 
       prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Rejected' } : inv)
     )
     showAlert('error', 'Investment Rejected', 'Investment has been rejected.')
   }
 
-  const handleApproveWithdrawal = (withdrawalId: number) => {
+  const handleApproveWithdrawal = async (withdrawalId: number) => {
+    const withdrawal = allWithdrawals.find(w => w.id === withdrawalId)
+    if (withdrawal) {
+      // Send email notification
+      await sendWithdrawalNotification(
+        withdrawal.userEmail,
+        withdrawal.userName,
+        'approved',
+        withdrawal.amount || 0,
+        withdrawal.method || 'Bank Transfer'
+      )
+    }
     setAllWithdrawals(prev => 
       prev.map(w => w.id === withdrawalId ? { ...w, status: 'Approved' } : w)
     )
     showAlert('success', 'Withdrawal Approved', 'Withdrawal has been approved and completed!')
   }
 
-  const handleRejectWithdrawal = (withdrawalId: number) => {
+  const handleRejectWithdrawal = async (withdrawalId: number) => {
+    const withdrawal = allWithdrawals.find(w => w.id === withdrawalId)
+    if (withdrawal) {
+      // Send email notification
+      await sendWithdrawalNotification(
+        withdrawal.userEmail,
+        withdrawal.userName,
+        'rejected',
+        withdrawal.amount || 0,
+        withdrawal.method || 'Bank Transfer'
+      )
+    }
     setAllWithdrawals(prev => 
       prev.map(w => w.id === withdrawalId ? { ...w, status: 'Rejected' } : w)
     )
@@ -275,6 +348,15 @@ function AdminDashboard() {
 
   const handleApproveKyc = async (kycId: string) => {
     try {
+      const kyc = allKycRequests.find(k => k.id === kycId)
+      if (kyc) {
+        // Send email notification
+        await sendKYCNotification(
+          kyc.userEmail,
+          kyc.userName,
+          'approved'
+        )
+      }
       await supabaseDb.updateKycStatus(kycId, 'approved')
       setAllKycRequests(prev => 
         prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'approved' } : kyc)
@@ -288,6 +370,15 @@ function AdminDashboard() {
 
   const handleRejectKyc = async (kycId: string, rejectionReason?: string) => {
     try {
+      const kyc = allKycRequests.find(k => k.id === kycId)
+      if (kyc) {
+        // Send email notification
+        await sendKYCNotification(
+          kyc.userEmail,
+          kyc.userName,
+          'rejected'
+        )
+      }
       await supabaseDb.updateKycStatus(kycId, 'rejected', rejectionReason)
       setAllKycRequests(prev => 
         prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'rejected' } : kyc)
@@ -305,7 +396,7 @@ function AdminDashboard() {
     setShowUserModal(true)
   }
 
-  const handleUpdateUserBalance = () => {
+  const handleUpdateUserBalance = async () => {
     if (!selectedUser || !newBalance) return
     
     const balance = parseFloat(newBalance)
@@ -313,6 +404,14 @@ function AdminDashboard() {
       showAlert('error', 'Invalid Amount', 'Please enter a valid balance amount')
       return
     }
+
+    // Send email notification
+    await sendBalanceUpdateNotification(
+      selectedUser.email,
+      selectedUser.userName || selectedUser.name,
+      balance,
+      selectedUser.balance || 0
+    )
 
     setAllUsers(prev => 
       prev.map(u => u.idnum === selectedUser.idnum ? { ...u, balance } : u)
@@ -373,6 +472,14 @@ function AdminDashboard() {
   // Loan approval/rejection handlers
   const handleApproveLoan = async (loan: any) => {
     try {
+      // Send email notification
+      await sendLoanNotification(
+        loan.userEmail,
+        loan.userName,
+        'approved',
+        loan.amount || 0,
+        loan.duration || 30
+      )
       await supabaseDb.updateLoan(loan.id, { status: 'approved', authStatus: 'approved' })
       setAllLoans(prev => prev.map(l => l.id === loan.id ? { ...l, status: 'approved', authStatus: 'approved' } : l))
       showAlert('success', 'Loan Approved', `Loan of $${loan.amount?.toLocaleString()} has been approved.`)
@@ -384,6 +491,14 @@ function AdminDashboard() {
 
   const handleRejectLoan = async (loan: any) => {
     try {
+      // Send email notification
+      await sendLoanNotification(
+        loan.userEmail,
+        loan.userName,
+        'rejected',
+        loan.amount || 0,
+        loan.duration || 30
+      )
       await supabaseDb.updateLoan(loan.id, { status: 'rejected', authStatus: 'rejected' })
       setAllLoans(prev => prev.map(l => l.id === loan.id ? { ...l, status: 'rejected', authStatus: 'rejected' } : l))
       showAlert('success', 'Loan Rejected', `Loan request has been rejected.`)
@@ -864,7 +979,15 @@ function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {allInvestments.map((inv, idx) => (
+                    {allInvestments.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                          <i className="icofont-chart-growth" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
+                          No investment records found
+                        </td>
+                      </tr>
+                    ) : (
+                      allInvestments.map((inv, idx) => (
                       <tr
                         key={inv.id || idx}
                         style={{
@@ -932,7 +1055,8 @@ function AdminDashboard() {
                           )}
                         </td>
                       </tr>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
                 </div>
@@ -977,7 +1101,15 @@ function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {allWithdrawals.map((withdrawal, idx) => (
+                    {allWithdrawals.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                          <i className="icofont-money" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
+                          No withdrawal records found
+                        </td>
+                      </tr>
+                    ) : (
+                      allWithdrawals.map((withdrawal, idx) => (
                       <tr
                         key={withdrawal.id || idx}
                         style={{
@@ -1045,7 +1177,8 @@ function AdminDashboard() {
                           )}
                         </td>
                       </tr>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
                 </div>

@@ -4,6 +4,13 @@ import { supabaseDb } from '@/lib/supabaseUtils'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 import { UserRole } from '@/utils/roles'
 import { fetchCryptoPrices, fetchDetailedCryptoPrices, formatPrice, formatMarketCap, CryptoPrice, CryptoPrices } from '@/utils/cryptoPrices'
+import { 
+  sendInvestmentNotification, 
+  sendWithdrawalNotification, 
+  sendKYCNotification, 
+  sendLoanNotification,
+  initializeEmailJS 
+} from '@/utils/emailService'
 import '@/styles/modern-dashboard.css'
 
 interface UserData {
@@ -124,6 +131,9 @@ function UserDashboard() {
   useEffect(() => {
     async function initDashboard() {
       try {
+        // Initialize email service
+        initializeEmailJS()
+
         // Get user data from localStorage/sessionStorage
         const userRaw = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser');
         if (!userRaw) {
@@ -720,6 +730,15 @@ function UserDashboard() {
         
         const savedLoan = await supabaseDb.createLoan(newLoan)
         
+        // Send email notification
+        await sendLoanNotification(
+          currentUser?.email || '',
+          currentUser?.userName || currentUser?.name || '',
+          'pending',
+          amount,
+          duration
+        )
+        
         // Update local state
         setLoans(prev => [savedLoan, ...prev])
         
@@ -795,6 +814,17 @@ function UserDashboard() {
       // Try database first, fallback to local storage
       try {
         await supabaseDb.createInvestment(newInvestment)
+        
+        // Send email notification
+        if (currentUser) {
+          await sendInvestmentNotification(
+            currentUser.email || '',
+            currentUser.userName || currentUser.name || '',
+            'pending',
+            capital,
+            selectedPlan.name
+          )
+        }
       } catch (dbError) {
         console.log('Database unavailable, storing locally')
         // Store in localStorage as fallback
