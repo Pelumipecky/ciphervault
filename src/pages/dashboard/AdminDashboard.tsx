@@ -165,21 +165,37 @@ function AdminDashboard() {
 
         // Fetch all data for admin
         try {
-          const [users, investments, withdrawals] = await Promise.all([
+          const [users, investments, withdrawals, kycRequests] = await Promise.all([
             supabaseDb.getAllUsers(),
             supabaseDb.getAllInvestments(),
             supabaseDb.getAllWithdrawals(),
+            supabaseDb.getAllKycRequests(),
           ])
-          
+
+          // Join investments with user data
+          const investmentsWithUsers = investments.map(investment => {
+            const user = users.find(u => u.idnum === investment.idnum)
+            return {
+              ...investment,
+              userName: user?.userName || user?.name || 'Unknown User',
+              userEmail: user?.email || ''
+            }
+          })
+
+          // Join KYC requests with user data
+          const kycWithUsers = kycRequests.map(kyc => {
+            const user = users.find(u => u.idnum === kyc.idnum)
+            return {
+              ...kyc,
+              userName: user?.userName || user?.name || 'Unknown User',
+              userEmail: user?.email || ''
+            }
+          })
+
           setAllUsers(users)
-          setAllInvestments(investments)
+          setAllInvestments(investmentsWithUsers)
           setAllWithdrawals(withdrawals)
-          
-          // Mock KYC requests (you can fetch from DB when ready)
-          setAllKycRequests([
-            { id: 1, userName: 'John Doe', email: 'john@example.com', status: 'Pending', submittedAt: new Date().toISOString() },
-            { id: 2, userName: 'Jane Smith', email: 'jane@example.com', status: 'Pending', submittedAt: new Date().toISOString() },
-          ])
+          setAllKycRequests(kycWithUsers)
         } catch (error) {
           console.log('Could not fetch admin data (Supabase may not be configured):', error)
           // Set mock data for demo
@@ -242,18 +258,30 @@ function AdminDashboard() {
     showAlert('error', 'Withdrawal Rejected', 'Withdrawal has been rejected.')
   }
 
-  const handleApproveKyc = (kycId: number) => {
-    setAllKycRequests(prev => 
-      prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'Approved' } : kyc)
-    )
-    showAlert('success', 'KYC Approved', 'KYC verification has been approved!')
+  const handleApproveKyc = async (kycId: string) => {
+    try {
+      await supabaseDb.updateKycStatus(kycId, 'approved')
+      setAllKycRequests(prev => 
+        prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'approved' } : kyc)
+      )
+      showAlert('success', 'KYC Approved', 'KYC verification has been approved!')
+    } catch (error) {
+      console.error('Error approving KYC:', error)
+      showAlert('error', 'Error', 'Failed to approve KYC verification.')
+    }
   }
 
-  const handleRejectKyc = (kycId: number) => {
-    setAllKycRequests(prev => 
-      prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'Rejected' } : kyc)
-    )
-    showAlert('error', 'KYC Rejected', 'KYC verification has been rejected.')
+  const handleRejectKyc = async (kycId: string, rejectionReason?: string) => {
+    try {
+      await supabaseDb.updateKycStatus(kycId, 'rejected', rejectionReason)
+      setAllKycRequests(prev => 
+        prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'rejected' } : kyc)
+      )
+      showAlert('error', 'KYC Rejected', 'KYC verification has been rejected.')
+    } catch (error) {
+      console.error('Error rejecting KYC:', error)
+      showAlert('error', 'Error', 'Failed to reject KYC verification.')
+    }
   }
 
   const handleViewUser = (user: any) => {
@@ -315,6 +343,17 @@ function AdminDashboard() {
 
   return (
     <div className="dashboard-container">
+      {/* Mobile Hamburger Button */}
+      <button 
+        className="mobile-menu-btn"
+        onClick={() => setShowSidePanel(!showSidePanel)}
+        aria-label="Toggle menu"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
       {/* Admin Sidebar */}
       <aside className={`dashboard-sidebar ${showSidePanel ? 'show' : ''}`}>
         <div className="sidebar-header">
@@ -647,7 +686,7 @@ function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {allUsers.map((user, idx) => (
+                    {allUsers.filter(user => user.idnum !== currentAdmin?.idnum).map((user, idx) => (
                       <tr
                         key={user.id || idx}
                         style={{
@@ -754,7 +793,7 @@ function AdminDashboard() {
                           ${(inv.capital || 0).toLocaleString()}
                         </td>
                         <td style={{ padding: '1rem', color: '#cbd5e1' }}>
-                          {new Date(inv.date).toLocaleDateString()}
+                          {new Date(inv.created_at || inv.date).toLocaleDateString()}
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'center' }}>
                           <span style={{
@@ -970,7 +1009,7 @@ function AdminDashboard() {
                         }}
                       >
                         <td style={{ padding: '1rem', color: '#f8fafc', fontWeight: 500 }}>{kyc.userName}</td>
-                        <td style={{ padding: '1rem', color: '#cbd5e1' }}>{kyc.email}</td>
+                        <td style={{ padding: '1rem', color: '#cbd5e1' }}>{kyc.userEmail}</td>
                         <td style={{ padding: '1rem', color: '#cbd5e1' }}>
                           {new Date(kyc.submittedAt).toLocaleDateString()}
                         </td>
@@ -980,18 +1019,18 @@ function AdminDashboard() {
                             borderRadius: '20px',
                             fontSize: '0.75rem',
                             fontWeight: 600,
-                            background: kyc.status === 'Pending' ? 'rgba(251,191,36,0.15)' :
-                                       kyc.status === 'Approved' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                            color: kyc.status === 'Pending' ? '#fbbf24' :
-                                   kyc.status === 'Approved' ? '#4ade80' : '#ef4444',
-                            border: `1px solid ${kyc.status === 'Pending' ? 'rgba(251,191,36,0.3)' :
-                                                 kyc.status === 'Approved' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`
+                            background: kyc.status?.toLowerCase() === 'pending' ? 'rgba(251,191,36,0.15)' :
+                                       kyc.status?.toLowerCase() === 'approved' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                            color: kyc.status?.toLowerCase() === 'pending' ? '#fbbf24' :
+                                   kyc.status?.toLowerCase() === 'approved' ? '#4ade80' : '#ef4444',
+                            border: `1px solid ${kyc.status?.toLowerCase() === 'pending' ? 'rgba(251,191,36,0.3)' :
+                                                 kyc.status?.toLowerCase() === 'approved' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`
                           }}>
-                            {kyc.status}
+                            {kyc.status || 'Unknown'}
                           </span>
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'center' }}>
-                          {kyc.status === 'Pending' && (
+                          {kyc.status?.toLowerCase() === 'pending' && (
                             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                               <button
                                 onClick={() => handleApproveKyc(kyc.id)}

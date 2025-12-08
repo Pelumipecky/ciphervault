@@ -77,6 +77,25 @@ export interface LoanRecord {
   created_at?: string
 }
 
+export interface KycRecord {
+  id?: string
+  idnum?: string
+  fullName?: string
+  dateOfBirth?: string
+  nationality?: string
+  documentType?: string
+  documentNumber?: string
+  documentFrontUrl?: string
+  documentBackUrl?: string
+  selfieUrl?: string
+  status?: string
+  rejectionReason?: string
+  submittedAt?: string
+  reviewedAt?: string
+  created_at?: string
+  updated_at?: string
+}
+
 export interface NotificationRecord {
   id?: string
   idnum?: string
@@ -338,7 +357,7 @@ export const supabaseDb = {
       .from('investments')
       .select('*')
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return (data || []).map(mapInvestmentRecord)
   },
@@ -425,6 +444,54 @@ export const supabaseDb = {
       .from('withdrawals')
       .update(updates)
       .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  // KYC operations
+  async getAllKycRequests(): Promise<KycRecord[]> {
+    const { data, error } = await db
+      .from('kyc_verifications')
+      .select('*')
+      .order('submittedAt', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async getKycByUser(idnum: string): Promise<KycRecord[]> {
+    const { data, error } = await db
+      .from('kyc_verifications')
+      .select('*')
+      .eq('idnum', idnum)
+      .order('submittedAt', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async updateKycStatus(id: string, status: string, rejectionReason?: string): Promise<KycRecord> {
+    const updates: any = { status, reviewedAt: new Date().toISOString() }
+    if (rejectionReason) updates.rejectionReason = rejectionReason
+    
+    const { data, error } = await db
+      .from('kyc_verifications')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async createKyc(kycData: Partial<KycRecord>): Promise<KycRecord> {
+    const { data, error } = await db
+      .from('kyc_verifications')
+      .insert([kycData])
       .select()
       .single()
     

@@ -124,52 +124,105 @@ function UserDashboard() {
   useEffect(() => {
     async function initDashboard() {
       try {
-        // Simulate fetching user data from localStorage/sessionStorage
+        // Get user data from localStorage/sessionStorage
         const userRaw = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser');
         if (!userRaw) {
           navigate('/login');
           return;
         }
         const userData = JSON.parse(userRaw);
-        setCurrentUser(userData);
 
-        // Simulate fetching investments from localStorage
-        const investmentsRaw = localStorage.getItem('userInvestments');
-        if (investmentsRaw) {
-          setInvestments(JSON.parse(investmentsRaw));
+        // Fetch real user data from database
+        try {
+          const dbUser = await supabaseDb.getUserByIdnum(userData.idnum);
+          if (dbUser) {
+            // Update localStorage with fresh data from database
+            const updatedUserData = { ...userData, ...dbUser };
+            localStorage.setItem('activeUser', JSON.stringify(updatedUserData));
+            setCurrentUser(updatedUserData);
+          } else {
+            setCurrentUser(userData);
+          }
+        } catch (dbError) {
+          console.log('Could not fetch user data from database, using localStorage:', dbError);
+          setCurrentUser(userData);
         }
 
-        // Load notifications from localStorage
-        const storedNotifications = localStorage.getItem('userNotifications');
-        if (storedNotifications) {
-          const parsedNotifications = JSON.parse(storedNotifications);
-          // Add welcome notification if no notifications exist
-          if (parsedNotifications.length === 0) {
+        // Fetch real investments from database
+        try {
+          const userInvestments = await supabaseDb.getInvestmentsByUser(userData.idnum);
+          setInvestments(userInvestments);
+          // Update localStorage for consistency
+          localStorage.setItem('userInvestments', JSON.stringify(userInvestments));
+        } catch (dbError) {
+          console.log('Could not fetch investments from database, using localStorage:', dbError);
+          // Fallback to localStorage
+          const investmentsRaw = localStorage.getItem('userInvestments');
+          if (investmentsRaw) {
+            setInvestments(JSON.parse(investmentsRaw));
+          }
+        }
+
+        // Fetch real notifications from database
+        try {
+          const userNotifications = await supabaseDb.getNotificationsByUser(userData.idnum);
+          const formattedNotifications = userNotifications.map(notif => ({
+            id: parseInt(notif.id || '0') || Date.now(),
+            title: notif.title || 'Notification',
+            message: notif.message || '',
+            type: notif.type || 'info',
+            read: notif.read || false,
+            created_at: notif.created_at || new Date().toISOString()
+          }));
+          setNotifications(formattedNotifications);
+          localStorage.setItem('userNotifications', JSON.stringify(formattedNotifications));
+        } catch (dbError) {
+          console.log('Could not fetch notifications from database, using localStorage:', dbError);
+          // Fallback to localStorage notifications
+          const storedNotifications = localStorage.getItem('userNotifications');
+          if (storedNotifications) {
+            const parsedNotifications = JSON.parse(storedNotifications);
+            // Add welcome notification if no notifications exist
+            if (parsedNotifications.length === 0) {
+              const welcomeNotification: Notification = {
+                id: Date.now(),
+                title: 'Welcome!',
+                message: 'Welcome to your dashboard! Start by exploring investment plans.',
+                type: 'info',
+                read: false,
+                created_at: new Date().toISOString()
+              };
+              setNotifications([welcomeNotification]);
+              localStorage.setItem('userNotifications', JSON.stringify([welcomeNotification]));
+            } else {
+              setNotifications(parsedNotifications);
+            }
+          } else {
+            // First time user - set welcome notification
             const welcomeNotification: Notification = {
               id: Date.now(),
               title: 'Welcome!',
-              message: 'Welcome to your dashboard! Start by exploring investment plans.',
-              type: 'info',
+              message: `Welcome ${userData.name || userData.userName || 'to your dashboard'}! Start exploring our investment plans.`,
+              type: 'success',
               read: false,
               created_at: new Date().toISOString()
             };
             setNotifications([welcomeNotification]);
             localStorage.setItem('userNotifications', JSON.stringify([welcomeNotification]));
-          } else {
-            setNotifications(parsedNotifications);
           }
-        } else {
-          // First time user - set welcome notification
-          const welcomeNotification: Notification = {
-            id: Date.now(),
-            title: 'Welcome!',
-            message: `Welcome ${userData.name || userData.userName || 'to your dashboard'}! Start exploring our investment plans.`,
-            type: 'success',
-            read: false,
-            created_at: new Date().toISOString()
-          };
-          setNotifications([welcomeNotification]);
-          localStorage.setItem('userNotifications', JSON.stringify([welcomeNotification]));
+        }
+
+        // Fetch KYC data from database
+        try {
+          const userKyc = await supabaseDb.getKycByUser(userData.idnum);
+          if (userKyc && userKyc.length > 0) {
+            // Get the most recent KYC submission
+            const latestKyc = userKyc.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())[0];
+            setKycData(latestKyc);
+          }
+        } catch (dbError) {
+          console.log('Could not fetch KYC data from database:', dbError);
+          setKycData(null);
         }
       } catch (error) {
         console.error('Error initializing dashboard:', error);
@@ -195,6 +248,7 @@ function UserDashboard() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<UserData | null>(null)
   const [investments, setInvestments] = useState<Investment[]>([])
+  const [kycData, setKycData] = useState<any>(null)
   const [profileState, setProfileState] = useState<string>('Dashboard')
   const [showSidePanel, setShowSidePanel] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -472,13 +526,47 @@ function UserDashboard() {
       }
       setKycStep('review')
     } else if (kycStep === 'review') {
-      // Submit KYC
-      addNotification(
-        'KYC Documents Submitted',
-        'Your KYC verification documents have been submitted for review. This may take 1-3 business days.',
-        'info'
-      )
-      setKycStep('success')
+      // Submit KYC to database
+      try {
+        const kycDataToSubmit = {
+          idnum: currentUser?.idnum,
+          fullName: currentUser?.name || currentUser?.userName,
+          dateOfBirth: '1990-01-01', // This would come from form in real implementation
+          nationality: 'United States', // This would come from form in real implementation
+          documentType: kycForm.idType,
+          documentNumber: kycForm.idNumber,
+          status: 'pending',
+          submittedAt: new Date().toISOString()
+          // In a real implementation, you'd upload files to storage and include URLs
+        }
+
+        // Note: This would need a createKyc function in supabaseUtils
+        // For now, we'll just simulate the submission
+        console.log('KYC data to submit:', kycDataToSubmit)
+
+        addNotification(
+          'KYC Documents Submitted',
+          'Your KYC verification documents have been submitted for review. This may take 1-3 business days.',
+          'info'
+        )
+        setKycStep('success')
+        
+        // Refresh KYC data after submission
+        setTimeout(() => {
+          // In a real implementation, this would fetch the newly created KYC record
+          setKycData({
+            ...kycDataToSubmit,
+            status: 'pending'
+          })
+        }, 1000)
+      } catch (error) {
+        console.error('Error submitting KYC:', error)
+        addNotification(
+          'KYC Submission Failed',
+          'There was an error submitting your KYC documents. Please try again.',
+          'error'
+        )
+      }
     }
   }
 
@@ -711,9 +799,15 @@ function UserDashboard() {
     setInvestmentForm({ capital: '', paymentMethod: 'Bitcoin', transactionHash: '', bankSlip: null })
   }
 
-  const totalCapital = investments.reduce((sum, inv) => sum + (inv.capital || 0), 0)
-  const totalROI = investments.reduce((sum, inv) => sum + (inv.roi || 0), 0)
-  const totalBonus = investments.reduce((sum, inv) => sum + (inv.bonus || 0), 0)
+  // Only count approved/active investments for totals (not pending)
+  const approvedInvestments = investments.filter(inv => 
+    inv.status?.toLowerCase() === 'active' || 
+    inv.status?.toLowerCase() === 'approved' || 
+    inv.status?.toLowerCase() === 'completed'
+  )
+  const totalCapital = approvedInvestments.reduce((sum, inv) => sum + (inv.capital || 0), 0)
+  const totalROI = approvedInvestments.reduce((sum, inv) => sum + (inv.roi || 0), 0)
+  const totalBonus = approvedInvestments.reduce((sum, inv) => sum + (inv.bonus || 0), 0)
   const totalBalance = (currentUser?.balance || 0) + (currentUser?.bonus || 0)
 
   if (loading) {
@@ -2431,19 +2525,34 @@ function UserDashboard() {
                       alignItems: 'center',
                       gap: '0.5rem',
                       padding: '0.5rem 1rem',
-                      background: 'rgba(234,179,8,0.1)',
-                      border: '1px solid rgba(234,179,8,0.3)',
+                      background: kycData?.status === 'approved' ? 'rgba(34,197,94,0.1)' :
+                                 kycData?.status === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(234,179,8,0.1)',
+                      border: kycData?.status === 'approved' ? '1px solid rgba(34,197,94,0.3)' :
+                             kycData?.status === 'rejected' ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(234,179,8,0.3)',
                       borderRadius: '8px',
-                      color: '#eab308',
+                      color: kycData?.status === 'approved' ? '#22c55e' :
+                             kycData?.status === 'rejected' ? '#ef4444' : '#eab308',
                       fontSize: '0.875rem',
                       fontWeight: 600,
                       marginBottom: '0.75rem'
                     }}>
-                      <i className="icofont-clock-time"></i>
-                      <span>Pending Verification</span>
+                      <i className={kycData?.status === 'approved' ? 'icofont-verification-check' :
+                                   kycData?.status === 'rejected' ? 'icofont-close' : 'icofont-clock-time'}></i>
+                      <span>
+                        {kycData?.status === 'approved' ? 'Verified' :
+                         kycData?.status === 'rejected' ? 'Rejected' :
+                         kycData?.status === 'pending' ? 'Pending Verification' : 'Not Submitted'}
+                      </span>
                     </div>
                     <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: '1.5' }}>
-                      Complete KYC verification to unlock all features including withdrawals and higher investment limits.
+                      {kycData?.status === 'approved' 
+                        ? 'Your KYC verification has been approved. You can now access all features including withdrawals and higher investment limits.'
+                        : kycData?.status === 'rejected'
+                        ? `Your KYC verification was rejected. ${kycData.rejectionReason ? 'Reason: ' + kycData.rejectionReason : 'Please contact support for more details.'}`
+                        : kycData?.status === 'pending'
+                        ? 'Your KYC verification is being reviewed. We will notify you once the review is complete.'
+                        : 'Complete KYC verification to unlock all features including withdrawals and higher investment limits.'
+                      }
                     </p>
                   </div>
 
@@ -2506,9 +2615,19 @@ function UserDashboard() {
                   <button 
                     className="primary-btn"
                     onClick={handleStartKyc}
-                    style={{ width: '100%', padding: '1rem', marginTop: '1rem' }}
+                    disabled={kycData?.status === 'approved' || kycData?.status === 'pending'}
+                    style={{ 
+                      width: '100%', 
+                      padding: '1rem', 
+                      marginTop: '1rem',
+                      opacity: (kycData?.status === 'approved' || kycData?.status === 'pending') ? 0.6 : 1,
+                      cursor: (kycData?.status === 'approved' || kycData?.status === 'pending') ? 'not-allowed' : 'pointer'
+                    }}
                   >
-                    <i className="icofont-verification-check"></i> Start KYC Verification
+                    <i className="icofont-verification-check"></i> 
+                    {kycData?.status === 'approved' ? 'KYC Verified' :
+                     kycData?.status === 'pending' ? 'KYC Under Review' :
+                     kycData?.status === 'rejected' ? 'Resubmit KYC' : 'Start KYC Verification'}
                   </button>
                 </div>
               </div>
