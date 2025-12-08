@@ -342,9 +342,37 @@ function AdminDashboard() {
     )
   }
 
+  // Get current page title based on active tab
+  const getPageTitle = () => {
+    switch(activeTab) {
+      case 'overview': return 'Dashboard Overview';
+      case 'users': return 'User Management';
+      case 'investments': return 'Investments';
+      case 'withdrawals': return 'Withdrawals';
+      case 'kyc': return 'KYC Requests';
+      case 'settings': return 'System Settings';
+      default: return 'Admin Panel';
+    }
+  };
+
   return (
     <div className="dashboard-container">
-      {/* Mobile Hamburger Button */}
+      {/* Mobile Header Bar */}
+      <div className="mobile-header">
+        <button 
+          className="mobile-header-btn"
+          onClick={() => setShowSidePanel(!showSidePanel)}
+          aria-label="Toggle menu"
+        >
+          <i className="icofont-navigation-menu"></i>
+        </button>
+        <h1 className="mobile-header-title">{getPageTitle()}</h1>
+        <div className="mobile-header-logo">
+          <span style={{ color: '#f0b90b', fontWeight: 700 }}>CV</span>
+        </div>
+      </div>
+
+      {/* Mobile Hamburger Button (floating) */}
       <button 
         className="mobile-menu-btn"
         onClick={() => setShowSidePanel(!showSidePanel)}
