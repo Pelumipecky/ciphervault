@@ -46,7 +46,8 @@ function AdminDashboard() {
   const [allInvestments, setAllInvestments] = useState<any[]>([])
   const [allWithdrawals, setAllWithdrawals] = useState<any[]>([])
   const [allKycRequests, setAllKycRequests] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'investments' | 'withdrawals' | 'kyc' | 'settings'>('overview')
+  const [allLoans, setAllLoans] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'investments' | 'withdrawals' | 'kyc' | 'loans' | 'settings'>('overview')
   const [showSidePanel, setShowSidePanel] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
   const [showUserModal, setShowUserModal] = useState(false)
@@ -58,6 +59,7 @@ function AdminDashboard() {
     if (path.includes('users-management')) setActiveTab('users')
     else if (path.includes('transactions')) setActiveTab('withdrawals')
     else if (path.includes('investment-plans')) setActiveTab('investments')
+    else if (path.includes('loans-management')) setActiveTab('loans')
     else if (path.includes('system-settings')) setActiveTab('settings')
     else setActiveTab('overview')
   }, [location.pathname])
@@ -166,11 +168,12 @@ function AdminDashboard() {
 
         // Fetch all data for admin
         try {
-          const [users, investments, withdrawals, kycRequests] = await Promise.all([
+          const [users, investments, withdrawals, kycRequests, loans] = await Promise.all([
             supabaseDb.getAllUsers(),
             supabaseDb.getAllInvestments(),
             supabaseDb.getAllWithdrawals(),
             supabaseDb.getAllKycRequests(),
+            supabaseDb.getAllLoans(),
           ])
 
           // Join investments with user data
@@ -193,10 +196,21 @@ function AdminDashboard() {
             }
           })
 
+          // Join loans with user data
+          const loansWithUsers = loans.map(loan => {
+            const user = users.find(u => u.idnum === loan.idnum)
+            return {
+              ...loan,
+              userName: user?.userName || user?.name || 'Unknown User',
+              userEmail: user?.email || ''
+            }
+          })
+
           setAllUsers(users)
           setAllInvestments(investmentsWithUsers)
           setAllWithdrawals(withdrawals)
           setAllKycRequests(kycWithUsers)
+          setAllLoans(loansWithUsers)
         } catch (error) {
           console.log('Could not fetch admin data (Supabase may not be configured):', error)
           // Set mock data for demo
@@ -350,10 +364,38 @@ function AdminDashboard() {
       case 'investments': return 'Investments';
       case 'withdrawals': return 'Withdrawals';
       case 'kyc': return 'KYC Requests';
+      case 'loans': return 'Loan Requests';
       case 'settings': return 'System Settings';
       default: return 'Admin Panel';
     }
   };
+
+  // Loan approval/rejection handlers
+  const handleApproveLoan = async (loan: any) => {
+    try {
+      await supabaseDb.updateLoan(loan.id, { status: 'approved', authStatus: 'approved' })
+      setAllLoans(prev => prev.map(l => l.id === loan.id ? { ...l, status: 'approved', authStatus: 'approved' } : l))
+      showAlert('success', 'Loan Approved', `Loan of $${loan.amount?.toLocaleString()} has been approved.`)
+    } catch (error) {
+      console.error('Error approving loan:', error)
+      showAlert('error', 'Error', 'Failed to approve loan')
+    }
+  }
+
+  const handleRejectLoan = async (loan: any) => {
+    try {
+      await supabaseDb.updateLoan(loan.id, { status: 'rejected', authStatus: 'rejected' })
+      setAllLoans(prev => prev.map(l => l.id === loan.id ? { ...l, status: 'rejected', authStatus: 'rejected' } : l))
+      showAlert('success', 'Loan Rejected', `Loan request has been rejected.`)
+    } catch (error) {
+      console.error('Error rejecting loan:', error)
+      showAlert('error', 'Error', 'Failed to reject loan')
+    }
+  }
+
+  // Calculate loan stats
+  const pendingLoans = allLoans.filter(l => l.status === 'pending').length
+  const totalLoanAmount = allLoans.filter(l => l.status === 'approved').reduce((sum, l) => sum + (l.amount || 0), 0)
 
   return (
     <div className="dashboard-container">
@@ -479,6 +521,16 @@ function AdminDashboard() {
             <span>KYC Requests</span>
             {pendingKyc > 0 && (
               <span className="badge">{pendingKyc}</span>
+            )}
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'loans' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('loans'); setShowSidePanel(false); navigate('/admin/loans-management'); }}
+          >
+            <i className="icofont-money-bag"></i>
+            <span>Loans</span>
+            {pendingLoans > 0 && (
+              <span className="badge">{pendingLoans}</span>
             )}
           </button>
 
@@ -1096,6 +1148,188 @@ function AdminDashboard() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Loans Management Tab */}
+          {activeTab === 'loans' && (
+            <div className="page-section">
+              <div className="page-header">
+                <h2><i className="icofont-money-bag"></i> Loan Requests</h2>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <span style={{
+                    background: 'rgba(240, 185, 11, 0.1)',
+                    color: '#f0b90b',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '0.875rem',
+                    fontWeight: 600
+                  }}>
+                    {pendingLoans} Pending
+                  </span>
+                  <span style={{
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    color: '#10b981',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '0.875rem',
+                    fontWeight: 600
+                  }}>
+                    ${totalLoanAmount.toLocaleString()} Approved
+                  </span>
+                </div>
+              </div>
+
+              {/* Loan Stats */}
+              <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
+                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #f0b90b 0%, #d19e09 100%)' }}>
+                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+                    <i className="icofont-tasks-alt"></i>
+                  </div>
+                  <div className="stat-info">
+                    <p className="stat-label" style={{ color: '#0f172a' }}>Total Requests</p>
+                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{allLoans.length}</h3>
+                  </div>
+                </div>
+
+                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
+                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+                    <i className="icofont-clock-time"></i>
+                  </div>
+                  <div className="stat-info">
+                    <p className="stat-label" style={{ color: '#0f172a' }}>Pending</p>
+                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{pendingLoans}</h3>
+                  </div>
+                </div>
+
+                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+                    <i className="icofont-check-circled"></i>
+                  </div>
+                  <div className="stat-info">
+                    <p className="stat-label" style={{ color: '#0f172a' }}>Approved</p>
+                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{allLoans.filter(l => l.status === 'approved').length}</h3>
+                  </div>
+                </div>
+
+                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>
+                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+                    <i className="icofont-close-circled"></i>
+                  </div>
+                  <div className="stat-info">
+                    <p className="stat-label" style={{ color: '#0f172a' }}>Rejected</p>
+                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{allLoans.filter(l => l.status === 'rejected').length}</h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Loans Table */}
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Amount</th>
+                      <th>Duration</th>
+                      <th>Interest</th>
+                      <th>Purpose</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allLoans.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                          <i className="icofont-money-bag" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
+                          No loan requests found
+                        </td>
+                      </tr>
+                    ) : (
+                      allLoans.map((loan, index) => (
+                        <tr key={loan.id || index}>
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: 500, color: '#f8fafc' }}>{loan.userName}</span>
+                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{loan.userEmail}</span>
+                            </div>
+                          </td>
+                          <td style={{ fontWeight: 600, color: '#f0b90b' }}>
+                            ${loan.amount?.toLocaleString() || '0'}
+                          </td>
+                          <td>{loan.duration || 30} days</td>
+                          <td>{loan.interestRate || 5}%</td>
+                          <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {loan.purpose || 'N/A'}
+                          </td>
+                          <td>
+                            <span style={{
+                              background: loan.status === 'approved' ? 'rgba(16,185,129,0.1)' :
+                                         loan.status === 'rejected' ? 'rgba(239,68,68,0.1)' :
+                                         'rgba(240,185,11,0.1)',
+                              color: loan.status === 'approved' ? '#10b981' :
+                                     loan.status === 'rejected' ? '#ef4444' :
+                                     '#f0b90b',
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '20px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              textTransform: 'capitalize'
+                            }}>
+                              {loan.status || 'Pending'}
+                            </span>
+                          </td>
+                          <td style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                            {loan.date ? new Date(loan.date).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td>
+                            {loan.status === 'pending' && (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleApproveLoan(loan)}
+                                  style={{
+                                    background: 'rgba(16,185,129,0.1)',
+                                    color: '#10b981',
+                                    border: '1px solid rgba(16,185,129,0.3)',
+                                    borderRadius: '6px',
+                                    padding: '0.375rem 0.75rem',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    fontWeight: 500
+                                  }}
+                                >
+                                  <i className="icofont-check"></i> Approve
+                                </button>
+                                <button
+                                  onClick={() => handleRejectLoan(loan)}
+                                  style={{
+                                    background: 'rgba(239,68,68,0.1)',
+                                    color: '#ef4444',
+                                    border: '1px solid rgba(239,68,68,0.3)',
+                                    borderRadius: '6px',
+                                    padding: '0.375rem 0.75rem',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    fontWeight: 500
+                                  }}
+                                >
+                                  <i className="icofont-close"></i> Reject
+                                </button>
+                              </div>
+                            )}
+                            {loan.status !== 'pending' && (
+                              <span style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                {loan.status === 'approved' ? '✓ Processed' : '✗ Declined'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -224,6 +224,17 @@ function UserDashboard() {
           console.log('Could not fetch KYC data from database:', dbError);
           setKycData(null);
         }
+
+        // Fetch Loans from database
+        try {
+          const userLoans = await supabaseDb.getLoansByUser(userData.idnum);
+          if (userLoans && userLoans.length > 0) {
+            setLoans(userLoans);
+          }
+        } catch (dbError) {
+          console.log('Could not fetch loans from database:', dbError);
+          setLoans([]);
+        }
       } catch (error) {
         console.error('Error initializing dashboard:', error);
         navigate('/login');
@@ -248,6 +259,7 @@ function UserDashboard() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<UserData | null>(null)
   const [investments, setInvestments] = useState<Investment[]>([])
+  const [loans, setLoans] = useState<any[]>([])
   const [kycData, setKycData] = useState<any>(null)
   const [profileState, setProfileState] = useState<string>('Dashboard')
   const [showSidePanel, setShowSidePanel] = useState(false)
@@ -666,7 +678,7 @@ function UserDashboard() {
     setShowLoanModal(true)
   }
 
-  const handleLoanNext = () => {
+  const handleLoanNext = async () => {
     if (loanStep === 'amount') {
       const amount = parseFloat(loanForm.amount)
       const maxLoan = totalCapital * 0.5
@@ -686,14 +698,41 @@ function UserDashboard() {
       }
       setLoanStep('confirm')
     } else if (loanStep === 'confirm') {
-      // Submit loan request
-      const amount = parseFloat(loanForm.amount)
-      addNotification(
-        'Loan Request Submitted',
-        `Your loan request of $${amount.toLocaleString()} for ${loanForm.duration} days has been submitted for review.`,
-        'info'
-      )
-      setLoanStep('success')
+      // Submit loan request to database
+      try {
+        const amount = parseFloat(loanForm.amount)
+        const interestRate = 5 // 5% monthly
+        const duration = parseInt(loanForm.duration)
+        const interestAmount = amount * (interestRate / 100) * (duration / 30)
+        const totalRepayment = amount + interestAmount
+        
+        const newLoan = {
+          idnum: currentUser?.idnum,
+          amount,
+          interestRate,
+          duration,
+          purpose: loanForm.purpose,
+          totalRepayment,
+          status: 'pending',
+          authStatus: 'pending',
+          date: new Date().toISOString()
+        }
+        
+        const savedLoan = await supabaseDb.createLoan(newLoan)
+        
+        // Update local state
+        setLoans(prev => [savedLoan, ...prev])
+        
+        addNotification(
+          'Loan Request Submitted',
+          `Your loan request of $${amount.toLocaleString()} for ${duration} days has been submitted for review.`,
+          'info'
+        )
+        setLoanStep('success')
+      } catch (error) {
+        console.error('Error creating loan:', error)
+        showAlert('error', 'Error', 'Failed to submit loan request. Please try again.')
+      }
     }
   }
 
@@ -2022,8 +2061,8 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Active Loans</p>
-                    <h2 className="stat-value">0</h2>
-                    <p className="stat-info">No outstanding loans</p>
+                    <h2 className="stat-value">{loans.filter(l => l.status === 'approved' || l.status === 'active').length}</h2>
+                    <p className="stat-info">{loans.filter(l => l.status === 'pending').length} pending approval</p>
                   </div>
                 </div>
               </div>
@@ -2068,15 +2107,53 @@ function UserDashboard() {
               {/* Active Loans Section */}
               <div className="activity-section" style={{ marginTop: '1.5rem' }}>
                 <div className="section-header">
-                  <h3><i className="icofont-tasks"></i> Active Loans</h3>
+                  <h3><i className="icofont-tasks"></i> Your Loans</h3>
                 </div>
-                <div className="empty-state">
-                  <i className="icofont-dollar-plus"></i>
-                  <p>No active loans</p>
-                  <button className="cta-btn" onClick={handleStartLoan}>
-                    <i className="icofont-plus-circle"></i> Request Your First Loan
-                  </button>
-                </div>
+                {loans.length === 0 ? (
+                  <div className="empty-state">
+                    <i className="icofont-dollar-plus"></i>
+                    <p>No loan requests yet</p>
+                    <button className="cta-btn" onClick={handleStartLoan}>
+                      <i className="icofont-plus-circle"></i> Request Your First Loan
+                    </button>
+                  </div>
+                ) : (
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Amount</th>
+                          <th>Duration</th>
+                          <th>Interest</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loans.map((loan, index) => (
+                          <tr key={loan.id || index}>
+                            <td style={{ fontWeight: 600, color: '#f0b90b' }}>
+                              ${loan.amount?.toLocaleString() || '0'}
+                            </td>
+                            <td>{loan.duration || 30} days</td>
+                            <td>{loan.interestRate || 5}%</td>
+                            <td>
+                              <span className={`status-badge ${
+                                loan.status === 'approved' || loan.status === 'active' ? 'success' :
+                                loan.status === 'rejected' ? 'danger' : 'pending'
+                              }`}>
+                                {loan.status || 'Pending'}
+                              </span>
+                            </td>
+                            <td style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                              {loan.date ? new Date(loan.date).toLocaleDateString() : 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}

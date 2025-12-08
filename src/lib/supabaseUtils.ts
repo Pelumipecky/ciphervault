@@ -543,6 +543,51 @@ export const supabaseDb = {
     
     if (error) throw error
   },
+
+  // Loan operations
+  async getAllLoans(): Promise<LoanRecord[]> {
+    const { data, error } = await db
+      .from('loans')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async getLoansByUser(idnum: string): Promise<LoanRecord[]> {
+    const { data, error } = await db
+      .from('loans')
+      .select('*')
+      .eq('idnum', idnum)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async createLoan(loan: LoanRecord): Promise<LoanRecord> {
+    const { data, error } = await db
+      .from('loans')
+      .insert(loan)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async updateLoan(id: string, updates: Partial<LoanRecord>): Promise<LoanRecord> {
+    const { data, error } = await db
+      .from('loans')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
 }
 
 // Realtime subscriptions
@@ -565,6 +610,13 @@ export const supabaseRealtime = {
     return db
       .channel('withdrawals-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, callback)
+      .subscribe()
+  },
+
+  subscribeToLoans(callback: (payload: any) => void) {
+    return db
+      .channel('loans-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'loans' }, callback)
       .subscribe()
   },
 }
