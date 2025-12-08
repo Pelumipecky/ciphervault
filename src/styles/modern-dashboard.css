@@ -967,6 +967,50 @@
   .profile-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Admin Tables Mobile Styles */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+
+  .table-container table {
+    min-width: 800px; /* Ensure table doesn't shrink too much */
+    font-size: 0.8rem;
+  }
+
+  .table-container th,
+  .table-container td {
+    padding: 0.75rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .table-container th {
+    font-size: 0.7rem;
+  }
+
+  /* Hide less important columns on very small screens */
+  .table-container th:nth-child(4),
+  .table-container td:nth-child(4) {
+    display: none;
+  }
+
+  /* Stack action buttons vertically on mobile */
+  .table-container td:last-child {
+    min-width: 120px;
+  }
+
+  .table-container td:last-child button {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .table-container td:last-child button:last-child {
+    margin-bottom: 0;
+  }
 }
 
 @media (max-width: 480px) {
@@ -981,6 +1025,30 @@
 
   .actions-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* More aggressive mobile table styles */
+  .table-container {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .table-container table {
+    min-width: 700px;
+    font-size: 0.75rem;
+  }
+
+  .table-container th,
+  .table-container td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  /* Hide more columns on very small screens */
+  .table-container th:nth-child(3),
+  .table-container td:nth-child(3),
+  .table-container th:nth-child(5),
+  .table-container td:nth-child(5) {
+    display: none;
   }
 }
 

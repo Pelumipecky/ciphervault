@@ -748,24 +748,25 @@ function AdminDashboard() {
                 overflow: 'hidden',
                 border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '0.875rem'
-                }}>
-                  <thead>
-                    <tr style={{
-                      background: 'rgba(240,185,11,0.1)',
-                      borderBottom: '2px solid rgba(240,185,11,0.3)'
-                    }}>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>ID</th>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Name</th>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Email</th>
-                      <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Balance</th>
-                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Status</th>
-                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Actions</th>
-                    </tr>
-                  </thead>
+                <div className="table-container">
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.875rem'
+                  }}>
+                    <thead>
+                      <tr style={{
+                        background: 'rgba(240,185,11,0.1)',
+                        borderBottom: '2px solid rgba(240,185,11,0.3)'
+                      }}>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>ID</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Name</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Email</th>
+                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Balance</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Status</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Actions</th>
+                      </tr>
+                    </thead>
                   <tbody>
                     {allUsers.filter(user => user.idnum !== currentAdmin?.idnum).map((user, idx) => (
                       <tr
@@ -821,6 +822,7 @@ function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}
@@ -842,11 +844,12 @@ function AdminDashboard() {
                 overflow: 'hidden',
                 border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '0.875rem'
-                }}>
+                <div className="table-container">
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.875rem'
+                  }}>
                   <thead>
                     <tr style={{
                       background: 'rgba(240,185,11,0.1)',
@@ -932,6 +935,7 @@ function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}
@@ -953,11 +957,12 @@ function AdminDashboard() {
                 overflow: 'hidden',
                 border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '0.875rem'
-                }}>
+                <div className="table-container">
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.875rem'
+                  }}>
                   <thead>
                     <tr style={{
                       background: 'rgba(240,185,11,0.1)',
@@ -1043,6 +1048,7 @@ function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}
@@ -1064,11 +1070,12 @@ function AdminDashboard() {
                 overflow: 'hidden',
                 border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '0.875rem'
-                }}>
+                <div className="table-container">
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.875rem'
+                  }}>
                   <thead>
                     <tr style={{
                       background: 'rgba(240,185,11,0.1)',
@@ -1150,6 +1157,7 @@ function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}
