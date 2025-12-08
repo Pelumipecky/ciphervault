@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
 import '../../styles/dashboard.css'
+import '../../styles/modern-dashboard.css'
 
 /**
  * ADMIN DASHBOARD

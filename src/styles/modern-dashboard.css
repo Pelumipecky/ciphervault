@@ -1,5 +1,14 @@
 /* Modern Dashboard Styles */
 
+.dashboard-container,
+.modern-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #020617;
+  color: #f8fafc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 .dashboard-loading {
   display: flex;
   flex-direction: column;
@@ -848,7 +857,8 @@
     transform: translateX(-100%);
   }
 
-  .dashboard-sidebar.mobile-open {
+  .dashboard-sidebar.mobile-open,
+  .dashboard-sidebar.show {
     transform: translateX(0);
   }
 
