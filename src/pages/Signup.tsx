@@ -68,7 +68,7 @@ function Signup() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    
+
     if (form.password !== form.confirmPassword) {
       setStatus({ state: 'error', message: 'Passwords do not match' })
       return

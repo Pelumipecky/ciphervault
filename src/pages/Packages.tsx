@@ -1,80 +1,24 @@
 import { Link } from 'react-router-dom'
+import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 
-const packages = [
-  {
-    name: 'Genesis Starter',
-    badge: 'Low Risk',
-    badgeColor: 'secondary',
-    description: 'Entry allocation for first-time digital asset investors seeking steady yield.',
-    minimum: '$5,000',
-    target: '6–9% APY',
-    lockup: '3–6 months',
-    details: '50% BTC/ETH, 30% tokenized T-bills, 20% stablecoin vaults',
-    footer: 'Capital preservation with automated downside hedges.'
-  },
-  {
-    name: 'Stable Yield',
-    badge: 'Income',
-    badgeColor: 'warning',
-    description: 'Institutional staking, money markets, and fully collateralized CeFi loans.',
-    minimum: '$15,000',
-    target: '10–13% APY',
-    lockup: '6 months',
-    details: 'Audited LST ladder + overcollateralized lending pools',
-    footer: 'Monthly cash flow distributed to USD, USDC, or USDT.'
-  },
-  {
-    name: 'Growth Momentum',
-    badge: 'Growth',
-    badgeColor: 'info',
-    description: 'Signal-driven basket of Layer-2, modular, and AI infrastructure protocols.',
-    minimum: '$25,000',
-    target: '15–22% CAGR',
-    lockup: '12 months',
-    details: 'Dynamic leverage bands with quarterly re-hedging',
-    footer: 'Momentum signals + hedged futures'
-  },
-  {
-    name: 'AI Macro Edge',
-    badge: 'Balanced',
-    badgeColor: 'primary',
-    description: 'Quant-driven long/short program that reallocates weekly using machine learning factors.',
-    minimum: '$40,000',
-    target: '18–25% CAGR',
-    lockup: '12 months',
-    details: 'Systematic hedging + volatility capture',
-    footer: 'AI-enhanced trading models and quantitative research.'
-  },
-  {
-    name: 'Institutional Prime',
-    badge: 'Premium',
-    badgeColor: 'success',
-    description: 'Custom mandate for allocators who require segregated custody and reporting.',
-    minimum: '$250,000',
-    target: '12–18% CAGR',
-    lockup: 'Rolling liquidity windows',
-    details: 'White-glove service & compliance',
-    footer: 'Dedicated advisors with institutional reporting cadences.'
-  },
-  {
-    name: 'Tokenized Real Assets',
-    badge: 'Income',
-    badgeColor: 'warning',
-    description: 'Exposure to on-chain treasury bills, revenue-share deals, and tokenized credit.',
-    minimum: '$75,000',
-    target: '9–12% APY',
-    lockup: '9 months',
-    details: 'RWAs, invoice pools, short-term debt',
-    footer: 'Regulatory-aware advisory for institutional clients.'
-  }
-]
+const packages = PLAN_CONFIG.map(plan => ({
+  name: plan.name,
+  badge: plan.featured ? 'Featured' : 'Standard',
+  badgeColor: plan.featured ? 'success' : 'primary',
+  description: plan.subtitle,
+  minimum: `$${plan.minCapital.toLocaleString()}`,
+  target: `${formatPercent(plan.dailyRate)} daily ROI`,
+  lockup: plan.durationLabel,
+  details: `Total return: ${plan.totalReturnPercent}% | Sample earnings: $${plan.sampleEarning.toLocaleString()}`,
+  footer: `Investment range: $${plan.minCapital.toLocaleString()} - ${plan.maxCapital ? `$${plan.maxCapital.toLocaleString()}` : 'Unlimited'}`
+}))
 
 function Packages() {
   return (
     <div className="packages-page">
       <header className="packages-page__header">
         <p className="eyebrow">CipherVault portfolios</p>
-        <h1>Six institutional-grade packages for every growth mandate</h1>
+        <h1>Six investment plans for every growth strategy</h1>
         <p className="lead">
           Pick the mix that matches your risk tolerance and liquidity needs. Each package is rebalanced by our 
           research desk, comes with audited custody partners, and includes real-time reporting.

@@ -11,6 +11,7 @@ import {
   sendLoanNotification,
   initializeEmailJS 
 } from '@/utils/emailService'
+import StockTrading from '@/pages/StockTrading'
 import '@/styles/modern-dashboard.css'
 
 interface UserData {
@@ -22,6 +23,7 @@ interface UserData {
   balance?: number
   bonus?: number
   referralCount?: number
+  referralBonusTotal?: number
   referralCode?: string
   phoneNumber?: string
   country?: string
@@ -87,27 +89,37 @@ function UserDashboard() {
   const [cryptoDetails, setCryptoDetails] = useState<CryptoPrice[]>([]);
   const [cryptoLoading, setCryptoLoading] = useState(true);
 
-  // Fetch live crypto prices
+  // Fetch live crypto prices with enhanced real-time updates
   useEffect(() => {
     async function loadCryptoPrices() {
       setCryptoLoading(true);
       try {
+        console.log('📊 Loading real-time crypto prices for dashboard...');
         const [prices, details] = await Promise.all([
           fetchCryptoPrices(),
           fetchDetailedCryptoPrices()
         ]);
-        setCryptoPrices(prices);
-        setCryptoDetails(details);
+
+        // Validate that we have real data
+        const validPrices = Object.values(prices).filter(p => p > 0).length;
+        if (validPrices >= 3) {
+          setCryptoPrices(prices);
+          setCryptoDetails(details);
+          console.log(`✅ Dashboard crypto prices updated: ${validPrices} valid prices, ${details.length} detailed entries`);
+        } else {
+          console.warn('⚠️ Insufficient real-time data received, keeping previous values');
+        }
       } catch (error) {
-        console.error('Error loading crypto prices:', error);
+        console.error('❌ Failed to load crypto prices:', error);
       }
       setCryptoLoading(false);
     }
-    
+
+    // Initial load
     loadCryptoPrices();
-    
-    // Refresh prices every 60 seconds
-    const interval = setInterval(loadCryptoPrices, 60000);
+
+    // Update every 15 seconds for real-time trading data
+    const interval = setInterval(loadCryptoPrices, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -256,7 +268,8 @@ function UserDashboard() {
 
   // Placeholder alert/confirm functions
   function showAlert(type: string, title: string, message: string) {
-    window.alert(`${title}: ${message}`);
+    setModalAlert({ show: true, type, title, message });
+    setTimeout(() => setModalAlert((prev) => ({ ...prev, show: false })), 5000)
   }
 
   function showConfirm(title: string, message: string, onConfirm: () => void, onCancel?: () => void, confirmText?: string, cancelText?: string) {
@@ -500,7 +513,7 @@ function UserDashboard() {
     setShowInvestmentModal(true)
   }
 
-  const handleInvestmentNext = () => {
+  const handleInvestmentNext = async () => {
     if (investmentStep === 'confirm') {
       const capital = parseFloat(investmentForm.capital)
       if (!capital || capital < selectedPlan.minCapital) {
@@ -513,8 +526,42 @@ function UserDashboard() {
       }
       setInvestmentStep('payment')
     } else if (investmentStep === 'payment') {
-      setInvestmentStep('success')
-      // Here you would typically submit to backend
+      // Validate payment proof before submitting
+      if (!investmentForm.transactionHash || investmentForm.transactionHash.trim() === '') {
+        showAlert('error', 'Transaction Hash Required', 'Please enter your transaction hash/ID to verify payment')
+        return
+      }
+      if (!investmentForm.bankSlip) {
+        showAlert('error', 'Payment Proof Required', 'Please upload a screenshot or photo of your payment as proof')
+        return
+      }
+      // Payment proof validated, proceed to submit
+      try {
+        const newInvestment = await supabaseDb.createInvestment({
+          idnum: currentUser?.idnum || '',
+          plan: selectedPlan.name,
+          capital: parseFloat(investmentForm.capital),
+          roi: selectedPlan.roi,
+          duration: selectedPlan.duration,
+          paymentOption: investmentForm.paymentMethod,
+          transactionHash: investmentForm.transactionHash,
+          status: 'pending',
+          authStatus: 'unseen',
+        })
+        // Refetch investments from Supabase to ensure persistence
+        const userInvestments = await supabaseDb.getInvestmentsByUser(currentUser?.idnum || '')
+        setInvestments(userInvestments)
+        localStorage.setItem('userInvestments', JSON.stringify(userInvestments))
+        setInvestmentStep('success')
+        // Show classy popup
+        showAlert(
+          'success',
+          'Investment Created!',
+          `Your ${selectedPlan.name} investment of $${parseFloat(investmentForm.capital).toLocaleString()} has been created. You'll earn $${selectedPlan.dailyRoi.toLocaleString()} daily for ${selectedPlan.duration} days once activated.`
+        )
+      } catch (err) {
+        showAlert('error', 'Error', 'Failed to create investment. Please try again.')
+      }
     }
   }
 
@@ -619,7 +666,7 @@ function UserDashboard() {
     setShowWithdrawalModal(true)
   }
 
-  const handleWithdrawalNext = () => {
+  const handleWithdrawalNext = async () => {
     if (withdrawalStep === 'amount') {
       const amount = parseFloat(withdrawalForm.amount)
       if (!amount || amount < 50) {
@@ -649,12 +696,51 @@ function UserDashboard() {
     } else if (withdrawalStep === 'confirm') {
       // Submit withdrawal
       const amount = parseFloat(withdrawalForm.amount)
-      addNotification(
-        'Withdrawal Requested',
-        `Your withdrawal request of $${amount.toLocaleString()} via ${withdrawalForm.method} has been submitted for processing.`,
-        'info'
-      )
-      setWithdrawalStep('success')
+      
+      try {
+        const newWithdrawal = {
+          idnum: currentUser?.idnum,
+          amount,
+          method: withdrawalForm.method,
+          walletAddress: withdrawalForm.method !== 'Bank Transfer' ? withdrawalForm.walletAddress : null,
+          bankName: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.bankName : null,
+          accountNumber: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.accountNumber : null,
+          accountName: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.accountName : null,
+          routingNumber: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.routingNumber : null,
+          status: 'pending',
+          authStatus: 'pending',
+          date: new Date().toISOString()
+        }
+        
+        const savedWithdrawal = await supabaseDb.createWithdrawal(newWithdrawal)
+        
+        // Send email notification
+        await sendWithdrawalNotification(
+          currentUser?.email || '',
+          currentUser?.userName || currentUser?.name || '',
+          'pending',
+          amount,
+          withdrawalForm.method
+        )
+        
+        // Update local state - update user balance
+        if (currentUser) {
+          setCurrentUser({
+            ...currentUser,
+            balance: (currentUser.balance || 0) - amount
+          })
+        }
+        
+        addNotification(
+          'Withdrawal Requested',
+          `Your withdrawal request of $${amount.toLocaleString()} via ${withdrawalForm.method} has been submitted for processing.`,
+          'info'
+        )
+        setWithdrawalStep('success')
+      } catch (error) {
+        console.error('Error creating withdrawal:', error)
+        showAlert('error', 'Error', 'Failed to submit withdrawal request. Please try again.')
+      }
     }
   }
 
@@ -935,6 +1021,20 @@ function UserDashboard() {
             <span>Wallet</span>
           </button>
           <button
+            className={`nav-item ${profileState === 'Bonus' ? 'active' : ''}`}
+            onClick={() => { setProfileState('Bonus'); setShowSidePanel(false); }}
+          >
+            <i className="icofont-gift"></i>
+            <span>Bonus</span>
+          </button>
+          <button
+            className={`nav-item ${profileState === 'Stocks' ? 'active' : ''}`}
+            onClick={() => { setProfileState('Stocks'); setShowSidePanel(false); }}
+          >
+            <i className="icofont-chart-line"></i>
+            <span>Stock Trading</span>
+          </button>
+          <button
             className={`nav-item ${profileState === 'Profile' ? 'active' : ''}`}
             onClick={() => { setProfileState('Profile'); setShowSidePanel(false); }}
           >
@@ -1075,7 +1175,7 @@ function UserDashboard() {
                     <div className="empty-state">
                       <i className="icofont-chart-line"></i>
                       <p>No investments yet</p>
-                      <Link to="/packages" className="cta-btn">Start Investing</Link>
+                      <button className="cta-btn" onClick={() => setProfileState('Investments')}>Start Investing</button>
                     </div>
                   ) : (
                     investments.slice(0, 5).map((inv, idx) => (
@@ -1103,11 +1203,11 @@ function UserDashboard() {
                   <h3>Quick Actions</h3>
                 </div>
                 <div className="actions-grid">
-                  <Link to="/packages" className="action-card">
+                  <button className="action-card" onClick={() => setProfileState('Investments')}>
                     <i className="icofont-plus-circle"></i>
                     <h4>New Investment</h4>
                     <p>Start earning today</p>
-                  </Link>
+                  </button>
                   <button className="action-card" onClick={() => setProfileState('Withdrawals')}>
                     <i className="icofont-pay"></i>
                     <h4>Withdraw Funds</h4>
@@ -1327,6 +1427,163 @@ function UserDashboard() {
             </div>
           )}
 
+          {profileState === 'Bonus' && (
+            <div className="page-section">
+              <div className="page-header">
+                <h2><i className="icofont-gift"></i> Bonus & Rewards</h2>
+              </div>
+
+              {/* Bonus Overview */}
+              <div className="stats-grid">
+                <div className="stat-card primary">
+                  <div className="stat-icon">
+                    <i className="icofont-gift"></i>
+                  </div>
+                  <div className="stat-details">
+                    <p className="stat-label">Current Bonus</p>
+                    <h2 className="stat-value">${(currentUser?.bonus || 0).toLocaleString()}</h2>
+                    <p className="stat-info">Available for withdrawal</p>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                    <i className="icofont-chart-growth"></i>
+                  </div>
+                  <div className="stat-details">
+                    <p className="stat-label">Total Earned</p>
+                    <h2 className="stat-value">${totalBonus.toLocaleString()}</h2>
+                    <p className="stat-info">From all investments</p>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
+                    <i className="icofont-users-social"></i>
+                  </div>
+                  <div className="stat-details">
+                    <p className="stat-label">Referral Bonus</p>
+                    <h2 className="stat-value">${(currentUser?.referralBonusTotal || 0).toLocaleString()}</h2>
+                    <p className="stat-info">From referrals</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bonus History */}
+              <div className="profile-card" style={{ marginTop: '24px' }}>
+                <div className="profile-card-header">
+                  <h3><i className="icofont-history"></i> Bonus History</h3>
+                </div>
+                <div className="activity-list">
+                  {investments.filter(inv => (inv.bonus || 0) > 0).length === 0 ? (
+                    <div className="empty-state">
+                      <i className="icofont-gift"></i>
+                      <p>No bonus earned yet</p>
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>
+                        Start investing to earn bonus rewards!
+                      </p>
+                    </div>
+                  ) : (
+                    investments.filter(inv => (inv.bonus || 0) > 0).slice(0, 10).map((inv, idx) => (
+                      <div key={idx} className="activity-item">
+                        <div className="activity-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                          <i className="icofont-gift"></i>
+                        </div>
+                        <div className="activity-details">
+                          <h4>Bonus from {inv.plan}</h4>
+                          <p>{new Date(inv.date || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                        </div>
+                        <div className="activity-amount positive">
+                          +${(inv.bonus || 0).toLocaleString()}
+                        </div>
+                        <span className="status-badge approved">Earned</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Bonus Information */}
+              <div className="profile-card" style={{ marginTop: '24px' }}>
+                <div className="profile-card-header">
+                  <h3><i className="icofont-info-circle"></i> How Bonus Works</h3>
+                </div>
+                <div style={{ padding: '20px' }}>
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <div style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        background: 'rgba(16, 185, 129, 0.1)', 
+                        color: '#10b981',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        flexShrink: 0
+                      }}>
+                        <i className="icofont-chart-growth"></i>
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', color: '#fff' }}>Investment Bonus</h4>
+                        <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
+                          Earn bonus rewards on your successful investments. Higher plans offer better bonus rates.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <div style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        background: 'rgba(245, 158, 11, 0.1)', 
+                        color: '#f59e0b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        flexShrink: 0
+                      }}>
+                        <i className="icofont-users-social"></i>
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', color: '#fff' }}>Referral Bonus</h4>
+                        <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
+                          Earn additional bonus when your referrals make investments. Build your network for more rewards.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <div style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        background: 'rgba(99, 102, 241, 0.1)', 
+                        color: '#6366f1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        flexShrink: 0
+                      }}>
+                        <i className="icofont-money"></i>
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', color: '#fff' }}>Withdraw Anytime</h4>
+                        <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
+                          Your bonus balance can be withdrawn at any time through the withdrawal section.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {profileState === 'Investments' && (
             <div className="page-section">
               <div className="page-header">
@@ -1344,8 +1601,8 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Total Invested</p>
-                    <h2 className="stat-value">${investments.reduce((sum, inv) => sum + (inv.capital || 0), 0).toLocaleString()}</h2>
-                    <p className="stat-info">All time investment</p>
+                    <h2 className="stat-value">${approvedInvestments.reduce((sum, inv) => sum + (inv.capital || 0), 0).toLocaleString()}</h2>
+                    <p className="stat-info">Approved investments</p>
                   </div>
                 </div>
                 <div className="stat-card">
@@ -1364,7 +1621,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Total Returns</p>
-                    <h2 className="stat-value">${investments.reduce((sum, inv) => sum + (inv.roi || 0), 0).toLocaleString()}</h2>
+                    <h2 className="stat-value">${approvedInvestments.reduce((sum, inv) => sum + (inv.roi || 0), 0).toLocaleString()}</h2>
                     <p className="stat-info">Profit earned</p>
                   </div>
                 </div>
@@ -3265,6 +3522,12 @@ function UserDashboard() {
               </div>
             </div>
           )}
+
+          {profileState === 'Stocks' && (
+            <div className="page-section">
+              <StockTrading />
+            </div>
+          )}
         </div>
       </main>
 
@@ -3495,6 +3758,36 @@ function UserDashboard() {
                             <p>QR Code</p>
                           </div>
                         </div>
+                        {/* Transaction Hash Input - Required for crypto */}
+                        <div className="detail-row" style={{ marginTop: '1.5rem' }}>
+                          <span className="detail-label">Transaction Hash / TXID <span style={{ color: '#ef4444' }}>*</span></span>
+                          <input
+                            type="text"
+                            className="modal-input"
+                            placeholder="Enter transaction hash (e.g., 0x1234...abcd)"
+                            value={investmentForm.transactionHash}
+                            onChange={e => setInvestmentForm({ ...investmentForm, transactionHash: e.target.value })}
+                            style={{ width: '100%', marginTop: '0.5rem' }}
+                            required
+                          />
+                        </div>
+                        {/* Payment Screenshot Upload - Required for crypto */}
+                        <div className="detail-row" style={{ marginTop: '1.5rem' }}>
+                          <span className="detail-label">Upload Payment Proof <span style={{ color: '#ef4444' }}>*</span></span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="modal-input"
+                            onChange={e => setInvestmentForm({ ...investmentForm, bankSlip: e.target.files ? e.target.files[0] : null })}
+                            style={{ width: '100%', marginTop: '0.5rem' }}
+                            required
+                          />
+                          {investmentForm.bankSlip && (
+                            <span style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
+                              <i className="icofont-check-circled"></i> {investmentForm.bankSlip.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div className="bank-payment-details">
@@ -3524,28 +3817,30 @@ function UserDashboard() {
                           <span className="detail-value">{paymentMethods.Bank.swiftCode}</span>
                         </div>
                         <div className="detail-row" style={{ marginTop: '1.5rem' }}>
-                          <span className="detail-label">Transaction Hash</span>
+                          <span className="detail-label">Transaction Reference <span style={{ color: '#ef4444' }}>*</span></span>
                           <input
                             type="text"
                             className="modal-input"
-                            placeholder="Enter transaction hash"
+                            placeholder="Enter transaction reference/ID"
                             value={investmentForm.transactionHash}
                             onChange={e => setInvestmentForm({ ...investmentForm, transactionHash: e.target.value })}
                             style={{ width: '100%', marginTop: '0.5rem' }}
+                            required
                           />
                         </div>
                         <div className="detail-row" style={{ marginTop: '1.5rem' }}>
-                          <span className="detail-label">Upload Payment Screenshot</span>
+                          <span className="detail-label">Upload Payment Proof <span style={{ color: '#ef4444' }}>*</span></span>
                           <input
                             type="file"
                             accept="image/*"
                             className="modal-input"
                             onChange={e => setInvestmentForm({ ...investmentForm, bankSlip: e.target.files ? e.target.files[0] : null })}
                             style={{ width: '100%', marginTop: '0.5rem' }}
+                            required
                           />
                           {investmentForm.bankSlip && (
-                            <span style={{ color: '#f0b90b', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
-                              Selected file: {investmentForm.bankSlip.name}
+                            <span style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
+                              <i className="icofont-check-circled"></i> {investmentForm.bankSlip.name}
                             </span>
                           )}
                         </div>

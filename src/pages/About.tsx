@@ -1,43 +1,18 @@
 import { Link } from 'react-router-dom'
+import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 
-const packages = [
-  {
-    name: 'Genesis Starter',
-    description: 'Conservative blend of BTC, ETH, and USD-yield strategies for new crypto investors.',
-    bullets: ['Minimum: $5K', 'Target 6–9% APY', '3–6 month lockup'],
-    footer: 'Focus: Capital preservation & on-chain treasuries'
-  },
-  {
-    name: 'Stable Yield',
-    description: 'Institutional-grade staking and liquidity provision backed by audited smart contracts.',
-    bullets: ['Minimum: $15K', 'Target 10–13% APY', '6-month lockup'],
-    footer: 'Focus: Curated LSTs, short-duration loans'
-  },
-  {
-    name: 'Growth Momentum',
-    description: 'Actively managed basket of Layer-2 and AI infrastructure tokens.',
-    bullets: ['Minimum: $25K', 'Target 15–22% CAGR', '12-month lockup'],
-    footer: 'Focus: Momentum signals + hedged futures'
-  },
-  {
-    name: 'AI Macro Edge',
-    description: 'Quant-driven long/short program that reallocates weekly using machine learning factors.',
-    bullets: ['Minimum: $40K', 'Target 18–25% CAGR', '12-month lockup'],
-    footer: 'Focus: Systematic hedging + volatility capture'
-  },
-  {
-    name: 'Institutional Prime',
-    description: 'Custom mandate for allocators who require segregated custody and reporting.',
-    bullets: ['Minimum: $250K', 'Target 12–18% CAGR', 'Rolling liquidity windows'],
-    footer: 'Focus: White-glove service & compliance'
-  },
-  {
-    name: 'Tokenized Real Assets',
-    description: 'Exposure to on-chain treasury bills, revenue-share deals, and tokenized credit.',
-    bullets: ['Minimum: $75K', 'Target 9–12% APY', '9-month lockup'],
-    footer: 'Focus: RWAs, invoice pools, short-term debt'
-  }
-]
+const packages = PLAN_CONFIG.map(plan => ({
+  name: plan.name,
+  description: plan.subtitle,
+  bullets: [
+    `Duration: ${plan.durationLabel}`,
+    `Daily ROI: ${formatPercent(plan.dailyRate)}`,
+    `Min Investment: $${plan.minCapital.toLocaleString()}`,
+    `Max Investment: ${plan.maxCapital ? `$${plan.maxCapital.toLocaleString()}` : 'Unlimited'}`,
+    `Total Return: ${plan.totalReturnPercent}%`
+  ],
+  footer: `Sample earnings: $${plan.sampleEarning.toLocaleString()} on minimum investment`
+}))
 
 function About() {
   return (
@@ -148,9 +123,9 @@ function About() {
         </div>
 
         <div className="about__packages-cta">
-          <a className="btn btn--primary" href="/packages.html">
+          <Link className="btn btn--primary" to="/packages">
             View Full Package Details
-          </a>
+          </Link>
           <a className="btn btn--ghost" href="/contact.html">
             Talk to an Advisor
           </a>

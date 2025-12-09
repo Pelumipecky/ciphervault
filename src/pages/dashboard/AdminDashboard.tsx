@@ -55,11 +55,16 @@ function AdminDashboard() {
   const [allWithdrawals, setAllWithdrawals] = useState<any[]>([])
   const [allKycRequests, setAllKycRequests] = useState<any[]>([])
   const [allLoans, setAllLoans] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'investments' | 'withdrawals' | 'kyc' | 'loans' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'investments' | 'withdrawals' | 'kyc' | 'loans' | 'bonus' | 'settings'>('overview')
   const [showSidePanel, setShowSidePanel] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
   const [showUserModal, setShowUserModal] = useState(false)
   const [newBalance, setNewBalance] = useState('')
+  const [showAddBonusModal, setShowAddBonusModal] = useState(false)
+  const [bonusAmount, setBonusAmount] = useState('')
+  const [bonusReason, setBonusReason] = useState('')
+  const [selectedBonusUser, setSelectedBonusUser] = useState<any>(null)
+  const [bonusSearchTerm, setBonusSearchTerm] = useState('')
 
   // Set active tab based on route
   useEffect(() => {
@@ -71,6 +76,18 @@ function AdminDashboard() {
     else if (path.includes('system-settings')) setActiveTab('settings')
     else setActiveTab('overview')
   }, [location.pathname])
+
+  // Fallback loading timeout - ensure loading doesn't hang forever
+  useEffect(() => {
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('AdminDashboard loading timeout reached, forcing load completion')
+        setLoading(false)
+      }
+    }, 15000) // 15 second timeout
+
+    return () => clearTimeout(loadingTimeout)
+  }, [loading])
 
   // Modal Alert System
   const [modalAlert, setModalAlert] = useState<{
@@ -140,16 +157,16 @@ function AdminDashboard() {
 
   useEffect(() => {
     const initAdminDashboard = async () => {
-      // Check if admin is authenticated
-      const adminStr = localStorage.getItem('adminData') || sessionStorage.getItem('adminData')
-      const activeUserStr = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser')
-
-      if (!adminStr && !activeUserStr) {
-        navigate('/admin/login')
-        return
-      }
-
       try {
+        // Check if admin is authenticated
+        const adminStr = localStorage.getItem('adminData') || sessionStorage.getItem('adminData')
+        const activeUserStr = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser')
+
+        if (!adminStr && !activeUserStr) {
+          navigate('/admin/login')
+          return
+        }
+
         const userData = JSON.parse(adminStr || activeUserStr || '{}')
 
         // Check if user has admin or superadmin role
@@ -177,19 +194,28 @@ function AdminDashboard() {
         // Initialize email service
         initializeEmailJS()
 
-        // Fetch all data for admin
+        // Fetch all data for admin with timeout
+        const fetchWithTimeout = (promise: Promise<any>, timeoutMs: number = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+            )
+          ])
+        }
+
         try {
           const [users, investments, withdrawals, kycRequests, loans] = await Promise.all([
-            supabaseDb.getAllUsers(),
-            supabaseDb.getAllInvestments(),
-            supabaseDb.getAllWithdrawals(),
-            supabaseDb.getAllKycRequests(),
-            supabaseDb.getAllLoans(),
+            fetchWithTimeout(supabaseDb.getAllUsers()),
+            fetchWithTimeout(supabaseDb.getAllInvestments()),
+            fetchWithTimeout(supabaseDb.getAllWithdrawals()),
+            fetchWithTimeout(supabaseDb.getAllKycRequests()),
+            fetchWithTimeout(supabaseDb.getAllLoans()),
           ])
 
           // Join investments with user data
-          const investmentsWithUsers = investments.map(investment => {
-            const user = users.find(u => u.idnum === investment.idnum)
+          const investmentsWithUsers = investments.map((investment: any) => {
+            const user = users.find((u: any) => u.idnum === investment.idnum)
             return {
               ...investment,
               userName: user?.userName || user?.name || 'Unknown User',
@@ -198,8 +224,8 @@ function AdminDashboard() {
           })
 
           // Join withdrawals with user data
-          const withdrawalsWithUsers = withdrawals.map(withdrawal => {
-            const user = users.find(u => u.idnum === withdrawal.idnum)
+          const withdrawalsWithUsers = withdrawals.map((withdrawal: any) => {
+            const user = users.find((u: any) => u.idnum === withdrawal.idnum)
             return {
               ...withdrawal,
               userName: user?.userName || user?.name || 'Unknown User',
@@ -208,8 +234,8 @@ function AdminDashboard() {
           })
 
           // Join KYC requests with user data
-          const kycWithUsers = kycRequests.map(kyc => {
-            const user = users.find(u => u.idnum === kyc.idnum)
+          const kycWithUsers = kycRequests.map((kyc: any) => {
+            const user = users.find((u: any) => u.idnum === kyc.idnum)
             return {
               ...kyc,
               userName: user?.userName || user?.name || 'Unknown User',
@@ -218,8 +244,8 @@ function AdminDashboard() {
           })
 
           // Join loans with user data
-          const loansWithUsers = loans.map(loan => {
-            const user = users.find(u => u.idnum === loan.idnum)
+          const loansWithUsers = loans.map((loan: any) => {
+            const user = users.find((u: any) => u.idnum === loan.idnum)
             return {
               ...loan,
               userName: user?.userName || user?.name || 'Unknown User',
@@ -240,6 +266,83 @@ function AdminDashboard() {
             kyc: kycWithUsers.length,
             loans: loansWithUsers.length
           })
+
+          // Set up Supabase Realtime subscriptions for live updates
+          const investmentsSubscription = supabaseRealtime.subscribeToInvestments(async (payload) => {
+            console.log('🔄 Investment change detected:', payload)
+            // Refresh investments data
+            const updatedInvestments = await supabaseDb.getAllInvestments()
+            const updatedUsers = await supabaseDb.getAllUsers()
+            const updatedInvestmentsWithUsers = updatedInvestments.map(investment => {
+              const user = updatedUsers.find(u => u.idnum === investment.idnum)
+              return {
+                ...investment,
+                userName: user?.userName || user?.name || 'Unknown User',
+                userEmail: user?.email || ''
+              }
+            })
+            setAllInvestments(updatedInvestmentsWithUsers)
+          })
+
+          const withdrawalsSubscription = supabaseRealtime.subscribeToWithdrawals(async (payload) => {
+            console.log('🔄 Withdrawal change detected:', payload)
+            const updatedWithdrawals = await supabaseDb.getAllWithdrawals()
+            const updatedUsers = await supabaseDb.getAllUsers()
+            const updatedWithdrawalsWithUsers = updatedWithdrawals.map(withdrawal => {
+              const user = updatedUsers.find(u => u.idnum === withdrawal.idnum)
+              return {
+                ...withdrawal,
+                userName: user?.userName || user?.name || 'Unknown User',
+                userEmail: user?.email || ''
+              }
+            })
+            setAllWithdrawals(updatedWithdrawalsWithUsers)
+          })
+
+          const usersSubscription = supabaseRealtime.subscribeToUsers(async (payload) => {
+            console.log('🔄 User change detected:', payload)
+            const updatedUsers = await supabaseDb.getAllUsers()
+            setAllUsers(updatedUsers)
+          })
+
+          const loansSubscription = supabaseRealtime.subscribeToLoans(async (payload) => {
+            console.log('🔄 Loan change detected:', payload)
+            const updatedLoans = await supabaseDb.getAllLoans()
+            const updatedUsers = await supabaseDb.getAllUsers()
+            const updatedLoansWithUsers = updatedLoans.map(loan => {
+              const user = updatedUsers.find(u => u.idnum === loan.idnum)
+              return {
+                ...loan,
+                userName: user?.userName || user?.name || 'Unknown User',
+                userEmail: user?.email || ''
+              }
+            })
+            setAllLoans(updatedLoansWithUsers)
+          })
+
+          const kycSubscription = supabaseRealtime.subscribeToKyc(async (payload) => {
+            console.log('🔄 KYC change detected:', payload)
+            const updatedKyc = await supabaseDb.getAllKycRequests()
+            const updatedUsers = await supabaseDb.getAllUsers()
+            const updatedKycWithUsers = updatedKyc.map(kyc => {
+              const user = updatedUsers.find(u => u.idnum === kyc.idnum)
+              return {
+                ...kyc,
+                userName: user?.userName || user?.name || 'Unknown User',
+                userEmail: user?.email || ''
+              }
+            })
+            setAllKycRequests(updatedKycWithUsers)
+          })
+
+          // Cleanup subscriptions on unmount
+          return () => {
+            investmentsSubscription.unsubscribe()
+            withdrawalsSubscription.unsubscribe()
+            usersSubscription.unsubscribe()
+            loansSubscription.unsubscribe()
+            kycSubscription.unsubscribe()
+          }
         } catch (error) {
           console.log('Could not fetch admin data (Supabase may not be configured):', error)
           // Set mock data for demo
@@ -258,9 +361,10 @@ function AdminDashboard() {
         console.error('Error parsing admin data:', error)
         navigate('/login')
         return
+      } finally {
+        // Always set loading to false, even if there are errors
+        setLoading(false)
       }
-
-      setLoading(false)
     }
 
     initAdminDashboard()
@@ -275,75 +379,129 @@ function AdminDashboard() {
   }
 
   const handleApproveInvestment = async (investmentId: number) => {
-    const investment = allInvestments.find(inv => inv.id === investmentId)
-    if (investment) {
-      // Send email notification
-      await sendInvestmentNotification(
-        investment.userEmail,
-        investment.userName,
-        'approved',
-        investment.capital || 0,
-        investment.plan || 'Investment Plan'
+    try {
+      // Update status in database
+      await supabaseDb.updateInvestment(investmentId.toString(), { 
+        status: 'Active',
+        authStatus: 'approved'
+      })
+
+      // Update local state
+      setAllInvestments(prev => 
+        prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Active', authStatus: 'approved' } : inv)
       )
+
+      // Send email notification
+      const investment = allInvestments.find(inv => inv.id === investmentId)
+      if (investment) {
+        await sendInvestmentNotification(
+          investment.userEmail,
+          investment.userName,
+          'approved',
+          investment.capital || 0,
+          investment.plan || 'Investment Plan'
+        )
+      }
+
+      showAlert('success', 'Investment Approved', 'Investment has been approved and saved successfully!')
+    } catch (error) {
+      console.error('Error approving investment:', error)
+      showAlert('error', 'Approval Failed', 'Failed to approve investment. Please try again.')
     }
-    setAllInvestments(prev => 
-      prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Active' } : inv)
-    )
-    showAlert('success', 'Investment Approved', 'Investment has been approved successfully!')
   }
 
   const handleRejectInvestment = async (investmentId: number) => {
-    const investment = allInvestments.find(inv => inv.id === investmentId)
-    if (investment) {
-      // Send email notification
-      await sendInvestmentNotification(
-        investment.userEmail,
-        investment.userName,
-        'rejected',
-        investment.capital || 0,
-        investment.plan || 'Investment Plan'
+    try {
+      // Update status in database
+      await supabaseDb.updateInvestment(investmentId.toString(), { 
+        status: 'Rejected',
+        authStatus: 'rejected'
+      })
+
+      // Update local state
+      setAllInvestments(prev => 
+        prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Rejected', authStatus: 'rejected' } : inv)
       )
+
+      // Send email notification
+      const investment = allInvestments.find(inv => inv.id === investmentId)
+      if (investment) {
+        await sendInvestmentNotification(
+          investment.userEmail,
+          investment.userName,
+          'rejected',
+          investment.capital || 0,
+          investment.plan || 'Investment Plan'
+        )
+      }
+
+      showAlert('error', 'Investment Rejected', 'Investment has been rejected and saved.')
+    } catch (error) {
+      console.error('Error rejecting investment:', error)
+      showAlert('error', 'Rejection Failed', 'Failed to reject investment. Please try again.')
     }
-    setAllInvestments(prev => 
-      prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Rejected' } : inv)
-    )
-    showAlert('error', 'Investment Rejected', 'Investment has been rejected.')
   }
 
   const handleApproveWithdrawal = async (withdrawalId: number) => {
-    const withdrawal = allWithdrawals.find(w => w.id === withdrawalId)
-    if (withdrawal) {
-      // Send email notification
-      await sendWithdrawalNotification(
-        withdrawal.userEmail,
-        withdrawal.userName,
-        'approved',
-        withdrawal.amount || 0,
-        withdrawal.method || 'Bank Transfer'
+    try {
+      // Update status in database
+      await supabaseDb.updateWithdrawal(withdrawalId.toString(), { 
+        status: 'Approved'
+      })
+
+      // Update local state
+      setAllWithdrawals(prev => 
+        prev.map(w => w.id === withdrawalId ? { ...w, status: 'Approved' } : w)
       )
+
+      // Send email notification
+      const withdrawal = allWithdrawals.find(w => w.id === withdrawalId)
+      if (withdrawal) {
+        await sendWithdrawalNotification(
+          withdrawal.userEmail,
+          withdrawal.userName,
+          'approved',
+          withdrawal.amount || 0,
+          withdrawal.method || 'Bank Transfer'
+        )
+      }
+
+      showAlert('success', 'Withdrawal Approved', 'Withdrawal has been approved and saved successfully!')
+    } catch (error) {
+      console.error('Error approving withdrawal:', error)
+      showAlert('error', 'Approval Failed', 'Failed to approve withdrawal. Please try again.')
     }
-    setAllWithdrawals(prev => 
-      prev.map(w => w.id === withdrawalId ? { ...w, status: 'Approved' } : w)
-    )
-    showAlert('success', 'Withdrawal Approved', 'Withdrawal has been approved and completed!')
   }
 
   const handleRejectWithdrawal = async (withdrawalId: number) => {
-    const withdrawal = allWithdrawals.find(w => w.id === withdrawalId)
-    if (withdrawal) {
-      // Send email notification
-      await sendWithdrawalNotification(
-        withdrawal.userEmail,
-        withdrawal.userName,
-        'rejected',
-        withdrawal.amount || 0,
-        withdrawal.method || 'Bank Transfer'
+    try {
+      // Update status in database
+      await supabaseDb.updateWithdrawal(withdrawalId.toString(), { 
+        status: 'Rejected'
+      })
+
+      // Update local state
+      setAllWithdrawals(prev => 
+        prev.map(w => w.id === withdrawalId ? { ...w, status: 'Rejected' } : w)
       )
+
+      // Send email notification
+      const withdrawal = allWithdrawals.find(w => w.id === withdrawalId)
+      if (withdrawal) {
+        await sendWithdrawalNotification(
+          withdrawal.userEmail,
+          withdrawal.userName,
+          'rejected',
+          withdrawal.amount || 0,
+          withdrawal.method || 'Bank Transfer'
+        )
+      }
+
+      showAlert('error', 'Withdrawal Rejected', 'Withdrawal has been rejected and saved.')
+    } catch (error) {
+      console.error('Error rejecting withdrawal:', error)
+      showAlert('error', 'Rejection Failed', 'Failed to reject withdrawal. Please try again.')
     }
-    setAllWithdrawals(prev => 
-      prev.map(w => w.id === withdrawalId ? { ...w, status: 'Rejected' } : w)
-    )
-    showAlert('error', 'Withdrawal Rejected', 'Withdrawal has been rejected.')
   }
 
   const handleApproveKyc = async (kycId: string) => {
@@ -464,6 +622,7 @@ function AdminDashboard() {
       case 'withdrawals': return 'Withdrawals';
       case 'kyc': return 'KYC Requests';
       case 'loans': return 'Loan Requests';
+      case 'bonus': return 'Bonus Management';
       case 'settings': return 'System Settings';
       default: return 'Admin Panel';
     }
@@ -505,6 +664,84 @@ function AdminDashboard() {
     } catch (error) {
       console.error('Error rejecting loan:', error)
       showAlert('error', 'Error', 'Failed to reject loan')
+    }
+  }
+
+  // Bonus management handlers
+  const handleAddBonusToUser = async (user: any) => {
+    setSelectedBonusUser(user)
+    setBonusAmount('')
+    setBonusReason('')
+    setShowAddBonusModal(true)
+  }
+
+  const handleConfirmAddBonus = async () => {
+    if (!selectedBonusUser || !bonusAmount || parseFloat(bonusAmount) <= 0) {
+      showAlert('error', 'Invalid Amount', 'Please enter a valid bonus amount')
+      return
+    }
+
+    try {
+      const currentBonus = selectedBonusUser.bonus || 0
+      const newBonusAmount = currentBonus + parseFloat(bonusAmount)
+
+      await supabaseDb.updateUser(selectedBonusUser.idnum, { 
+        bonus: newBonusAmount 
+      })
+
+      // Update local state
+      setAllUsers(prev => prev.map(u => 
+        u.idnum === selectedBonusUser.idnum 
+          ? { ...u, bonus: newBonusAmount }
+          : u
+      ))
+
+      // Send notification
+      await sendBalanceUpdateNotification(
+        selectedBonusUser.email,
+        selectedBonusUser.name || selectedBonusUser.userName,
+        (selectedBonusUser.bonus || 0) + parseFloat(bonusAmount),
+        selectedBonusUser.bonus || 0
+      )
+
+      showAlert('success', 'Bonus Added', `$${parseFloat(bonusAmount).toLocaleString()} bonus added to ${selectedBonusUser.name || selectedBonusUser.email}`)
+      setShowAddBonusModal(false)
+      setSelectedBonusUser(null)
+      setBonusAmount('')
+      setBonusReason('')
+    } catch (error) {
+      console.error('Error adding bonus:', error)
+      showAlert('error', 'Error', 'Failed to add bonus')
+    }
+  }
+
+  const handleRemoveBonusFromUser = async (user: any) => {
+    const amount = prompt(`Enter amount to remove from ${user.name || user.email}'s bonus:`)
+    if (!amount || parseFloat(amount) <= 0) return
+
+    if (parseFloat(amount) > (user.bonus || 0)) {
+      showAlert('error', 'Invalid Amount', 'Cannot remove more than current bonus')
+      return
+    }
+
+    try {
+      const newBonusAmount = (user.bonus || 0) - parseFloat(amount)
+
+      await supabaseDb.updateUser(user.idnum, { 
+        bonus: newBonusAmount 
+      })
+
+      // Update local state
+      setAllUsers(prev => prev.map(u => 
+        u.idnum === user.idnum 
+          ? { ...u, bonus: newBonusAmount }
+          : u
+      ))
+
+      showAlert('success', 'Bonus Removed', `$${parseFloat(amount).toLocaleString()} bonus removed from ${user.name || user.email}`)
+    } catch (error) {
+      console.error('Error removing bonus:', error)
+      showAlert('error', 'Error', 'Failed to remove bonus')
     }
   }
 
@@ -647,6 +884,14 @@ function AdminDashboard() {
             {pendingLoans > 0 && (
               <span className="badge">{pendingLoans}</span>
             )}
+          </button>
+
+          <button
+            className={`nav-item ${activeTab === 'bonus' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('bonus'); setShowSidePanel(false); }}
+          >
+            <i className="icofont-gift"></i>
+            <span>Bonus Management</span>
           </button>
 
           {/* Super Admin Only - System Settings */}
@@ -1477,6 +1722,173 @@ function AdminDashboard() {
             </div>
           )}
 
+          {/* Bonus Management Tab */}
+          {activeTab === 'bonus' && (
+            <div className="page-section">
+              <div className="page-header">
+                <h2><i className="icofont-gift"></i> Bonus Management</h2>
+                <button
+                  className="primary-btn"
+                  onClick={() => setShowAddBonusModal(true)}
+                  style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                >
+                  <i className="icofont-plus"></i> Add Bonus
+                </button>
+              </div>
+
+              {/* Bonus Stats */}
+              <div className="stats-grid" style={{ marginBottom: '2rem' }}>
+                <div className="stat-card primary">
+                  <div className="stat-icon">
+                    <i className="icofont-gift"></i>
+                  </div>
+                  <div className="stat-details">
+                    <p className="stat-label">Total Bonus Distributed</p>
+                    <h2 className="stat-value">${allUsers.reduce((sum, user) => sum + (user.bonus || 0), 0).toLocaleString()}</h2>
+                    <p className="stat-info">Across all users</p>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                    <i className="icofont-users-alt-5"></i>
+                  </div>
+                  <div className="stat-details">
+                    <p className="stat-label">Users with Bonus</p>
+                    <h2 className="stat-value">{allUsers.filter(user => (user.bonus || 0) > 0).length}</h2>
+                    <p className="stat-info">Active bonus holders</p>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
+                    <i className="icofont-chart-line"></i>
+                  </div>
+                  <div className="stat-details">
+                    <p className="stat-label">Average Bonus</p>
+                    <h2 className="stat-value">
+                      ${allUsers.length > 0 ? Math.round(allUsers.reduce((sum, user) => sum + (user.bonus || 0), 0) / allUsers.length).toLocaleString() : '0'}
+                    </h2>
+                    <p className="stat-info">Per user</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Users with Bonus Table */}
+              <div className="profile-card">
+                <div className="profile-card-header">
+                  <h3><i className="icofont-users-alt-5"></i> Users with Bonus</h3>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Search users..."
+                      value={bonusSearchTerm}
+                      onChange={(e) => setBonusSearchTerm(e.target.value)}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        fontSize: '0.875rem'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>User</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>Email</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'right', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>Current Bonus</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allUsers
+                        .filter(user => (user.bonus || 0) > 0)
+                        .filter(user => 
+                          user.name?.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                          user.email?.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
+                          user.userName?.toLowerCase().includes(bonusSearchTerm.toLowerCase())
+                        )
+                        .map((user) => (
+                        <tr key={user.idnum} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                fontWeight: 'bold'
+                              }}>
+                                {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                              <div>
+                                <div style={{ color: '#fff', fontWeight: '500' }}>{user.name || user.userName}</div>
+                                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>ID: {user.idnum}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '16px', color: '#fff' }}>{user.email}</td>
+                          <td style={{ padding: '16px', textAlign: 'right', color: '#f59e0b', fontWeight: '600' }}>
+                            ${user.bonus?.toLocaleString() || '0'}
+                          </td>
+                          <td style={{ padding: '16px', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                              <button
+                                onClick={() => handleAddBonusToUser(user)}
+                                style={{
+                                  padding: '0.375rem 0.75rem',
+                                  background: 'rgba(16, 185, 129, 0.1)',
+                                  color: '#10b981',
+                                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <i className="icofont-plus"></i> Add
+                              </button>
+                              <button
+                                onClick={() => handleRemoveBonusFromUser(user)}
+                                style={{
+                                  padding: '0.375rem 0.75rem',
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  color: '#ef4444',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <i className="icofont-minus"></i> Remove
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {allUsers.filter(user => (user.bonus || 0) > 0).length === 0 && (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
+                            <i className="icofont-gift" style={{ fontSize: '48px', marginBottom: '16px', display: 'block', opacity: 0.3 }}></i>
+                            No users have bonus yet
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* System Settings - Superadmin Only */}
           {activeTab === 'settings' && currentAdmin?.role === 'superadmin' && (
             <div className="page-section">
@@ -2012,6 +2424,170 @@ function AdminDashboard() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Bonus Modal */}
+      {showAddBonusModal && selectedBonusUser && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          backdropFilter: 'blur(8px)',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(245,158,11,0.2)'
+          }}>
+            <div style={{
+              padding: '1.5rem',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <h3 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>
+                <i className="icofont-gift" style={{ marginRight: '0.5rem', color: '#f59e0b' }}></i>
+                Add Bonus to {selectedBonusUser.name || selectedBonusUser.email}
+              </h3>
+              <button
+                onClick={() => setShowAddBonusModal(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#cbd5e1'
+                }}
+              >
+                <i className="icofont-close"></i>
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#f8fafc',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  marginBottom: '0.5rem'
+                }}>
+                  Current Bonus: <span style={{ color: '#f59e0b', fontWeight: 600 }}>${selectedBonusUser.bonus?.toLocaleString() || '0'}</span>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#f8fafc',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  marginBottom: '0.5rem'
+                }}>
+                  Bonus Amount ($)
+                </label>
+                <input
+                  type="number"
+                  value={bonusAmount}
+                  onChange={(e) => setBonusAmount(e.target.value)}
+                  placeholder="Enter bonus amount"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#f8fafc',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#f8fafc',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  marginBottom: '0.5rem'
+                }}>
+                  Reason (Optional)
+                </label>
+                <textarea
+                  value={bonusReason}
+                  onChange={(e) => setBonusReason(e.target.value)}
+                  placeholder="Enter reason for bonus..."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#f8fafc',
+                    fontSize: '0.875rem',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button
+                  onClick={() => setShowAddBonusModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    color: '#cbd5e1',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmAddBonus}
+                  disabled={!bonusAmount || parseFloat(bonusAmount) <= 0}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#0f172a',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: (!bonusAmount || parseFloat(bonusAmount) <= 0) ? 'not-allowed' : 'pointer',
+                    opacity: (!bonusAmount || parseFloat(bonusAmount) <= 0) ? 0.5 : 1
+                  }}
+                >
+                  <i className="icofont-plus" style={{ marginRight: '0.5rem' }}></i>
+                  Add Bonus
+                </button>
+              </div>
             </div>
           </div>
         </div>

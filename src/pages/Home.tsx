@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { fetchDetailedCryptoPrices, formatPrice, CryptoPrice } from '@/utils/cryptoPrices'
+import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 
 const stats = [
   { label: '24h Volume', value: '$38B', detail: 'Traded across spot, futures, and structured products.' },
@@ -9,26 +10,18 @@ const stats = [
   { label: 'Fees', value: '0.10%', detail: 'Institutional pricing with maker rebates.' }
 ]
 
-const packages = [
-  {
-    name: 'Genesis Starter',
-    badge: 'Low Risk',
-    description: 'Entry allocation for first-time digital asset investors seeking steady yield.',
-    bullets: ['50% BTC + ETH core', '30% tokenized T-bills', '20% stablecoin vaults']
-  },
-  {
-    name: 'AI Macro Edge',
-    badge: 'Balanced',
-    description: 'Signals-driven basket focused on AI infra, DePIN, and layer-two rollups.',
-    bullets: ['Quant momentum guardrails', 'Automatically hedged with options', 'Weekly risk briefings']
-  },
-  {
-    name: 'Real-World Assets',
-    badge: 'Income',
-    description: 'Tokenized invoices, treasuries, and commodity streams under full compliance.',
-    bullets: ['Yield monitored hourly', 'Institutional custody partners', 'Insurance-backed storage']
-  }
-]
+const packages = PLAN_CONFIG.map(plan => ({
+  name: plan.name,
+  badge: plan.featured ? 'Featured' : 'Standard',
+  description: plan.subtitle,
+  bullets: [
+    `Duration: ${plan.durationLabel}`,
+    `Daily ROI: ${formatPercent(plan.dailyRate)}`,
+    `Min Investment: $${plan.minCapital.toLocaleString()}`,
+    `Max Investment: ${plan.maxCapital ? `$${plan.maxCapital.toLocaleString()}` : 'Unlimited'}`,
+    `Total Return: ${plan.totalReturnPercent}%`
+  ]
+}))
 
 const helpTiles = [
   {
@@ -58,20 +51,32 @@ function Home() {
   useEffect(() => {
     async function loadPrices() {
       try {
-        const prices = await fetchDetailedCryptoPrices()
-        setCryptoPrices(prices)
-        setCryptoError(false)
+        console.log('🏠 Loading real-time crypto prices...');
+        const prices = await fetchDetailedCryptoPrices();
+        if (prices && prices.length > 0) {
+          setCryptoPrices(prices);
+          setCryptoError(false);
+          console.log(`✅ Loaded ${prices.length} cryptocurrencies with real-time data`);
+        } else {
+          console.warn('⚠️ No crypto prices received, will retry...');
+          setCryptoError(true);
+          setCryptoPrices([]);
+        }
       } catch (error) {
-        console.error('Failed to load crypto prices:', error)
-        setCryptoError(true)
-        // Set empty array so ticker doesn't show
-        setCryptoPrices([])
+        console.error('❌ Failed to load crypto prices:', error);
+        setCryptoError(true);
+        setCryptoPrices([]);
       }
     }
-    loadPrices()
-    const interval = setInterval(loadPrices, 60000)
-    return () => clearInterval(interval)
-  }, [])
+
+    // Initial load
+    loadPrices();
+
+    // Update every 30 seconds for real-time data
+    const interval = setInterval(loadPrices, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
   return (
     <div className="home">
       {/* Live Crypto Ticker */}
@@ -217,10 +222,10 @@ function Home() {
 
       <section className="packages" id="packages">
         <div className="section-heading">
-          <p className="eyebrow">CipherVault portfolios</p>
-          <h2>Six institutional-grade packages for every mandate.</h2>
+          <p className="eyebrow">Investment Plans</p>
+          <h2>Six investment plans for every growth strategy.</h2>
           <p>
-            Pick the mix that matches your risk tolerance and liquidity needs. Each package is rebalanced by our research desk and audited quarterly.
+            Choose the plan that matches your investment goals and timeline. Each plan offers daily ROI with automatic compounding.
           </p>
         </div>
         <div className="package-grid">
@@ -235,9 +240,9 @@ function Home() {
                 ))}
               </ul>
               <div className="package-card__actions">
-                <a className="btn btn--primary" href="/dashboard.html">
+                <Link className="btn btn--primary" to="/dashboard">
                   Go to dashboard
-                </a>
+                </Link>
                 <Link className="btn btn--ghost" to="/signup">
                   Allocate now
                 </Link>

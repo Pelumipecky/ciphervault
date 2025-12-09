@@ -135,11 +135,14 @@ const mapUserRecord = (record: any): UserRecord => {
 
 const mapInvestmentRecord = (record: any): InvestmentRecord => {
   if (!record || typeof record !== 'object') return record
-  const { paymentoption, authstatus, ...rest } = record
+  const { paymentoption, authstatus, transaction_hash, credited_roi, credited_bonus, ...rest } = record
   return {
     ...rest,
     paymentOption: paymentoption ?? record.paymentOption ?? 'Bitcoin',
     authStatus: authstatus ?? record.authStatus ?? 'unseen',
+    transactionHash: transaction_hash ?? record.transactionHash ?? null,
+    creditedRoi: credited_roi ?? record.creditedRoi ?? 0,
+    creditedBonus: credited_bonus ?? record.creditedBonus ?? 0,
   }
 }
 
@@ -151,11 +154,11 @@ const normalizeInvestmentPayload = (investmentData: Partial<InvestmentRecord> = 
   roi: investmentData.roi ?? 0,
   bonus: investmentData.bonus ?? 0,
   duration: investmentData.duration ?? 5,
-  paymentoption: investmentData.paymentOption ?? 'Bitcoin',
-  transaction_hash: investmentData.transactionHash ?? null,
-  authstatus: investmentData.authStatus ?? 'unseen',
-  credited_roi: investmentData.creditedRoi ?? 0,
-  credited_bonus: investmentData.creditedBonus ?? 0,
+  "paymentOption": investmentData.paymentOption ?? 'Bitcoin',
+  "transactionHash": investmentData.transactionHash ?? null,
+  "authStatus": investmentData.authStatus ?? 'unseen',
+  creditedRoi: investmentData.creditedRoi ?? 0,
+  creditedBonus: investmentData.creditedBonus ?? 0,
 })
 
 // Referral helpers
@@ -617,6 +620,13 @@ export const supabaseRealtime = {
     return db
       .channel('loans-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'loans' }, callback)
+      .subscribe()
+  },
+
+  subscribeToKyc(callback: (payload: any) => void) {
+    return db
+      .channel('kyc-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'kyc' }, callback)
       .subscribe()
   },
 }

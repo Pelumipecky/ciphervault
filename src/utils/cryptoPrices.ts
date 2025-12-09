@@ -1,5 +1,8 @@
 // Live Cryptocurrency Price Fetcher
-// Uses Binance API as primary (more reliable from browser) and CoinGecko as fallback
+// Uses multiple real-time APIs for maximum reliability and data accuracy
+// Primary: Binance API (most reliable for browser requests)
+// Secondary: CoinGecko API (comprehensive data)
+// Tertiary: CoinMarketCap API (additional fallback)
 
 export interface CryptoPrice {
   id: string;
@@ -14,6 +17,12 @@ export interface CryptoPrice {
   low_24h: number;
   image: string;
   last_updated: string;
+  circulating_supply?: number;
+  max_supply?: number;
+  ath?: number;
+  ath_change_percentage?: number;
+  atl?: number;
+  atl_change_percentage?: number;
 }
 
 export interface CryptoPrices {
@@ -32,42 +41,67 @@ export interface CryptoPriceDetails {
   [key: string]: CryptoPrice;
 }
 
-// Fetch prices using Binance API (primary - no CORS issues)
+// Fetch prices using multiple real-time APIs for maximum reliability
 export async function fetchCryptoPrices(): Promise<CryptoPrices> {
-  // Try Binance API first (more reliable from browser, no CORS issues)
+  const defaultPrices: CryptoPrices = { BTC: 0, ETH: 0, USDT: 1, BNB: 0, XRP: 0, SOL: 0, DOGE: 0, ADA: 0 };
+
+  // Try Binance API first (most reliable for browser requests, no CORS issues)
   try {
-    const binanceResponse = await fetch('https://api.binance.com/api/v3/ticker/price');
+    console.log('🔄 Fetching prices from Binance API...');
+    const binanceResponse = await fetch('https://api.binance.com/api/v3/ticker/price', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CipherVault-App/1.0'
+      }
+    });
+
     if (binanceResponse.ok) {
       const binanceData = await binanceResponse.json();
-      const prices: CryptoPrices = { BTC: 0, ETH: 0, USDT: 1, BNB: 0, XRP: 0, SOL: 0, DOGE: 0, ADA: 0 };
-      
+      const prices: CryptoPrices = { ...defaultPrices };
+
       binanceData.forEach((item: { symbol: string; price: string }) => {
-        if (item.symbol === 'BTCUSDT') prices.BTC = parseFloat(item.price);
-        if (item.symbol === 'ETHUSDT') prices.ETH = parseFloat(item.price);
-        if (item.symbol === 'BNBUSDT') prices.BNB = parseFloat(item.price);
-        if (item.symbol === 'XRPUSDT') prices.XRP = parseFloat(item.price);
-        if (item.symbol === 'SOLUSDT') prices.SOL = parseFloat(item.price);
-        if (item.symbol === 'DOGEUSDT') prices.DOGE = parseFloat(item.price);
-        if (item.symbol === 'ADAUSDT') prices.ADA = parseFloat(item.price);
+        const price = parseFloat(item.price);
+        if (!isNaN(price) && price > 0) {
+          if (item.symbol === 'BTCUSDT') prices.BTC = price;
+          if (item.symbol === 'ETHUSDT') prices.ETH = price;
+          if (item.symbol === 'BNBUSDT') prices.BNB = price;
+          if (item.symbol === 'XRPUSDT') prices.XRP = price;
+          if (item.symbol === 'SOLUSDT') prices.SOL = price;
+          if (item.symbol === 'DOGEUSDT') prices.DOGE = price;
+          if (item.symbol === 'ADAUSDT') prices.ADA = price;
+        }
       });
-      
-      console.log('Binance prices fetched:', prices);
-      return prices;
+
+      // Validate that we got at least some real prices
+      const validPrices = Object.values(prices).filter(p => p > 0).length;
+      if (validPrices >= 3) {
+        console.log('✅ Binance prices fetched successfully:', prices);
+        return prices;
+      }
     }
   } catch (binanceError) {
-    console.error('Binance API failed, trying CoinGecko:', binanceError);
+    console.warn('⚠️ Binance API failed:', binanceError);
   }
 
-  // Fallback to CoinGecko API
+  // Fallback to CoinGecko API (more comprehensive data)
   try {
+    console.log('🔄 Fetching prices from CoinGecko API...');
     const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,ripple,solana,dogecoin,cardano&vs_currencies=usd'
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,ripple,solana,dogecoin,cardano&vs_currencies=usd&include_24hr_change=true',
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'CipherVault-App/1.0'
+        }
+      }
     );
-    
+
     if (response.ok) {
       const data = await response.json();
-      console.log('CoinGecko prices fetched:', data);
-      
+      console.log('✅ CoinGecko prices fetched:', data);
+
       return {
         BTC: data.bitcoin?.usd || 0,
         ETH: data.ethereum?.usd || 0,
@@ -80,24 +114,49 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
       };
     }
   } catch (error) {
-    console.error('CoinGecko API also failed:', error);
+    console.warn('⚠️ CoinGecko API failed:', error);
   }
-    
-  // Final fallback - return zeros to indicate no data
-  console.error('All price APIs failed');
-  return {
-    BTC: 0,
-    ETH: 0,
-    USDT: 1,
-    BNB: 0,
-    XRP: 0,
-    SOL: 0,
-    DOGE: 0,
-    ADA: 0,
-  };
+
+  // Final fallback - try CoinMarketCap API if available
+  try {
+    console.log('🔄 Attempting CoinMarketCap API...');
+    const cmcResponse = await fetch(
+      'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC,ETH,USDT,BNB,XRP,SOL,DOGE,ADA',
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-CMC_PRO_API_KEY': import.meta.env.VITE_CMC_API_KEY || '',
+          'User-Agent': 'CipherVault-App/1.0'
+        }
+      }
+    );
+
+    if (cmcResponse.ok) {
+      const cmcData = await cmcResponse.json();
+      console.log('✅ CoinMarketCap prices fetched');
+
+      return {
+        BTC: cmcData.data?.BTC?.quote?.USD?.price || 0,
+        ETH: cmcData.data?.ETH?.quote?.USD?.price || 0,
+        USDT: cmcData.data?.USDT?.quote?.USD?.price || 1,
+        BNB: cmcData.data?.BNB?.quote?.USD?.price || 0,
+        XRP: cmcData.data?.XRP?.quote?.USD?.price || 0,
+        SOL: cmcData.data?.SOL?.quote?.USD?.price || 0,
+        DOGE: cmcData.data?.DOGE?.quote?.USD?.price || 0,
+        ADA: cmcData.data?.ADA?.quote?.USD?.price || 0,
+      };
+    }
+  } catch (error) {
+    console.warn('⚠️ CoinMarketCap API failed or not configured:', error);
+  }
+
+  // Ultimate fallback - return zeros but log the issue
+  console.error('❌ All crypto price APIs failed - returning default values');
+  return defaultPrices;
 }
 
-// Fetch detailed price data with 24h changes - Binance API primary (more reliable)
+// Fetch detailed price data with 24h changes - Multiple APIs for maximum reliability
 export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
   const symbolMap: { [key: string]: { id: string; name: string; image: string } } = {
     'BTCUSDT': { id: 'bitcoin', name: 'Bitcoin', image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
@@ -118,18 +177,25 @@ export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
     'ATOMUSDT': { id: 'cosmos', name: 'Cosmos', image: 'https://assets.coingecko.com/coins/images/1481/large/cosmos_hub.png' },
   };
 
-  // Try Binance API first (more reliable from browser, no CORS issues)
+  // Try Binance API first (most reliable for browser requests, no CORS issues)
   try {
-    const ticker24hResponse = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-    
+    console.log('🔄 Fetching detailed prices from Binance API...');
+    const ticker24hResponse = await fetch('https://api.binance.com/api/v3/ticker/24hr', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CipherVault-App/1.0'
+      }
+    });
+
     if (ticker24hResponse.ok) {
       const ticker24h = await ticker24hResponse.json();
-      
+
       const prices: CryptoPrice[] = [];
-      
+
       ticker24h.forEach((item: any) => {
         const info = symbolMap[item.symbol];
-        if (info) {
+        if (info && parseFloat(item.lastPrice) > 0) {
           prices.push({
             id: info.id,
             symbol: item.symbol.replace('USDT', '').replace('USDC', '').toLowerCase(),
@@ -137,42 +203,77 @@ export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
             current_price: parseFloat(item.lastPrice),
             price_change_24h: parseFloat(item.priceChange),
             price_change_percentage_24h: parseFloat(item.priceChangePercent),
-            market_cap: parseFloat(item.quoteVolume) * 100, // Approximate
+            market_cap: parseFloat(item.quoteVolume) * 100, // Approximate market cap from volume
             total_volume: parseFloat(item.quoteVolume),
             high_24h: parseFloat(item.highPrice),
             low_24h: parseFloat(item.lowPrice),
             image: info.image,
-            last_updated: new Date().toISOString()
+            last_updated: new Date().toISOString(),
+            circulating_supply: parseFloat(item.count) || undefined,
           });
         }
       });
-      
-      // Sort by approximate market cap (volume-based)
-      prices.sort((a, b) => b.market_cap - a.market_cap);
-      console.log('Binance detailed prices fetched:', prices.length, 'coins');
-      return prices;
+
+      // Sort by volume (approximate market cap ranking)
+      prices.sort((a, b) => b.total_volume - a.total_volume);
+
+      if (prices.length > 0) {
+        console.log(`✅ Binance detailed prices fetched: ${prices.length} cryptocurrencies`);
+        return prices;
+      }
     }
   } catch (binanceError) {
-    console.error('Binance API failed, trying CoinGecko:', binanceError);
+    console.warn('⚠️ Binance detailed API failed:', binanceError);
   }
 
-  // Fallback to CoinGecko API
+  // Fallback to CoinGecko API (more comprehensive data)
   try {
+    console.log('🔄 Fetching detailed prices from CoinGecko API...');
     const response = await fetch(
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,tether,binancecoin,ripple,solana,dogecoin,cardano,polkadot,avalanche-2,chainlink,matic-network,litecoin,uniswap&order=market_cap_desc&per_page=20&page=1&sparkline=false'
+      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,tether,binancecoin,ripple,solana,dogecoin,cardano,polkadot,avalanche-2,chainlink,matic-network,litecoin,uniswap,tron,cosmos&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h',
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'CipherVault-App/1.0'
+        }
+      }
     );
-    
+
     if (response.ok) {
       const data: CryptoPrice[] = await response.json();
-      console.log('CoinGecko detailed prices fetched:', data.length, 'coins');
-      return data;
+
+      // Transform CoinGecko data to our format
+      const transformedData = data.map((coin: any) => ({
+        id: coin.id,
+        symbol: coin.symbol,
+        name: coin.name,
+        current_price: coin.current_price,
+        price_change_24h: coin.price_change_24h,
+        price_change_percentage_24h: coin.price_change_percentage_24h,
+        market_cap: coin.market_cap,
+        total_volume: coin.total_volume,
+        high_24h: coin.high_24h,
+        low_24h: coin.low_24h,
+        image: coin.image,
+        last_updated: coin.last_updated,
+        circulating_supply: coin.circulating_supply,
+        max_supply: coin.max_supply,
+        ath: coin.ath,
+        ath_change_percentage: coin.ath_change_percentage,
+        atl: coin.atl,
+        atl_change_percentage: coin.atl_change_percentage,
+      }));
+
+      console.log(`✅ CoinGecko detailed prices fetched: ${transformedData.length} cryptocurrencies`);
+      return transformedData;
     }
   } catch (error) {
-    console.error('CoinGecko API also failed:', error);
+    console.warn('⚠️ CoinGecko detailed API failed:', error);
   }
-    
+
   // Final fallback - return empty array
-  console.error('All price APIs failed');
+  console.error('❌ All detailed price APIs failed');
   return [];
 }
 
@@ -205,6 +306,113 @@ export function formatMarketCap(marketCap: number): string {
   return `$${marketCap.toLocaleString()}`;
 }
 
+// Get real-time price updates using WebSocket (for live trading data)
+export function subscribeToPriceUpdates(callback: (prices: CryptoPrices) => void): () => void {
+  // For browser compatibility, we'll use polling instead of WebSocket
+  // In production, you could implement WebSocket connection to Binance streams
+  const interval = setInterval(async () => {
+    try {
+      const prices = await fetchCryptoPrices();
+      callback(prices);
+    } catch (error) {
+      console.error('Failed to fetch real-time prices:', error);
+    }
+  }, 10000); // Update every 10 seconds
+
+  // Return cleanup function
+  return () => clearInterval(interval);
+}
+
+// Get market overview data (global crypto statistics)
+export async function fetchMarketOverview(): Promise<{
+  total_market_cap: number;
+  total_volume: number;
+  market_cap_change_percentage_24h: number;
+  active_cryptocurrencies: number;
+  upcoming_icos: number;
+  ongoing_icos: number;
+  ended_icos: number;
+}> {
+  try {
+    console.log('🔄 Fetching market overview from CoinGecko...');
+    const response = await fetch('https://api.coingecko.com/api/v3/global', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CipherVault-App/1.0'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Market overview fetched');
+      return {
+        total_market_cap: data.data?.total_market_cap?.usd || 0,
+        total_volume: data.data?.total_volume?.usd || 0,
+        market_cap_change_percentage_24h: data.data?.market_cap_change_percentage_24h_usd || 0,
+        active_cryptocurrencies: data.data?.active_cryptocurrencies || 0,
+        upcoming_icos: data.data?.upcoming_icos || 0,
+        ongoing_icos: data.data?.ongoing_icos || 0,
+        ended_icos: data.data?.ended_icos || 0,
+      };
+    }
+  } catch (error) {
+    console.warn('⚠️ Market overview API failed:', error);
+  }
+
+  return {
+    total_market_cap: 0,
+    total_volume: 0,
+    market_cap_change_percentage_24h: 0,
+    active_cryptocurrencies: 0,
+    upcoming_icos: 0,
+    ongoing_icos: 0,
+    ended_icos: 0,
+  };
+}
+
+// Get trending cryptocurrencies
+export async function fetchTrendingCryptos(): Promise<CryptoPrice[]> {
+  try {
+    console.log('🔄 Fetching trending cryptocurrencies...');
+    const response = await fetch('https://api.coingecko.com/api/v3/search/trending', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CipherVault-App/1.0'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const trendingCoins = data.coins || [];
+
+      // Convert to our CryptoPrice format
+      const trendingPrices: CryptoPrice[] = trendingCoins.map((item: any) => ({
+        id: item.item.id,
+        symbol: item.item.symbol,
+        name: item.item.name,
+        current_price: item.item.price_btc * 50000 || 0, // Approximate BTC price
+        price_change_24h: 0,
+        price_change_percentage_24h: item.item.price_change_percentage_24h || 0,
+        market_cap: item.item.market_cap_rank || 0,
+        total_volume: 0,
+        high_24h: 0,
+        low_24h: 0,
+        image: item.item.large,
+        last_updated: new Date().toISOString(),
+      }));
+
+      console.log(`✅ Trending cryptos fetched: ${trendingPrices.length} coins`);
+      return trendingPrices;
+    }
+  } catch (error) {
+    console.warn('⚠️ Trending cryptos API failed:', error);
+  }
+
+  return [];
+}
+
 // Get symbol to id mapping for CoinGecko
 export const cryptoIdMap: { [key: string]: string } = {
   BTC: 'bitcoin',
@@ -220,5 +428,7 @@ export const cryptoIdMap: { [key: string]: string } = {
   LINK: 'chainlink',
   MATIC: 'polygon',
   LTC: 'litecoin',
-  UNI: 'uniswap'
+  UNI: 'uniswap',
+  TRX: 'tron',
+  ATOM: 'cosmos'
 };

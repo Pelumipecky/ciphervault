@@ -13,7 +13,7 @@
 import { FormEvent, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { supabaseAuth } from '@/lib/supabaseUtils'
+import { supabaseAuth, supabaseDb } from '@/lib/supabaseUtils'
 
 type LoginStatus =
   | { state: 'idle' }
@@ -24,6 +24,33 @@ type LoginStatus =
 // Rate limiting configuration
 const MAX_ATTEMPTS = 5
 const LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes in milliseconds
+
+function AdminCredentialsDisplay() {
+  const [admin, setAdmin] = useState<any>(null)
+  useEffect(() => {
+    async function fetchAdmin() {
+      const users = await supabaseDb.getAllUsers();
+      const adminUser = users.find((u: any) => u.role === 'admin' || u.role === 'superadmin');
+      setAdmin(adminUser);
+    }
+    fetchAdmin();
+  }, [])
+
+  if (!admin) {
+    return (
+      <div style={{ padding: '12px', background: 'rgba(240,185,11,0.07)', border: '1px solid rgba(240,185,11,0.15)', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', color: '#F0B90B' }}>
+        <strong>Loading admin credentials…</strong>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '12px', background: 'rgba(240,185,11,0.07)', border: '1px solid rgba(240,185,11,0.15)', borderRadius: '8px', marginBottom: '20px', fontSize: '14px' }}>
+      <strong>🔑 Admin Credentials:</strong><br />
+      <strong>👨‍💼 Admin:</strong> <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>{admin.email}</code> / <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>{admin.password ? admin.password : '******'}</code>
+    </div>
+  )
+}
 
 function AdminLogin() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -117,18 +144,8 @@ function AdminLogin() {
           <h1>Admin Login</h1>
           <p>Administrator access to CipherVault Investments</p>
         </div>
-        <div style={{ 
-          padding: '12px', 
-          background: 'rgba(240, 185, 11, 0.1)', 
-          border: '1px solid rgba(240, 185, 11, 0.3)',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          fontSize: '14px'
-        }}>
-          <strong>🔑 Demo Credentials:</strong>
-          <br />
-          <strong>👨‍💼 Admin:</strong> <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>admin@ciphervault.com</code> / <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>admin123</code>
-        </div>
+        {/* Real-time Admin Credentials from Supabase */}
+        <AdminCredentialsDisplay />
         <form className="binance-form" onSubmit={handleSubmit}>
           <div className="binance-form__group">
             <label htmlFor="email">Email or Username</label>
