@@ -1903,9 +1903,9 @@ function UserDashboard() {
                 </div>
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: 'repeat(3, 1fr)', 
-                  gap: '20px',
-                  padding: '20px'
+                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(1, 1fr)' : window.innerWidth <= 1024 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', 
+                  gap: window.innerWidth <= 768 ? '16px' : '20px',
+                  padding: window.innerWidth <= 768 ? '16px' : '20px'
                 }}>
                   {PLAN_CONFIG.map((plan) => (
                     <div 

@@ -35,6 +35,19 @@ function StockTrading() {
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
   const [limitPrice, setLimitPrice] = useState('');
 
+  // Modal alert state
+  const [modalAlert, setModalAlert] = useState<{
+    show: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+  }>({
+    show: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
   // Chart refs
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -185,8 +198,18 @@ function StockTrading() {
     const price = selectedStock.current_price;
     const total = qty * price;
 
-    alert(`${tradeType.toUpperCase()} Order: ${qty} shares of ${selectedStock.symbol} at $${price.toFixed(2)} = $${total.toFixed(2)}`);
+    showAlert('success', 'Order Placed', `${tradeType.toUpperCase()} Order: ${qty} shares of ${selectedStock.symbol} at $${price.toFixed(2)} = $${total.toFixed(2)}`);
     // Here you would integrate with your trading backend
+  };
+
+  // Alert functions
+  const showAlert = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
+    setModalAlert({ show: true, type, title, message });
+    setTimeout(() => setModalAlert((prev) => ({ ...prev, show: false })), 5000);
+  };
+
+  const closeAlert = () => {
+    setModalAlert({ ...modalAlert, show: false });
   };
 
   if (loading) {
@@ -661,6 +684,107 @@ function StockTrading() {
           </button>
         </div>
       </div>
+
+      {/* Modal Alert */}
+      {modalAlert.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: modalAlert.type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' :
+                       modalAlert.type === 'error' ? 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)' :
+                       modalAlert.type === 'warning' ? 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' :
+                       'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)',
+            borderRadius: '16px',
+            padding: '2rem',
+            maxWidth: '400px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: modalAlert.type === 'success' ? '0 8px 20px rgba(16,185,129,0.3)' :
+                      modalAlert.type === 'error' ? '0 8px 20px rgba(239,68,68,0.3)' :
+                      modalAlert.type === 'warning' ? '0 8px 20px rgba(245,158,11,0.3)' :
+                      '0 8px 20px rgba(59,130,246,0.3)',
+            position: 'relative'
+          }}>
+            <button
+              onClick={closeAlert}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                color: '#ffffff',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                padding: '0.25rem'
+              }}
+            >
+              ×
+            </button>
+            <div style={{
+              fontSize: '3rem',
+              marginBottom: '1rem',
+              color: '#ffffff'
+            }}>
+              <i className={
+                modalAlert.type === 'success' ? 'icofont-check-circled' :
+                modalAlert.type === 'error' ? 'icofont-close-circled' :
+                modalAlert.type === 'warning' ? 'icofont-warning' :
+                'icofont-info-circle'
+              }></i>
+            </div>
+            <h3 style={{
+              color: '#ffffff',
+              fontSize: '1.25rem',
+              fontWeight: '600',
+              marginBottom: '0.5rem'
+            }}>
+              {modalAlert.title}
+            </h3>
+            <p style={{
+              color: 'rgba(255,255,255,0.9)',
+              fontSize: '1rem',
+              lineHeight: '1.5',
+              marginBottom: '1.5rem'
+            }}>
+              {modalAlert.message}
+            </p>
+            <button
+              onClick={closeAlert}
+              style={{
+                padding: '0.75rem 2rem',
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
