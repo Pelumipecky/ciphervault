@@ -191,46 +191,73 @@ function StockTrading() {
 
   if (loading) {
     return (
-      <div className="stock-trading" style={{ padding: '2rem', color: '#f8fafc' }}>
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <i className="icofont-spinner icofont-spin" style={{ fontSize: '2rem', color: '#f59e0b' }}></i>
-          <p>Loading stock market data...</p>
+      <div className="stock-trading" style={{
+        padding: window.innerWidth <= 768 ? '1rem' : '2rem',
+        color: '#f8fafc'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          padding: window.innerWidth <= 768 ? '2rem 1rem' : '2rem'
+        }}>
+          <i className="icofont-spinner icofont-spin" style={{
+            fontSize: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+            color: '#f59e0b'
+          }}></i>
+          <p style={{
+            fontSize: window.innerWidth <= 768 ? '0.875rem' : '1rem'
+          }}>Loading stock market data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="stock-trading" style={{ padding: '2rem', color: '#f8fafc', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="stock-trading" style={{
+      padding: window.innerWidth <= 768 ? '1rem' : '2rem',
+      color: '#f8fafc',
+      maxWidth: '1400px',
+      margin: '0 auto'
+    }}>
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ color: '#f8fafc', fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+      <div style={{ marginBottom: window.innerWidth <= 768 ? '1.5rem' : '2rem' }}>
+        <h1 style={{
+          color: '#f8fafc',
+          fontSize: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+          fontWeight: 'bold',
+          marginBottom: '1rem'
+        }}>
           <i className="icofont-chart-line" style={{ marginRight: '0.5rem', color: '#f59e0b' }}></i>
           Stock Trading
         </h1>
-        <p style={{ color: '#94a3b8' }}>Trade stocks with real-time data and advanced charting</p>
+        <p style={{ color: '#94a3b8', fontSize: window.innerWidth <= 768 ? '0.875rem' : '1rem' }}>
+          Trade stocks with real-time data and advanced charting
+        </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '2rem' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '1fr 400px',
+        gap: window.innerWidth <= 768 ? '1.5rem' : '2rem'
+      }}>
         {/* Main Content */}
         <div>
           {/* Stock Search */}
           <div style={{ marginBottom: '2rem', position: 'relative' }}>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: window.innerWidth <= 768 ? '0.75rem' : '1rem', marginBottom: '1rem' }}>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
                   type="text"
-                  placeholder="Search stocks (e.g., AAPL, Apple)..."
+                  placeholder={window.innerWidth <= 768 ? "Search stocks..." : "Search stocks (e.g., AAPL, Apple)..."}
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.75rem 1rem',
+                    padding: window.innerWidth <= 768 ? '0.625rem 0.875rem' : '0.75rem 1rem',
                     borderRadius: '8px',
                     border: '1px solid rgba(255,255,255,0.1)',
                     background: 'rgba(255,255,255,0.05)',
                     color: '#f8fafc',
-                    fontSize: '0.875rem'
+                    fontSize: window.innerWidth <= 768 ? '0.875rem' : '0.875rem'
                   }}
                 />
                 {showSearchResults && searchResults.length > 0 && (
@@ -270,19 +297,23 @@ function StockTrading() {
             {/* Popular Stocks */}
             <div>
               <h3 style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>Popular Stocks</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: window.innerWidth <= 768 ? '0.375rem' : '0.5rem'
+              }}>
                 {POPULAR_STOCKS.slice(0, 8).map((stock) => (
                   <button
                     key={stock.symbol}
                     onClick={() => handleStockSelect(stock.symbol)}
                     style={{
-                      padding: '0.5rem 1rem',
+                      padding: window.innerWidth <= 768 ? '0.375rem 0.75rem' : '0.5rem 1rem',
                       borderRadius: '20px',
                       border: selectedStock?.symbol === stock.symbol ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
                       background: selectedStock?.symbol === stock.symbol ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.05)',
                       color: '#f8fafc',
                       cursor: 'pointer',
-                      fontSize: '0.875rem',
+                      fontSize: window.innerWidth <= 768 ? '0.75rem' : '0.875rem',
                       fontWeight: selectedStock?.symbol === stock.symbol ? '600' : 'normal'
                     }}
                   >
@@ -302,32 +333,61 @@ function StockTrading() {
               marginBottom: '2rem',
               border: '1px solid rgba(245,158,11,0.2)'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div>
-                  <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: window.innerWidth <= 768 ? 'flex-start' : 'flex-start',
+                flexDirection: window.innerWidth <= 480 ? 'column' : 'row',
+                gap: window.innerWidth <= 480 ? '1rem' : '0',
+                marginBottom: '1rem'
+              }}>
+                <div style={{ flex: window.innerWidth <= 480 ? '1' : '1' }}>
+                  <h2 style={{
+                    color: '#f8fafc',
+                    fontSize: window.innerWidth <= 768 ? '1.25rem' : '1.5rem',
+                    fontWeight: 'bold',
+                    margin: 0
+                  }}>
                     {stockDetails.name} ({stockDetails.symbol})
                   </h2>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f8fafc' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    marginTop: '0.5rem',
+                    flexWrap: window.innerWidth <= 480 ? 'wrap' : 'nowrap'
+                  }}>
+                    <span style={{
+                      fontSize: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+                      fontWeight: 'bold',
+                      color: '#f8fafc'
+                    }}>
                       {formatStockPrice(stockDetails.current_price)}
                     </span>
                     <span style={{
                       color: stockDetails.change >= 0 ? '#10b981' : '#ef4444',
                       fontWeight: '600',
-                      fontSize: '1.125rem'
+                      fontSize: window.innerWidth <= 768 ? '1rem' : '1.125rem'
                     }}>
                       {stockDetails.change >= 0 ? '+' : ''}{formatStockPrice(stockDetails.change)}
                       ({stockDetails.change_percent >= 0 ? '+' : ''}{stockDetails.change_percent.toFixed(2)}%)
                     </span>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{
+                  textAlign: window.innerWidth <= 480 ? 'left' : 'right',
+                  marginTop: window.innerWidth <= 480 ? '0' : '0'
+                }}>
                   <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Volume</div>
                   <div style={{ color: '#f8fafc', fontWeight: '600' }}>{stockDetails.volume?.toLocaleString() || 'N/A'}</div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '1rem'
+              }}>
                 {stockDetails.market_cap && (
                   <div>
                     <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Market Cap</div>
@@ -364,23 +424,39 @@ function StockTrading() {
             border: '1px solid rgba(245,158,11,0.2)',
             marginBottom: '2rem'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem',
+              flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
+              gap: window.innerWidth <= 768 ? '1rem' : '0'
+            }}>
+              <h3 style={{
+                color: '#f8fafc',
+                fontSize: window.innerWidth <= 768 ? '1.125rem' : '1.25rem',
+                fontWeight: '600',
+                margin: 0
+              }}>
                 Price Chart - {selectedStock?.symbol || 'AAPL'}
               </h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                flexWrap: window.innerWidth <= 768 ? 'wrap' : 'nowrap'
+              }}>
                 {(['1D', '1W', '1M', '3M', '6M', '1Y'] as const).map((tf) => (
                   <button
                     key={tf}
                     onClick={() => setTimeframe(tf)}
                     style={{
-                      padding: '0.5rem 1rem',
+                      padding: window.innerWidth <= 768 ? '0.4rem 0.8rem' : '0.5rem 1rem',
                       borderRadius: '6px',
                       border: timeframe === tf ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
                       background: timeframe === tf ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.05)',
                       color: '#f8fafc',
                       cursor: 'pointer',
-                      fontSize: '0.875rem',
+                      fontSize: window.innerWidth <= 768 ? '0.75rem' : '0.875rem',
                       fontWeight: timeframe === tf ? '600' : 'normal'
                     }}
                   >
@@ -389,7 +465,10 @@ function StockTrading() {
                 ))}
               </div>
             </div>
-            <div ref={chartContainerRef} style={{ width: '100%', height: '400px' }} />
+            <div ref={chartContainerRef} style={{
+              width: '100%',
+              height: window.innerWidth <= 768 ? '300px' : '400px'
+            }} />
           </div>
         </div>
 
@@ -397,9 +476,10 @@ function StockTrading() {
         <div style={{
           background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
           borderRadius: '12px',
-          padding: '1.5rem',
+          padding: window.innerWidth <= 768 ? '1.25rem' : '1.5rem',
           border: '1px solid rgba(245,158,11,0.2)',
-          height: 'fit-content'
+          height: 'fit-content',
+          width: window.innerWidth <= 768 ? '100%' : '400px'
         }}>
           <h3 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: '600', marginBottom: '1.5rem' }}>
             <i className="icofont-exchange" style={{ marginRight: '0.5rem', color: '#f59e0b' }}></i>
