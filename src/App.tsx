@@ -1,6 +1,3 @@
-import AdminVerifier from '@/components/AdminVerifier'
-import AdminResetter from '@/components/AdminResetter'
-import PasswordTester from '@/components/PasswordTester'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -13,7 +10,6 @@ import FAQ from '@/pages/FAQ'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
 import AdminLogin from '@/pages/AdminLogin'
-import AdminSeeder from '@/components/AdminSeeder'
 import AdminDashboard from '@/pages/dashboard/AdminDashboard'
 import UserDashboard from '@/pages/dashboard/UserDashboard'
 import Markets from '@/pages/Markets'
@@ -146,15 +142,6 @@ function App() {
             <AdminDashboard />
           </SuperAdminRoute>
         } />
-
-        {/* TEMP: Admin Seeder - Remove after use */}
-        <Route path="/admin-seed" element={<AdminSeeder />} />
-        {/* TEMP: Admin Resetter - Remove after use */}
-        <Route path="/admin-reset" element={<AdminResetter />} />
-        {/* TEMP: Admin Verifier - Remove after use */}
-        <Route path="/admin-verify" element={<AdminVerifier />} />
-        {/* TEMP: Password Tester - Remove after use */}
-        <Route path="/test-password" element={<PasswordTester />} />
         {/* Catch all route - redirects based on user role */}
         <Route path="*" element={<RoleBasedRedirect />} />
       </Routes>
