@@ -118,18 +118,36 @@ function AdminLogin() {
     setStatus({ state: 'loading', message: 'Authenticating…' })
 
     try {
+      console.log('Attempting login with:', form.email, form.password)
       const result = await login(form.email, form.password)
+      console.log('Login result:', result)
+      
       if (!result.success) {
-        setStatus({ state: 'error', message: 'Invalid email/username or password' })
+        console.log('Login failed:', result)
+        setStatus({ state: 'error', message: 'Invalid email/username or password.' })
         return
       }
+      
       const userData = localStorage.getItem('activeUser')
+      console.log('User data from localStorage:', userData)
       const user = userData ? JSON.parse(userData) : null
+      console.log('Parsed user:', user)
+      
+      if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
+        console.log('User role check failed:', user?.role)
+        setStatus({ state: 'error', message: 'You do not have admin access.' })
+        // Optionally clear session if not admin
+        localStorage.removeItem('user');
+        localStorage.removeItem('activeUser');
+        return;
+      }
+      
       const redirectPath = result.redirectTo || '/admin'
-      const userType = user?.role || 'admin'
-      setStatus({ state: 'success', message: `Welcome ${userType}! Redirecting to dashboard…` })
+      console.log('Redirecting to:', redirectPath)
+      setStatus({ state: 'success', message: `Welcome ${user.role}! Redirecting to dashboard…` })
       setTimeout(() => navigate(redirectPath), 1000)
     } catch (error: any) {
+      console.error('Login error:', error)
       setStatus({ state: 'error', message: error?.message || 'Login failed. Please try again.' })
     }
   }

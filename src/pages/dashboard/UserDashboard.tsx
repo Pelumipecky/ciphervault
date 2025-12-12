@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { supabaseDb } from '@/lib/supabaseUtils'
+import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 import { UserRole } from '@/utils/roles'
 import { fetchCryptoPrices, fetchDetailedCryptoPrices, formatPrice, formatMarketCap, CryptoPrice, CryptoPrices } from '@/utils/cryptoPrices'
@@ -84,6 +84,21 @@ function UserDashboard() {
   // Notifications modal state
   const [showNotifications, setShowNotifications] = useState(false);
 
+      // Helper to force balance refresh after deposit or admin update
+      async function refreshUserBalance() {
+        let userRaw = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser');
+        if (!userRaw) return;
+        let userData = JSON.parse(userRaw);
+        try {
+          const dbUser = await supabaseDb.getUserByIdnum(userData.idnum);
+          if (dbUser) {
+            userData = { ...userData, ...dbUser };
+            localStorage.setItem('activeUser', JSON.stringify(userData));
+          }
+          setCurrentUser(userData);
+        } catch {}
+      }
+
   // Live Crypto prices state
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({ BTC: 0, ETH: 0, USDT: 1, BNB: 0, XRP: 0, SOL: 0, DOGE: 0, ADA: 0 });
   const [cryptoDetails, setCryptoDetails] = useState<CryptoPrice[]>([]);
@@ -146,27 +161,21 @@ function UserDashboard() {
         // Initialize email service
         initializeEmailJS()
 
-        // Get user data from localStorage/sessionStorage
-        const userRaw = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser');
+        // Always fetch latest user data from database on mount
+        let userRaw = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser');
         if (!userRaw) {
           navigate('/login');
           return;
         }
-        const userData = JSON.parse(userRaw);
-
-        // Fetch real user data from database
+        let userData = JSON.parse(userRaw);
         try {
           const dbUser = await supabaseDb.getUserByIdnum(userData.idnum);
           if (dbUser) {
-            // Update localStorage with fresh data from database
-            const updatedUserData = { ...userData, ...dbUser };
-            localStorage.setItem('activeUser', JSON.stringify(updatedUserData));
-            setCurrentUser(updatedUserData);
-          } else {
-            setCurrentUser(userData);
+            userData = { ...userData, ...dbUser };
+            localStorage.setItem('activeUser', JSON.stringify(userData));
           }
+          setCurrentUser(userData);
         } catch (dbError) {
-          console.log('Could not fetch user data from database, using localStorage:', dbError);
           setCurrentUser(userData);
         }
 
@@ -257,14 +266,62 @@ function UserDashboard() {
           console.log('Could not fetch loans from database:', dbError);
           setLoans([]);
         }
+
+        // Set up real-time subscriptions
+        if (userData?.idnum) {
+          // KYC status updates subscription
+          const kycSubscription = supabaseRealtime.subscribeToKyc(async (payload) => {
+            console.log('KYC update received:', payload);
+            if (payload.new && payload.new.userId === userData.idnum) {
+              // Refresh KYC data when status changes
+              try {
+                const userKyc = await supabaseDb.getKycByUser(userData.idnum);
+                if (userKyc && userKyc.length > 0) {
+                  const latestKyc = userKyc.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())[0];
+                  setKycData(latestKyc);
+                  
+                  // Show notification for status change
+                  if (latestKyc.status === 'approved') {
+                    addNotification(
+                      'KYC Approved! ✅',
+                      'Your KYC verification has been approved. You can now access all platform features.',
+                      'success'
+                    );
+                    showAlert('success', 'KYC Approved!', 'Your KYC verification has been approved.');
+                  } else if (latestKyc.status === 'rejected') {
+                    addNotification(
+                      'KYC Update',
+                      'Your KYC verification was not approved. Please check your email for details and resubmit.',
+                      'warning'
+                    );
+                    showAlert('warning', 'KYC Update', 'Your KYC verification requires attention.');
+                  }
+                }
+              } catch (error) {
+                console.error('Error refreshing KYC data:', error);
+              }
+            }
+          });
+
+          // Store subscription for cleanup
+          (window as any).kycSubscription = kycSubscription;
+        }
       } catch (error) {
         console.error('Error initializing dashboard:', error);
         navigate('/login');
-      }
-      setLoading(false);
+      }      setLoading(false);
     }
     initDashboard();
   }, [navigate]);
+
+  // Cleanup subscriptions on unmount
+  useEffect(() => {
+    return () => {
+      if ((window as any).kycSubscription) {
+        (window as any).kycSubscription.unsubscribe();
+      }
+    };
+  }, []);
 
   // Placeholder alert/confirm functions
   function showAlert(type: string, title: string, message: string) {
@@ -939,6 +996,7 @@ function UserDashboard() {
         setInvestmentStep('select')
         setSelectedPlan(null)
         setInvestmentForm({ capital: '', paymentMethod: 'Bitcoin', transactionHash: '', bankSlip: null })
+        refreshUserBalance();
       }, 3000)
     } catch (error) {
       console.error('Error creating investment:', error)
@@ -1012,6 +1070,13 @@ function UserDashboard() {
           >
             <i className="icofont-dashboard-web"></i>
             <span>Dashboard</span>
+          </button>
+          <button
+            className="nav-item"
+            onClick={() => { navigate('/deposit'); setShowSidePanel(false); }}
+          >
+            <i className="icofont-plus-circle"></i>
+            <span>Deposit Funds</span>
           </button>
           <button
             className={`nav-item ${profileState === 'Wallet' ? 'active' : ''}`}
@@ -1203,6 +1268,11 @@ function UserDashboard() {
                   <h3>Quick Actions</h3>
                 </div>
                 <div className="actions-grid">
+                  <button className="action-card" onClick={() => navigate('/deposit')}>
+                    <i className="icofont-plus-circle"></i>
+                    <h4>Deposit Funds</h4>
+                    <p>Add money to your wallet</p>
+                  </button>
                   <button className="action-card" onClick={() => setProfileState('Investments')}>
                     <i className="icofont-plus-circle"></i>
                     <h4>New Investment</h4>
@@ -2462,7 +2532,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Verification Status</p>
-                    <h2 className="stat-value">Pending</h2>
+                      <h2 className="stat-value">{kycData?.status ? kycData.status.charAt(0).toUpperCase() + kycData.status.slice(1) : "Pending"}</h2>
                     <p className="stat-info">Complete verification to unlock features</p>
                   </div>
                 </div>
@@ -2627,7 +2697,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">KYC Status</p>
-                    <h2 className="stat-value">Pending</h2>
+                      <h2 className="stat-value">{kycData?.status ? kycData.status.charAt(0).toUpperCase() + kycData.status.slice(1) : "Pending"}</h2>
                     <p className="stat-info">Complete verification</p>
                   </div>
                 </div>
