@@ -25,47 +25,6 @@ function Signup() {
   const { signup } = useAuth()
   const navigate = useNavigate()
 
-  const createQuickAdmin = async () => {
-    const adminUser = {
-      id: 'USR' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0'),
-      idnum: 'ADMIN001',
-      name: 'Admin User',
-      userName: 'admin',
-      email: 'admin@ciphervault.com',
-      password: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-      balance: 10000,
-      bonus: 500,
-      referralCount: 0,
-      referralCode: 'ADMINREF001',
-      phoneNumber: '+1234567890',
-      country: 'United States',
-      city: 'New York',
-      address: '123 Admin Street',
-      role: 'admin',
-      avatar: '👨‍💼',
-      createdAt: new Date().toISOString()
-    }
-
-    // Save to localStorage for immediate access
-    localStorage.setItem('activeUser', JSON.stringify(adminUser))
-    sessionStorage.setItem('activeUser', JSON.stringify(adminUser))
-    
-    // Also save to users list for future logins
-    try {
-      const existingUsers = JSON.parse(localStorage.getItem('localUsers') || '[]')
-      const adminExists = existingUsers.find((u: any) => u.email === adminUser.email)
-      if (!adminExists) {
-        existingUsers.push(adminUser)
-        localStorage.setItem('localUsers', JSON.stringify(existingUsers))
-      }
-    } catch (e) {
-      console.log('Could not save to local users:', e)
-    }
-
-    setStatus({ state: 'success', message: '✅ Admin account created! Redirecting to admin panel...' })
-    setTimeout(() => navigate('/admin'), 1500)
-  }
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -269,34 +228,6 @@ function Signup() {
             disabled={status.state === 'loading'}
           >
             {status.state === 'loading' ? 'Creating Account...' : 'Sign Up'}
-          </button>
-
-          <button 
-            type="button"
-            onClick={createQuickAdmin}
-            style={{
-              width: '100%',
-              padding: '12px',
-              marginTop: '12px',
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(139,92,246,0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            🚀 Create Quick Admin Account (Test)
           </button>
         </form>
 

@@ -18,6 +18,11 @@ export default function AdminResetter() {
         setStatus('notfound');
         return;
       }
+      if (!admin.idnum) {
+        setError('Admin user ID is missing');
+        setStatus('error');
+        return;
+      }
       await supabaseDb.updateUser(admin.idnum, { password: hashedPassword });
       setStatus('success');
     } catch (e) {

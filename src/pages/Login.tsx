@@ -68,22 +68,6 @@ function Login() {
           <p>Welcome back to CipherVault Investments</p>
         </div>
 
-        {/* Demo Credentials Info */}
-        <div style={{ 
-          padding: '12px', 
-          background: 'rgba(240, 185, 11, 0.1)', 
-          border: '1px solid rgba(240, 185, 11, 0.3)',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          fontSize: '14px'
-        }}>
-          <strong>🔑 Demo Credentials:</strong>
-          <br />
-          <strong>👤 User:</strong> <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>demo@example.com</code> / <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>demo123</code>
-          <br />
-          <strong>👨‍💼 Admin:</strong> <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>admin@ciphervault.com</code> / <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>admin123</code>
-        </div>
-
         <form className="binance-form" onSubmit={handleSubmit}>
           <div className="binance-form__group">
             <label htmlFor="email">Email or Username</label>
