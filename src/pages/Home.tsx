@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { fetchDetailedCryptoPrices, formatPrice, CryptoPrice } from '@/utils/cryptoPrices'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
 // `stats` will be built inside the component to ensure translations are applied via `t()`
 
@@ -89,10 +88,6 @@ function Home() {
 
   return (
     <div className="home">
-      {/* Language Switcher for Home page */}
-      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 100 }}>
-        <LanguageSwitcher variant="home" />
-      </div>
       {/* Live Crypto Ticker */}
       {cryptoPrices.length > 0 && (
         <div style={{
