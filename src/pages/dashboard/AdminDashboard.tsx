@@ -1572,182 +1572,218 @@ function AdminDashboard() {
 
           {/* Loans Management Tab */}
           {activeTab === 'loans' && (
-            <div className="page-section">
-              <div className="page-header">
-                <h2><i className="icofont-money-bag"></i> Loan Requests</h2>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <span style={{
-                    background: 'rgba(240, 185, 11, 0.1)',
-                    color: '#f0b90b',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    fontSize: '0.875rem',
-                    fontWeight: 600
-                  }}>
-                    {pendingLoans} Pending
-                  </span>
-                  <span style={{
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    color: '#10b981',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    fontSize: '0.875rem',
-                    fontWeight: 600
-                  }}>
-                    ${totalLoanAmount.toLocaleString()} Approved
-                  </span>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600 }}>
+                  <i className="icofont-money-bag"></i> Loan Requests
+                </h3>
+                <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                  Total: ${totalLoanAmount.toLocaleString()} | Pending: {pendingLoans}
                 </div>
               </div>
 
               {/* Loan Stats */}
-              <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #f0b90b 0%, #d19e09 100%)' }}>
-                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+              <div className="stats-grid" style={{ marginBottom: '2rem' }}>
+                <div className="stat-card primary">
+                  <div className="stat-icon">
                     <i className="icofont-tasks-alt"></i>
                   </div>
-                  <div className="stat-info">
-                    <p className="stat-label" style={{ color: '#0f172a' }}>Total Requests</p>
-                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{allLoans.length}</h3>
+                  <div className="stat-details">
+                    <p className="stat-label">Total Requests</p>
+                    <h2 className="stat-value">{allLoans.length}</h2>
+                    <p className="stat-info">All loan applications</p>
                   </div>
                 </div>
 
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
-                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
                     <i className="icofont-clock-time"></i>
                   </div>
-                  <div className="stat-info">
-                    <p className="stat-label" style={{ color: '#0f172a' }}>Pending</p>
-                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{pendingLoans}</h3>
+                  <div className="stat-details">
+                    <p className="stat-label">Pending Review</p>
+                    <h2 className="stat-value">{pendingLoans}</h2>
+                    <p className="stat-info">Awaiting approval</p>
                   </div>
                 </div>
 
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
-                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
                     <i className="icofont-check-circled"></i>
                   </div>
-                  <div className="stat-info">
-                    <p className="stat-label" style={{ color: '#0f172a' }}>Approved</p>
-                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{allLoans.filter(l => l.status === 'approved').length}</h3>
+                  <div className="stat-details">
+                    <p className="stat-label">Approved</p>
+                    <h2 className="stat-value">{allLoans.filter(l => l.status === 'approved').length}</h2>
+                    <p className="stat-info">Successfully processed</p>
                   </div>
                 </div>
 
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>
-                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#0f172a' }}>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
                     <i className="icofont-close-circled"></i>
                   </div>
-                  <div className="stat-info">
-                    <p className="stat-label" style={{ color: '#0f172a' }}>Rejected</p>
-                    <h3 className="stat-value" style={{ color: '#0f172a' }}>{allLoans.filter(l => l.status === 'rejected').length}</h3>
+                  <div className="stat-details">
+                    <p className="stat-label">Rejected</p>
+                    <h2 className="stat-value">{allLoans.filter(l => l.status === 'rejected').length}</h2>
+                    <p className="stat-info">Declined applications</p>
                   </div>
                 </div>
               </div>
 
-              {/* Loans Table */}
-              <div className="table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Amount</th>
-                      <th>Duration</th>
-                      <th>Interest</th>
-                      <th>Purpose</th>
-                      <th>Status</th>
-                      <th>Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allLoans.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                          <i className="icofont-money-bag" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
-                          No loan requests found
-                        </td>
+              <div style={{
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                <div className="table-container">
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.875rem'
+                  }}>
+                    <thead>
+                      <tr style={{
+                        background: 'rgba(240,185,11,0.1)',
+                        borderBottom: '2px solid rgba(240,185,11,0.3)'
+                      }}>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>User</th>
+                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Amount</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Duration</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Interest</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Purpose</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Status</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Date</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Actions</th>
                       </tr>
-                    ) : (
-                      allLoans.map((loan, index) => (
-                        <tr key={loan.id || index}>
-                          <td>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontWeight: 500, color: '#f8fafc' }}>{loan.userName}</span>
-                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{loan.userEmail}</span>
-                            </div>
-                          </td>
-                          <td style={{ fontWeight: 600, color: '#f0b90b' }}>
-                            ${loan.amount?.toLocaleString() || '0'}
-                          </td>
-                          <td>{loan.duration || 30} days</td>
-                          <td>{loan.interestRate || 5}%</td>
-                          <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {loan.purpose || 'N/A'}
-                          </td>
-                          <td>
-                            <span style={{
-                              background: loan.status === 'approved' ? 'rgba(16,185,129,0.1)' :
-                                         loan.status === 'rejected' ? 'rgba(239,68,68,0.1)' :
-                                         'rgba(240,185,11,0.1)',
-                              color: loan.status === 'approved' ? '#10b981' :
-                                     loan.status === 'rejected' ? '#ef4444' :
-                                     '#f0b90b',
-                              padding: '0.25rem 0.75rem',
-                              borderRadius: '20px',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              textTransform: 'capitalize'
-                            }}>
-                              {loan.status || 'Pending'}
-                            </span>
-                          </td>
-                          <td style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-                            {loan.date ? new Date(loan.date).toLocaleDateString() : 'N/A'}
-                          </td>
-                          <td>
-                            {loan.status === 'pending' && (
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button
-                                  onClick={() => handleApproveLoan(loan)}
-                                  style={{
-                                    background: 'rgba(16,185,129,0.1)',
-                                    color: '#10b981',
-                                    border: '1px solid rgba(16,185,129,0.3)',
-                                    borderRadius: '6px',
-                                    padding: '0.375rem 0.75rem',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer',
-                                    fontWeight: 500
-                                  }}
-                                >
-                                  <i className="icofont-check"></i> Approve
-                                </button>
-                                <button
-                                  onClick={() => handleRejectLoan(loan)}
-                                  style={{
-                                    background: 'rgba(239,68,68,0.1)',
-                                    color: '#ef4444',
-                                    border: '1px solid rgba(239,68,68,0.3)',
-                                    borderRadius: '6px',
-                                    padding: '0.375rem 0.75rem',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer',
-                                    fontWeight: 500
-                                  }}
-                                >
-                                  <i className="icofont-close"></i> Reject
-                                </button>
-                              </div>
-                            )}
-                            {loan.status !== 'pending' && (
-                              <span style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                                {loan.status === 'approved' ? '✓ Processed' : '✗ Declined'}
-                              </span>
-                            )}
+                    </thead>
+                    <tbody>
+                      {allLoans.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                            <i className="icofont-money-bag" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
+                            No loan requests found
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        allLoans.map((loan, index) => (
+                          <tr
+                            key={loan.id || index}
+                            style={{
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(240,185,11,0.05)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent'
+                            }}
+                          >
+                            <td style={{ padding: '1rem', color: '#f8fafc', fontWeight: 500 }}>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span>{loan.userName}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>{loan.userEmail}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '1rem', textAlign: 'right', color: '#f0b90b', fontWeight: 600 }}>
+                              ${loan.amount?.toLocaleString() || '0'}
+                            </td>
+                            <td style={{ padding: '1rem', textAlign: 'center', color: '#cbd5e1' }}>
+                              {loan.duration || 30} days
+                            </td>
+                            <td style={{ padding: '1rem', textAlign: 'center', color: '#cbd5e1' }}>
+                              {loan.interestRate || 5}%
+                            </td>
+                            <td style={{ padding: '1rem', color: '#cbd5e1', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {loan.purpose || 'N/A'}
+                            </td>
+                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                              <span style={{
+                                padding: '0.375rem 0.875rem',
+                                borderRadius: '20px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                background: loan.status === 'approved' ? 'rgba(34,197,94,0.15)' :
+                                         loan.status === 'rejected' ? 'rgba(239,68,68,0.15)' :
+                                         'rgba(245,158,11,0.15)',
+                                color: loan.status === 'approved' ? '#4ade80' :
+                                       loan.status === 'rejected' ? '#f87171' :
+                                       '#fbbf24',
+                                border: `1px solid ${loan.status === 'approved' ? 'rgba(34,197,94,0.3)' :
+                                                 loan.status === 'rejected' ? 'rgba(239,68,68,0.3)' :
+                                                 'rgba(245,158,11,0.3)'}`
+                              }}>
+                                {loan.status || 'Pending'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.875rem' }}>
+                              {loan.date ? new Date(loan.date).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                              {loan.status === 'pending' && (
+                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                  <button
+                                    onClick={() => handleApproveLoan(loan)}
+                                    style={{
+                                      padding: '0.5rem 1rem',
+                                      background: 'rgba(34,197,94,0.1)',
+                                      border: '1px solid rgba(34,197,94,0.3)',
+                                      borderRadius: '6px',
+                                      color: '#10b981',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer',
+                                      fontWeight: 500,
+                                      transition: 'all 0.3s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.background = 'rgba(34,197,94,0.2)'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background = 'rgba(34,197,94,0.1)'
+                                    }}
+                                  >
+                                    <i className="icofont-check"></i> Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectLoan(loan)}
+                                    style={{
+                                      padding: '0.5rem 1rem',
+                                      background: 'rgba(239,68,68,0.1)',
+                                      border: '1px solid rgba(239,68,68,0.3)',
+                                      borderRadius: '6px',
+                                      color: '#ef4444',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer',
+                                      fontWeight: 500,
+                                      transition: 'all 0.3s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.background = 'rgba(239,68,68,0.2)'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background = 'rgba(239,68,68,0.1)'
+                                    }}
+                                  >
+                                    <i className="icofont-close"></i> Reject
+                                  </button>
+                                </div>
+                              )}
+                              {loan.status !== 'pending' && (
+                                <span style={{
+                                  color: loan.status === 'approved' ? '#10b981' : '#ef4444',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600
+                                }}>
+                                  {loan.status === 'approved' ? '✓ Approved' : '✗ Rejected'}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

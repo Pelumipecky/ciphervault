@@ -165,6 +165,11 @@ function App() {
             <AdminDashboard />
           </AdminRoute>
         } />
+        <Route path="/admin/loans-management" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
 
         {/* Super Admin Only Routes */}
         <Route path="/admin/system-settings" element={

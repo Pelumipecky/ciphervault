@@ -108,7 +108,40 @@ CREATE TABLE IF NOT EXISTS loans (
   "totalRepayment" NUMERIC,
   date TIMESTAMP DEFAULT NOW(),
   created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  updated_at TIMESTAMP DEFAULT NOW(),
+
+  -- Personal Information
+  "fullName" TEXT,
+  "dateOfBirth" DATE,
+  "phoneNumber" TEXT,
+  address TEXT,
+  city TEXT,
+  country TEXT,
+  "maritalStatus" TEXT,
+  dependents INTEGER,
+
+  -- Work Information
+  "employmentStatus" TEXT,
+  "employerName" TEXT,
+  "jobTitle" TEXT,
+  "monthlyIncome" NUMERIC,
+  "workExperience" INTEGER,
+  "employerPhone" TEXT,
+  "employerAddress" TEXT,
+
+  -- Financial Information
+  "monthlyExpenses" NUMERIC,
+  "otherIncome" NUMERIC,
+  "existingDebts" NUMERIC,
+  collateral TEXT,
+
+  -- References
+  "reference1Name" TEXT,
+  "reference1Phone" TEXT,
+  "reference1Relationship" TEXT,
+  "reference2Name" TEXT,
+  "reference2Phone" TEXT,
+  "reference2Relationship" TEXT
 );
 
 -- Create indexes for faster queries

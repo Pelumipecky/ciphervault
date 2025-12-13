@@ -44,6 +44,8 @@ interface Investment {
   earnedRoi?: number       // ROI earned so far (credited daily)
   totalExpectedRoi?: number // Total expected ROI at end of duration
   bonus?: number
+  creditedRoi?: number     // Total ROI credited to user
+  creditedBonus?: number   // Total bonus credited to user
   status?: string
   date?: string
   startDate?: string       // When investment was activated
@@ -308,11 +310,114 @@ function UserDashboard() {
 
           // Store subscription for cleanup
           (window as any).kycSubscription = kycSubscription;
+
+          // Loan status updates subscription
+          const loanSubscription = supabaseRealtime.subscribeToLoans(async (payload) => {
+            console.log('Loan update received:', payload);
+            if (payload.new && payload.new.idnum === userData.idnum) {
+              // Refresh loan data when status changes
+              try {
+                const userLoans = await supabaseDb.getLoansByUser(userData.idnum);
+                if (userLoans && userLoans.length > 0) {
+                  setLoans(userLoans);
+
+                  // Show notification for status change
+                  const updatedLoan = userLoans.find(l => l.id === payload.new.id);
+                  if (updatedLoan) {
+                    if (updatedLoan.status === 'approved') {
+                      addNotification(
+                        'Loan Approved! 🎉',
+                        `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been approved.`,
+                        'success'
+                      );
+                      showAlert('success', 'Loan Approved!', `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been approved.`);
+                    } else if (updatedLoan.status === 'rejected') {
+                      addNotification(
+                        'Loan Application Update',
+                        `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been reviewed.`,
+                        'warning'
+                      );
+                      showAlert('warning', 'Loan Application Update', 'Your loan request has been reviewed. Please check your dashboard for details.');
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error('Error refreshing loan data:', error);
+              }
+            }
+          });
+
+          // Store subscription for cleanup
+          (window as any).loanSubscription = loanSubscription;
+
+          // Investment status updates subscription
+          const investmentSubscription = supabaseRealtime.subscribeToInvestments(async (payload) => {
+            console.log('Investment update received:', payload);
+            if (payload.new && payload.new.idnum === userData.idnum) {
+              // Refresh investment data when status changes
+              try {
+                const userInvestments = await supabaseDb.getInvestmentsByUser(userData.idnum);
+                setInvestments(userInvestments);
+
+                // Show notification for status change
+                const updatedInvestment = userInvestments.find(inv => inv.id === payload.new.id);
+                if (updatedInvestment) {
+                  if (updatedInvestment.status === 'Active') {
+                    addNotification(
+                      'Investment Approved! 🎉',
+                      `Your investment of $${updatedInvestment.capital?.toLocaleString()} in ${updatedInvestment.plan} has been approved and is now active.`,
+                      'success'
+                    );
+                    showAlert('success', 'Investment Approved!', `Your investment of $${updatedInvestment.capital?.toLocaleString()} has been approved and is now active.`);
+                  } else if (updatedInvestment.status === 'Rejected') {
+                    addNotification(
+                      'Investment Application Update',
+                      `Your investment request of $${updatedInvestment.capital?.toLocaleString()} has been reviewed.`,
+                      'warning'
+                    );
+                    showAlert('warning', 'Investment Application Update', 'Your investment request has been reviewed. Please check your dashboard for details.');
+                  }
+                }
+              } catch (error) {
+                console.error('Error refreshing investment data:', error);
+              }
+            }
+          });
+
+          // Store subscription for cleanup
+          (window as any).investmentSubscription = investmentSubscription;
+
+          // Withdrawal status updates subscription
+          const withdrawalSubscription = supabaseRealtime.subscribeToWithdrawals(async (payload) => {
+            console.log('Withdrawal update received:', payload);
+            if (payload.new && payload.new.idnum === userData.idnum) {
+              // Show notification for status change (withdrawals are not stored in state since they're not displayed in UI)
+              if (payload.new.status === 'Approved') {
+                addNotification(
+                  'Withdrawal Approved! ✅',
+                  `Your withdrawal request of $${payload.new.amount?.toLocaleString()} has been approved and processed.`,
+                  'success'
+                );
+                showAlert('success', 'Withdrawal Approved!', `Your withdrawal request of $${payload.new.amount?.toLocaleString()} has been approved and processed.`);
+              } else if (payload.new.status === 'Rejected') {
+                addNotification(
+                  'Withdrawal Request Update',
+                  `Your withdrawal request of $${payload.new.amount?.toLocaleString()} has been reviewed.`,
+                  'warning'
+                );
+                showAlert('warning', 'Withdrawal Request Update', 'Your withdrawal request has been reviewed. Please check your dashboard for details.');
+              }
+            }
+          });
+
+          // Store subscription for cleanup
+          (window as any).withdrawalSubscription = withdrawalSubscription;
         }
       } catch (error) {
         console.error('Error initializing dashboard:', error);
         navigate('/login');
-      }      setLoading(false);
+      }
+      setLoading(false);
     }
     initDashboard();
   }, [navigate]);
@@ -322,6 +427,15 @@ function UserDashboard() {
     return () => {
       if ((window as any).kycSubscription) {
         (window as any).kycSubscription.unsubscribe();
+      }
+      if ((window as any).loanSubscription) {
+        (window as any).loanSubscription.unsubscribe();
+      }
+      if ((window as any).investmentSubscription) {
+        (window as any).investmentSubscription.unsubscribe();
+      }
+      if ((window as any).withdrawalSubscription) {
+        (window as any).withdrawalSubscription.unsubscribe();
       }
     };
   }, []);
@@ -408,11 +522,43 @@ function UserDashboard() {
   
   // Loan modal states
   const [showLoanModal, setShowLoanModal] = useState(false)
-  const [loanStep, setLoanStep] = useState<'amount' | 'terms' | 'confirm' | 'success'>('amount')
+  const [loanStep, setLoanStep] = useState<'personal' | 'work' | 'financial' | 'confirm' | 'success'>('personal')
   const [loanForm, setLoanForm] = useState({
+    // Personal Information
+    fullName: currentUser?.name || currentUser?.userName || '',
+    dateOfBirth: '',
+    phoneNumber: currentUser?.phoneNumber || '',
+    address: currentUser?.address || '',
+    city: currentUser?.city || '',
+    country: currentUser?.country || '',
+    maritalStatus: '',
+    dependents: '',
+
+    // Work Information
+    employmentStatus: '',
+    employerName: '',
+    jobTitle: '',
+    monthlyIncome: '',
+    workExperience: '',
+    employerPhone: '',
+    employerAddress: '',
+
+    // Financial Information
     amount: '',
     duration: '30',
-    purpose: ''
+    purpose: '',
+    monthlyExpenses: '',
+    otherIncome: '',
+    existingDebts: '',
+    collateral: '',
+
+    // References
+    reference1Name: '',
+    reference1Phone: '',
+    reference1Relationship: '',
+    reference2Name: '',
+    reference2Phone: '',
+    reference2Relationship: ''
   });
 
   const handleLogout = () => {
@@ -626,6 +772,12 @@ function UserDashboard() {
         setInvestments(userInvestments)
         localStorage.setItem('userInvestments', JSON.stringify(userInvestments))
         setInvestmentStep('success')
+        // Add notification for investment submission
+        addNotification(
+          'Investment Submitted! 📈',
+          `Your ${selectedPlan.name} investment of $${parseFloat(investmentForm.capital).toLocaleString()} has been submitted for review.`,
+          'info'
+        )
         // Show classy popup
         showAlert(
           'success',
@@ -845,12 +997,27 @@ function UserDashboard() {
 
   // Loan modal handlers
   const handleStartLoan = () => {
-    setLoanStep('amount')
+    setLoanStep('personal')
     setShowLoanModal(true)
   }
 
   const handleLoanNext = async () => {
-    if (loanStep === 'amount') {
+    if (loanStep === 'personal') {
+      // Validate personal information
+      if (!loanForm.fullName || !loanForm.dateOfBirth || !loanForm.phoneNumber || !loanForm.address || !loanForm.city || !loanForm.country) {
+        showAlert('error', t('alerts.titleMissingInformation'), 'Please fill in all personal information fields.')
+        return
+      }
+      setLoanStep('work')
+    } else if (loanStep === 'work') {
+      // Validate work information
+      if (!loanForm.employmentStatus || !loanForm.employerName || !loanForm.jobTitle || !loanForm.monthlyIncome || !loanForm.workExperience) {
+        showAlert('error', t('alerts.titleMissingInformation'), 'Please fill in all work information fields.')
+        return
+      }
+      setLoanStep('financial')
+    } else if (loanStep === 'financial') {
+      // Validate financial information
       const amount = parseFloat(loanForm.amount)
       const maxLoan = totalCapital * 0.5
       if (!amount || amount < 100) {
@@ -861,10 +1028,8 @@ function UserDashboard() {
         showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountMax', { max: maxLoan.toLocaleString() }))
         return
       }
-      setLoanStep('terms')
-    } else if (loanStep === 'terms') {
-      if (!loanForm.purpose) {
-        showAlert('error', t('alerts.titleMissingInformation'), t('alerts.missingInformation'))
+      if (!loanForm.purpose || !loanForm.monthlyExpenses) {
+        showAlert('error', t('alerts.titleMissingInformation'), 'Please fill in loan purpose and monthly expenses.')
         return
       }
       setLoanStep('confirm')
@@ -872,7 +1037,7 @@ function UserDashboard() {
       // Submit loan request to database
       try {
         const amount = parseFloat(loanForm.amount)
-        const interestRate = 5 // 5% monthly
+        const interestRate = loanForm.duration === '30' ? 5 : loanForm.duration === '60' ? 10 : 15
         const duration = parseInt(loanForm.duration)
         const interestAmount = amount * (interestRate / 100) * (duration / 30)
         const totalRepayment = amount + interestAmount
@@ -886,7 +1051,40 @@ function UserDashboard() {
           totalRepayment,
           status: 'pending',
           authStatus: 'pending',
-          date: new Date().toISOString()
+          date: new Date().toISOString(),
+
+          // Personal Information
+          fullName: loanForm.fullName,
+          dateOfBirth: loanForm.dateOfBirth,
+          phoneNumber: loanForm.phoneNumber,
+          address: loanForm.address,
+          city: loanForm.city,
+          country: loanForm.country,
+          maritalStatus: loanForm.maritalStatus,
+          dependents: loanForm.dependents ? parseInt(loanForm.dependents) : null,
+
+          // Work Information
+          employmentStatus: loanForm.employmentStatus,
+          employerName: loanForm.employerName,
+          jobTitle: loanForm.jobTitle,
+          monthlyIncome: loanForm.monthlyIncome ? parseFloat(loanForm.monthlyIncome) : null,
+          workExperience: loanForm.workExperience ? parseInt(loanForm.workExperience) : null,
+          employerPhone: loanForm.employerPhone,
+          employerAddress: loanForm.employerAddress,
+
+          // Financial Information
+          monthlyExpenses: loanForm.monthlyExpenses ? parseFloat(loanForm.monthlyExpenses) : null,
+          otherIncome: loanForm.otherIncome ? parseFloat(loanForm.otherIncome) : null,
+          existingDebts: loanForm.existingDebts ? parseFloat(loanForm.existingDebts) : null,
+          collateral: loanForm.collateral,
+
+          // References
+          reference1Name: loanForm.reference1Name,
+          reference1Phone: loanForm.reference1Phone,
+          reference1Relationship: loanForm.reference1Relationship,
+          reference2Name: loanForm.reference2Name,
+          reference2Phone: loanForm.reference2Phone,
+          reference2Relationship: loanForm.reference2Relationship
         }
         
         const savedLoan = await supabaseDb.createLoan(newLoan)
@@ -917,20 +1115,56 @@ function UserDashboard() {
   }
 
   const handleLoanBack = () => {
-    if (loanStep === 'terms') {
-      setLoanStep('amount')
+    if (loanStep === 'work') {
+      setLoanStep('personal')
+    } else if (loanStep === 'financial') {
+      setLoanStep('work')
     } else if (loanStep === 'confirm') {
-      setLoanStep('terms')
+      setLoanStep('financial')
+    } else if (loanStep === 'success') {
+      setLoanStep('confirm')
     }
   }
 
   const closeLoanModal = () => {
     setShowLoanModal(false)
-    setLoanStep('amount')
+    setLoanStep('personal')
     setLoanForm({
+      // Personal Information
+      fullName: currentUser?.name || currentUser?.userName || '',
+      dateOfBirth: '',
+      phoneNumber: currentUser?.phoneNumber || '',
+      address: currentUser?.address || '',
+      city: currentUser?.city || '',
+      country: currentUser?.country || '',
+      maritalStatus: '',
+      dependents: '',
+
+      // Work Information
+      employmentStatus: '',
+      employerName: '',
+      jobTitle: '',
+      monthlyIncome: '',
+      workExperience: '',
+      employerPhone: '',
+      employerAddress: '',
+
+      // Financial Information
       amount: '',
       duration: '30',
-      purpose: ''
+      purpose: '',
+      monthlyExpenses: '',
+      otherIncome: '',
+      existingDebts: '',
+      collateral: '',
+
+      // References
+      reference1Name: '',
+      reference1Phone: '',
+      reference1Relationship: '',
+      reference2Name: '',
+      reference2Phone: '',
+      reference2Relationship: ''
     })
   }
 
@@ -1038,6 +1272,7 @@ function UserDashboard() {
   const totalCapital = approvedInvestments.reduce((sum, inv) => sum + (inv.capital || 0), 0)
   const totalROI = approvedInvestments.reduce((sum, inv) => sum + (inv.roi || 0), 0)
   const totalBonus = approvedInvestments.reduce((sum, inv) => sum + (inv.bonus || 0), 0)
+  const totalReturns = approvedInvestments.reduce((sum, inv) => sum + (inv.creditedRoi || 0) + (inv.creditedBonus || 0), 0)
   const totalBalance = (currentUser?.balance || 0) + (currentUser?.bonus || 0)
 
   // Deposit submit handler
@@ -1258,7 +1493,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Total Returns</p>
-                    <h2 className="stat-value">${totalROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+                    <h2 className="stat-value">${totalReturns.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
                     <p className="stat-change positive">+${totalBonus.toLocaleString()} bonus</p>
                   </div>
                 </div>
@@ -1858,7 +2093,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Total Returns</p>
-                    <h2 className="stat-value">${approvedInvestments.reduce((sum, inv) => sum + (inv.roi || 0), 0).toLocaleString()}</h2>
+                    <h2 className="stat-value">${totalReturns.toLocaleString()}</h2>
                     <p className="stat-info">Profit earned</p>
                   </div>
                 </div>
@@ -5100,10 +5335,10 @@ function UserDashboard() {
             }}>
               <div>
                 <h3 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                  Request Loan
+                  Loan Application
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>
-                  Step {loanStep === 'amount' ? '1' : loanStep === 'terms' ? '2' : loanStep === 'confirm' ? '3' : '4'} of 4
+                  Step {loanStep === 'personal' ? '1' : loanStep === 'work' ? '2' : loanStep === 'financial' ? '3' : loanStep === 'confirm' ? '4' : '5'} of 5
                 </p>
               </div>
               <button
@@ -5128,316 +5363,781 @@ function UserDashboard() {
 
             {/* Modal Body */}
             <div style={{ padding: '2rem' }}>
-              {/* Step 1: Amount */}
-              {loanStep === 'amount' && (
+              {/* Step 1: Personal Information */}
+              {loanStep === 'personal' && (
                 <div>
                   <h4 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>
-                    How Much Do You Need?
+                    Personal Information
                   </h4>
-                  <div style={{
-                    background: 'rgba(59,130,246,0.1)',
-                    border: '1px solid rgba(59,130,246,0.3)',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
-                    marginBottom: '1.5rem'
-                  }}>
-                    <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Maximum Available</p>
-                    <h2 style={{ color: '#60a5fa', fontSize: '2rem', fontWeight: 700, margin: 0 }}>
-                      ${(totalCapital * 0.5).toLocaleString()}
-                    </h2>
-                    <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.25rem' }}>Based on 50% of your total investment</p>
-                  </div>
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
-                      Loan Amount (USD) <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input
-                      type="number"
-                      value={loanForm.amount}
-                      onChange={(e) => setLoanForm({ ...loanForm, amount: e.target.value })}
-                      placeholder="Enter loan amount"
-                      min="100"
-                      max={totalCapital * 0.5}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                        color: '#f8fafc',
-                        fontSize: '1rem',
-                        fontWeight: 500
-                      }}
-                    />
-                    <small style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.5rem', display: 'block' }}>
-                      Min: $100 | Max: ${(totalCapital * 0.5).toLocaleString()}
-                    </small>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {[500, 1000, 2500, 5000].map(amount => (
-                      amount <= totalCapital * 0.5 && (
-                        <button
-                          key={amount}
-                          onClick={() => setLoanForm({ ...loanForm, amount: amount.toString() })}
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Full Name <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={loanForm.fullName}
+                          onChange={(e) => setLoanForm({ ...loanForm, fullName: e.target.value })}
+                          placeholder="Enter your full name"
                           style={{
-                            padding: '0.5rem 1rem',
+                            width: '100%',
+                            padding: '0.75rem',
                             background: 'rgba(255,255,255,0.05)',
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '8px',
-                            color: '#60a5fa',
-                            fontSize: '0.875rem',
-                            cursor: 'pointer',
-                            fontWeight: 500
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
                           }}
-                        >
-                          ${amount.toLocaleString()}
-                        </button>
-                      )
-                    ))}
-                    <button
-                      onClick={() => setLoanForm({ ...loanForm, amount: (totalCapital * 0.5).toString() })}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: 'rgba(59,130,246,0.1)',
-                        border: '1px solid rgba(59,130,246,0.3)',
-                        borderRadius: '8px',
-                        color: '#60a5fa',
-                        fontSize: '0.875rem',
-                        cursor: 'pointer',
-                        fontWeight: 600
-                      }}
-                    >
-                      Max
-                    </button>
-                  </div>
-                  {loanForm.amount && parseFloat(loanForm.amount) >= 100 && (
-                    <div style={{
-                      marginTop: '1.5rem',
-                      background: 'rgba(240,185,11,0.1)',
-                      border: '1px solid rgba(240,185,11,0.3)',
-                      borderRadius: '12px',
-                      padding: '1rem'
-                    }}>
-                      <h5 style={{ color: '#f0b90b', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem' }}>
-                        Loan Calculation
-                      </h5>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>Principal:</span>
-                        <span style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 600 }}>
-                          ${parseFloat(loanForm.amount).toLocaleString()}
-                        </span>
+                        />
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>Interest (5%):</span>
-                        <span style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 600 }}>
-                          ${(parseFloat(loanForm.amount) * 0.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.75rem', borderTop: '1px solid rgba(240,185,11,0.3)' }}>
-                        <span style={{ color: '#f0b90b', fontSize: '0.875rem', fontWeight: 600 }}>Total Repayment:</span>
-                        <span style={{ color: '#f0b90b', fontSize: '1rem', fontWeight: 700 }}>
-                          ${(parseFloat(loanForm.amount) * 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Date of Birth <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={loanForm.dateOfBirth}
+                          onChange={(e) => setLoanForm({ ...loanForm, dateOfBirth: e.target.value })}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
                       </div>
                     </div>
-                  )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Phone Number <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          value={loanForm.phoneNumber}
+                          onChange={(e) => setLoanForm({ ...loanForm, phoneNumber: e.target.value })}
+                          placeholder="+1 (555) 123-4567"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Marital Status
+                        </label>
+                        <select
+                          value={loanForm.maritalStatus}
+                          onChange={(e) => setLoanForm({ ...loanForm, maritalStatus: e.target.value })}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        >
+                          <option value="">Select status</option>
+                          <option value="single">Single</option>
+                          <option value="married">Married</option>
+                          <option value="divorced">Divorced</option>
+                          <option value="widowed">Widowed</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Address <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={loanForm.address}
+                        onChange={(e) => setLoanForm({ ...loanForm, address: e.target.value })}
+                        placeholder="Street address"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem'
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          City <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={loanForm.city}
+                          onChange={(e) => setLoanForm({ ...loanForm, city: e.target.value })}
+                          placeholder="City"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Country <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={loanForm.country}
+                          onChange={(e) => setLoanForm({ ...loanForm, country: e.target.value })}
+                          placeholder="Country"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Number of Dependents
+                      </label>
+                      <input
+                        type="number"
+                        value={loanForm.dependents}
+                        onChange={(e) => setLoanForm({ ...loanForm, dependents: e.target.value })}
+                        placeholder="0"
+                        min="0"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem'
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Step 2: Terms */}
-              {loanStep === 'terms' && (
+              {/* Step 2: Work Information */}
+              {loanStep === 'work' && (
                 <div>
                   <h4 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>
-                    Loan Terms & Purpose
+                    Employment Information
                   </h4>
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
-                      Loan Duration <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                      {[
-                        { value: '30', label: '30 Days', interest: '5%' },
-                        { value: '60', label: '60 Days', interest: '10%' },
-                        { value: '90', label: '90 Days', interest: '15%' }
-                      ].map(option => (
-                        <button
-                          key={option.value}
-                          onClick={() => setLoanForm({ ...loanForm, duration: option.value })}
-                          style={{
-                            padding: '1.25rem',
-                            background: loanForm.duration === option.value ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.03)',
-                            border: loanForm.duration === option.value ? '2px solid #60a5fa' : '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '12px',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                          }}
-                        >
-                          <div>
-                            <div style={{ color: '#f8fafc', fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem' }}>{option.label}</div>
-                            <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Total Interest: {option.interest}</div>
-                          </div>
-                          <div style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            border: loanForm.duration === option.value ? '2px solid #60a5fa' : '2px solid rgba(255,255,255,0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            {loanForm.duration === option.value && (
-                              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#60a5fa' }}></div>
-                            )}
-                          </div>
-                        </button>
-                      ))}
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Employment Status <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <select
+                        value={loanForm.employmentStatus}
+                        onChange={(e) => setLoanForm({ ...loanForm, employmentStatus: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        <option value="">Select employment status</option>
+                        <option value="employed">Employed (Full-time)</option>
+                        <option value="self-employed">Self-Employed</option>
+                        <option value="part-time">Part-time</option>
+                        <option value="unemployed">Unemployed</option>
+                        <option value="retired">Retired</option>
+                        <option value="student">Student</option>
+                      </select>
                     </div>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
-                      Loan Purpose <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <textarea
-                      value={loanForm.purpose}
-                      onChange={(e) => setLoanForm({ ...loanForm, purpose: e.target.value })}
-                      placeholder="Please describe how you plan to use this loan..."
-                      rows={4}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                        color: '#f8fafc',
-                        fontSize: '0.875rem',
-                        resize: 'vertical'
-                      }}
-                    />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Employer Name <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={loanForm.employerName}
+                          onChange={(e) => setLoanForm({ ...loanForm, employerName: e.target.value })}
+                          placeholder="Company name"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Job Title <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={loanForm.jobTitle}
+                          onChange={(e) => setLoanForm({ ...loanForm, jobTitle: e.target.value })}
+                          placeholder="Your position"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Monthly Income <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={loanForm.monthlyIncome}
+                          onChange={(e) => setLoanForm({ ...loanForm, monthlyIncome: e.target.value })}
+                          placeholder="5000"
+                          min="0"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Work Experience (Years) <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={loanForm.workExperience}
+                          onChange={(e) => setLoanForm({ ...loanForm, workExperience: e.target.value })}
+                          placeholder="5"
+                          min="0"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Employer Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={loanForm.employerPhone}
+                        onChange={(e) => setLoanForm({ ...loanForm, employerPhone: e.target.value })}
+                        placeholder="+1 (555) 123-4567"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Employer Address
+                      </label>
+                      <input
+                        type="text"
+                        value={loanForm.employerAddress}
+                        onChange={(e) => setLoanForm({ ...loanForm, employerAddress: e.target.value })}
+                        placeholder="Company address"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem'
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 3: Confirm */}
+              {/* Step 3: Financial Information */}
+              {loanStep === 'financial' && (
+                <div>
+                  <h4 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+                    Financial Information & Loan Details
+                  </h4>
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{
+                      background: 'rgba(59,130,246,0.1)',
+                      border: '1px solid rgba(59,130,246,0.3)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      marginBottom: '1rem'
+                    }}>
+                      <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Maximum Available Loan</p>
+                      <h2 style={{ color: '#60a5fa', fontSize: '2rem', fontWeight: 700, margin: 0 }}>
+                        ${(totalCapital * 0.5).toLocaleString()}
+                      </h2>
+                      <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.25rem' }}>Based on 50% of your total investment</p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Monthly Expenses <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={loanForm.monthlyExpenses}
+                          onChange={(e) => setLoanForm({ ...loanForm, monthlyExpenses: e.target.value })}
+                          placeholder="2000"
+                          min="0"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Other Monthly Income
+                        </label>
+                        <input
+                          type="number"
+                          value={loanForm.otherIncome}
+                          onChange={(e) => setLoanForm({ ...loanForm, otherIncome: e.target.value })}
+                          placeholder="500"
+                          min="0"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Existing Debts
+                      </label>
+                      <input
+                        type="number"
+                        value={loanForm.existingDebts}
+                        onChange={(e) => setLoanForm({ ...loanForm, existingDebts: e.target.value })}
+                        placeholder="0"
+                        min="0"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Loan Amount (USD) <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={loanForm.amount}
+                        onChange={(e) => setLoanForm({ ...loanForm, amount: e.target.value })}
+                        placeholder="Enter loan amount"
+                        min="100"
+                        max={totalCapital * 0.5}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '1rem',
+                          fontWeight: 500
+                        }}
+                      />
+                      <small style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.5rem', display: 'block' }}>
+                        Min: $100 | Max: ${(totalCapital * 0.5).toLocaleString()}
+                      </small>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Loan Duration <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <div style={{ display: 'grid', gap: '0.5rem' }}>
+                        {[
+                          { value: '30', label: '30 Days', interest: '5%' },
+                          { value: '60', label: '60 Days', interest: '10%' },
+                          { value: '90', label: '90 Days', interest: '15%' }
+                        ].map(option => (
+                          <button
+                            key={option.value}
+                            onClick={() => setLoanForm({ ...loanForm, duration: option.value })}
+                            style={{
+                              padding: '1rem',
+                              background: loanForm.duration === option.value ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.03)',
+                              border: loanForm.duration === option.value ? '2px solid #60a5fa' : '1px solid rgba(255,255,255,0.1)',
+                              borderRadius: '8px',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease'
+                            }}
+                          >
+                            <div style={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{option.label}</div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Interest Rate: {option.interest}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Loan Purpose <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <textarea
+                        value={loanForm.purpose}
+                        onChange={(e) => setLoanForm({ ...loanForm, purpose: e.target.value })}
+                        placeholder="Please describe how you plan to use this loan..."
+                        rows={3}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem',
+                          resize: 'vertical'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500 }}>
+                        Collateral (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={loanForm.collateral}
+                        onChange={(e) => setLoanForm({ ...loanForm, collateral: e.target.value })}
+                        placeholder="Any assets you can offer as collateral"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          fontSize: '0.875rem'
+                        }}
+                      />
+                    </div>
+
+                    {loanForm.amount && parseFloat(loanForm.amount) >= 100 && (
+                      <div style={{
+                        background: 'rgba(240,185,11,0.1)',
+                        border: '1px solid rgba(240,185,11,0.3)',
+                        borderRadius: '12px',
+                        padding: '1rem'
+                      }}>
+                        <h5 style={{ color: '#f0b90b', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                          Loan Calculation
+                        </h5>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                          <span style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>Principal:</span>
+                          <span style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 600 }}>
+                            ${parseFloat(loanForm.amount).toLocaleString()}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                          <span style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>Interest ({loanForm.duration === '30' ? '5%' : loanForm.duration === '60' ? '10%' : '15%'}):</span>
+                          <span style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 600 }}>
+                            ${(parseFloat(loanForm.amount) * (loanForm.duration === '30' ? 0.05 : loanForm.duration === '60' ? 0.10 : 0.15)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.75rem', borderTop: '1px solid rgba(240,185,11,0.3)' }}>
+                          <span style={{ color: '#f0b90b', fontSize: '0.875rem', fontWeight: 600 }}>Total Repayment:</span>
+                          <span style={{ color: '#f0b90b', fontSize: '1rem', fontWeight: 700 }}>
+                            ${(parseFloat(loanForm.amount) * (loanForm.duration === '30' ? 1.05 : loanForm.duration === '60' ? 1.10 : 1.15)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: References */}
               {loanStep === 'confirm' && (
                 <div>
                   <h4 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>
-                    Review Loan Application
+                    References
+                  </h4>
+                  <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    <div style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      padding: '1rem'
+                    }}>
+                      <h5 style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Reference 1</h5>
+                      <div style={{ display: 'grid', gap: '0.75rem' }}>
+                        <input
+                          type="text"
+                          value={loanForm.reference1Name}
+                          onChange={(e) => setLoanForm({ ...loanForm, reference1Name: e.target.value })}
+                          placeholder="Full name"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '4px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                        <input
+                          type="tel"
+                          value={loanForm.reference1Phone}
+                          onChange={(e) => setLoanForm({ ...loanForm, reference1Phone: e.target.value })}
+                          placeholder="Phone number"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '4px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={loanForm.reference1Relationship}
+                          onChange={(e) => setLoanForm({ ...loanForm, reference1Relationship: e.target.value })}
+                          placeholder="Relationship (e.g., friend, colleague)"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '4px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      padding: '1rem'
+                    }}>
+                      <h5 style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Reference 2</h5>
+                      <div style={{ display: 'grid', gap: '0.75rem' }}>
+                        <input
+                          type="text"
+                          value={loanForm.reference2Name}
+                          onChange={(e) => setLoanForm({ ...loanForm, reference2Name: e.target.value })}
+                          placeholder="Full name"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '4px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                        <input
+                          type="tel"
+                          value={loanForm.reference2Phone}
+                          onChange={(e) => setLoanForm({ ...loanForm, reference2Phone: e.target.value })}
+                          placeholder="Phone number"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '4px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={loanForm.reference2Relationship}
+                          onChange={(e) => setLoanForm({ ...loanForm, reference2Relationship: e.target.value })}
+                          placeholder="Relationship (e.g., family, neighbor)"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '4px',
+                            color: '#f8fafc',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: 'rgba(59,130,246,0.1)',
+                      border: '1px solid rgba(59,130,246,0.3)',
+                      borderRadius: '8px',
+                      padding: '1rem'
+                    }}>
+                      <small style={{ color: '#93c5fd', fontSize: '0.75rem', lineHeight: '1.5' }}>
+                        <i className="icofont-info-circle" style={{ marginRight: '0.5rem' }}></i>
+                        References will be contacted to verify your information. Providing accurate contact details is important for loan approval.
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 5: Review & Submit */}
+              {loanStep === 'success' && (
+                <div>
+                  <h4 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+                    Review Your Application
                   </h4>
                   <div style={{
                     background: 'rgba(255,255,255,0.05)',
                     borderRadius: '12px',
                     padding: '1.5rem',
-                    marginBottom: '1rem'
+                    marginBottom: '1rem',
+                    maxHeight: '400px',
+                    overflowY: 'auto'
                   }}>
-                    <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>Loan Amount</span>
-                      <span style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: 700 }}>${parseFloat(loanForm.amount).toLocaleString()}</span>
-                    </div>
-                    <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>Duration</span>
-                      <span style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 500 }}>{loanForm.duration} Days</span>
-                    </div>
-                    <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>Interest Rate</span>
-                      <span style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 500 }}>
-                        {loanForm.duration === '30' ? '5%' : loanForm.duration === '60' ? '10%' : '15%'}
-                      </span>
-                    </div>
-                    <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>Total Interest</span>
-                      <span style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 500 }}>
-                        ${(parseFloat(loanForm.amount) * (loanForm.duration === '30' ? 0.05 : loanForm.duration === '60' ? 0.10 : 0.15)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>Total Repayment</span>
-                      <span style={{ color: '#60a5fa', fontSize: '1.25rem', fontWeight: 700 }}>
-                        ${(parseFloat(loanForm.amount) * (loanForm.duration === '30' ? 1.05 : loanForm.duration === '60' ? 1.10 : 1.15)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block', marginBottom: '0.5rem' }}>Purpose</span>
-                      <p style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: '1.6', margin: 0 }}>{loanForm.purpose}</p>
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                      <div>
+                        <h5 style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Personal Information</h5>
+                        <div style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                          <div>Name: {loanForm.fullName}</div>
+                          <div>Phone: {loanForm.phoneNumber}</div>
+                          <div>Address: {loanForm.address}, {loanForm.city}, {loanForm.country}</div>
+                          {loanForm.maritalStatus && <div>Marital Status: {loanForm.maritalStatus}</div>}
+                          {loanForm.dependents && <div>Dependents: {loanForm.dependents}</div>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Employment Information</h5>
+                        <div style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                          <div>Status: {loanForm.employmentStatus}</div>
+                          <div>Employer: {loanForm.employerName}</div>
+                          <div>Job Title: {loanForm.jobTitle}</div>
+                          <div>Monthly Income: ${loanForm.monthlyIncome}</div>
+                          <div>Experience: {loanForm.workExperience} years</div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Financial Details</h5>
+                        <div style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                          <div>Loan Amount: ${parseFloat(loanForm.amount).toLocaleString()}</div>
+                          <div>Duration: {loanForm.duration} days</div>
+                          <div>Monthly Expenses: ${loanForm.monthlyExpenses}</div>
+                          {loanForm.otherIncome && <div>Other Income: ${loanForm.otherIncome}</div>}
+                          {loanForm.existingDebts && <div>Existing Debts: ${loanForm.existingDebts}</div>}
+                          <div>Purpose: {loanForm.purpose}</div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Loan Calculation</h5>
+                        <div style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                          <div>Principal: ${parseFloat(loanForm.amount).toLocaleString()}</div>
+                          <div>Interest Rate: {loanForm.duration === '30' ? '5%' : loanForm.duration === '60' ? '10%' : '15%'}</div>
+                          <div>Interest Amount: ${(parseFloat(loanForm.amount) * (loanForm.duration === '30' ? 0.05 : loanForm.duration === '60' ? 0.10 : 0.15)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div style={{ color: '#f0b90b', fontWeight: 600 }}>Total Repayment: ${(parseFloat(loanForm.amount) * (loanForm.duration === '30' ? 1.05 : loanForm.duration === '60' ? 1.10 : 1.15)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
+
                   <div style={{
-                    background: 'rgba(59,130,246,0.1)',
-                    border: '1px solid rgba(59,130,246,0.3)',
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.3)',
                     borderRadius: '8px',
                     padding: '1rem',
                     marginBottom: '1rem'
                   }}>
-                    <small style={{ color: '#93c5fd', fontSize: '0.75rem', lineHeight: '1.5' }}>
-                      <i className="icofont-info-circle" style={{ marginRight: '0.5rem' }}></i>
-                      By submitting this application, you agree to repay the full amount plus interest within the specified duration. Failure to repay may result in liquidation of your investments.
+                    <small style={{ color: '#fca5a5', fontSize: '0.75rem', lineHeight: '1.5' }}>
+                      <strong>Important:</strong> By submitting this application, you agree to repay the full amount plus interest within the specified duration. Failure to repay may result in liquidation of your investments. All information provided will be verified.
                     </small>
                   </div>
                 </div>
               )}
 
-              {/* Step 4: Success */}
-              {loanStep === 'success' && (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
-                    background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 1.5rem',
-                    boxShadow: '0 8px 24px rgba(16,185,129,0.3)'
-                  }}>
-                    <i className="icofont-check" style={{ fontSize: '2.5rem', color: '#fff' }}></i>
-                  </div>
-                  <h4 style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>
-                    Loan Approved!
-                  </h4>
-                  <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-                    Your loan of <strong style={{ color: '#60a5fa' }}>${parseFloat(loanForm.amount).toLocaleString()}</strong> has been approved and will be credited to your wallet within 24 hours.
-                  </p>
-                  <div style={{
-                    background: 'rgba(240,185,11,0.1)',
-                    border: '1px solid rgba(240,185,11,0.3)',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
-                    textAlign: 'left',
-                    marginBottom: '1rem'
-                  }}>
-                    <h5 style={{ color: '#f0b90b', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem' }}>Repayment Details</h5>
-                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: '1.8' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span>Due Date:</span>
-                        <strong style={{ color: '#f8fafc' }}>
-                          {new Date(Date.now() + parseInt(loanForm.duration) * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                        </strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span>Total to Repay:</span>
-                        <strong style={{ color: '#f0b90b' }}>
-                          ${(parseFloat(loanForm.amount) * (loanForm.duration === '30' ? 1.05 : loanForm.duration === '60' ? 1.10 : 1.15)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{
-                    background: 'rgba(59,130,246,0.1)',
-                    border: '1px solid rgba(59,130,246,0.3)',
-                    borderRadius: '8px',
-                    padding: '1rem'
-                  }}>
-                    <small style={{ color: '#93c5fd', fontSize: '0.75rem', lineHeight: '1.5' }}>
-                      <i className="icofont-bell" style={{ marginRight: '0.5rem' }}></i>
-                      You'll receive email and SMS reminders before the due date. Track your loan status in the Loans section.
-                    </small>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Modal Footer */}
@@ -5448,7 +6148,7 @@ function UserDashboard() {
               gap: '1rem',
               justifyContent: 'flex-end'
             }}>
-              {loanStep !== 'amount' && loanStep !== 'success' && (
+              {loanStep !== 'personal' && loanStep !== 'success' && (
                 <button
                   onClick={handleLoanBack}
                   style={{
