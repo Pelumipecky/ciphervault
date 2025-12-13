@@ -1,5 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
 
 interface SidebarProps {
   isOpen?: boolean
@@ -14,20 +16,21 @@ interface NavigationItem {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Investments', href: '/dashboard/investments', icon: '💼' },
-  { name: 'Wallet', href: '/dashboard/wallet', icon: '💰' },
-  { name: 'Transactions', href: '/dashboard/transactions', icon: '📝' },
-  { name: 'Portfolio', href: '/dashboard/portfolio', icon: '📈' },
-  { name: 'Support', href: '/dashboard/support', icon: '💬' },
-  { name: 'Profile', href: '/dashboard/profile', icon: '👤' },
-  { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
-  { name: 'Admin', href: '/dashboard/admin', icon: '👨‍💼', adminOnly: true },
+  { name: 'Dashboard', href: '/dashboard', icon: '📊', key: 'dashboard' },
+  { name: 'Investments', href: '/dashboard/investments', icon: '💼', key: 'investments' },
+  { name: 'Wallet', href: '/dashboard/wallet', icon: '💰', key: 'wallet' },
+  { name: 'Transactions', href: '/dashboard/transactions', icon: '📝', key: 'transactions' },
+  { name: 'Portfolio', href: '/dashboard/portfolio', icon: '📈', key: 'portfolio' },
+  { name: 'Support', href: '/dashboard/support', icon: '💬', key: 'support' },
+  { name: 'Profile', href: '/dashboard/profile', icon: '👤', key: 'profile' },
+  { name: 'Settings', href: '/dashboard/settings', icon: '⚙️', key: 'settings' },
+  { name: 'Admin', href: '/dashboard/admin', icon: '👨‍💼', key: 'admin', adminOnly: true },
 ]
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const handleLogout = () => {
     logout()
@@ -83,13 +86,18 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                       onClick={onClose}
                     >
                       <span className="text-lg sm:text-xl flex-shrink-0">{item.icon}</span>
-                      <span className="hidden sm:inline">{item.name}</span>
+                      <span className="hidden sm:inline">{t(`dashboard.${item.key}`)}</span>
                     </NavLink>
                   </li>
                 )
               })}
             </ul>
           </nav>
+          
+          {/* Language Switcher */}
+          <div className="p-3 sm:p-4 border-t border-border flex-shrink-0">
+            <LanguageSwitcher variant="dashboard" />
+          </div>
           
           {/* Logout */}
           <div className="p-3 sm:p-4 border-t border-border flex-shrink-0">
@@ -98,7 +106,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               className="flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 w-full rounded-lg text-red-500 hover:bg-red-500/10 transition-colors text-sm sm:text-base"
             >
               <span className="text-lg sm:text-xl flex-shrink-0">🚪</span>
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t('nav.logout')}</span>
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
 import { 
@@ -46,6 +47,7 @@ import '../../styles/modern-dashboard.css'
 interface AdminDashboardProps {}
 
 function AdminDashboard() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [loading, setLoading] = useState(true)
@@ -378,10 +380,10 @@ function AdminDashboard() {
     navigate('/login')
   }
 
-  const handleApproveInvestment = async (investmentId: number) => {
+  const handleApproveInvestment = async (investmentId: string) => {
     try {
       // Update status in database
-      await supabaseDb.updateInvestment(investmentId.toString(), { 
+      await supabaseDb.updateInvestment(investmentId, { 
         status: 'Active',
         authStatus: 'approved'
       })
@@ -403,17 +405,17 @@ function AdminDashboard() {
         )
       }
 
-      showAlert('success', 'Investment Approved', 'Investment has been approved and saved successfully!')
+      showAlert('success', t('alerts.investmentApprovedTitle'), t('alerts.investmentApprovedMessage'))
     } catch (error) {
       console.error('Error approving investment:', error)
-      showAlert('error', 'Approval Failed', 'Failed to approve investment. Please try again.')
+      showAlert('error', t('alerts.approvalFailedTitle'), t('alerts.approvalFailedMessage'))
     }
   }
 
-  const handleRejectInvestment = async (investmentId: number) => {
+  const handleRejectInvestment = async (investmentId: string) => {
     try {
       // Update status in database
-      await supabaseDb.updateInvestment(investmentId.toString(), { 
+      await supabaseDb.updateInvestment(investmentId, { 
         status: 'Rejected',
         authStatus: 'rejected'
       })
@@ -435,10 +437,10 @@ function AdminDashboard() {
         )
       }
 
-      showAlert('error', 'Investment Rejected', 'Investment has been rejected and saved.')
+      showAlert('error', t('alerts.investmentRejectedTitle'), t('alerts.investmentRejectedMessage'))
     } catch (error) {
       console.error('Error rejecting investment:', error)
-      showAlert('error', 'Rejection Failed', 'Failed to reject investment. Please try again.')
+      showAlert('error', t('alerts.rejectionFailedTitle'), t('alerts.rejectionFailedMessage'))
     }
   }
 
@@ -466,10 +468,10 @@ function AdminDashboard() {
         )
       }
 
-      showAlert('success', 'Withdrawal Approved', 'Withdrawal has been approved and saved successfully!')
+      showAlert('success', t('alerts.withdrawalApprovedTitle'), t('alerts.withdrawalApprovedMessage'))
     } catch (error) {
       console.error('Error approving withdrawal:', error)
-      showAlert('error', 'Approval Failed', 'Failed to approve withdrawal. Please try again.')
+      showAlert('error', t('alerts.approvalFailedTitle'), t('alerts.approvalErrorMessage'))
     }
   }
 
@@ -497,10 +499,10 @@ function AdminDashboard() {
         )
       }
 
-      showAlert('error', 'Withdrawal Rejected', 'Withdrawal has been rejected and saved.')
+      showAlert('error', t('alerts.withdrawalRejectedTitle'), t('alerts.withdrawalRejectedMessage'))
     } catch (error) {
       console.error('Error rejecting withdrawal:', error)
-      showAlert('error', 'Rejection Failed', 'Failed to reject withdrawal. Please try again.')
+      showAlert('error', t('alerts.rejectionFailedTitle'), t('alerts.rejectionFailedMessage'))
     }
   }
 
@@ -519,10 +521,10 @@ function AdminDashboard() {
       setAllKycRequests(prev => 
         prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'approved' } : kyc)
       )
-      showAlert('success', 'KYC Approved', 'KYC verification has been approved!')
+      showAlert('success', t('alerts.kycApprovedAdminTitle'), t('alerts.kycApprovedAdminMessage'))
     } catch (error) {
       console.error('Error approving KYC:', error)
-      showAlert('error', 'Error', 'Failed to approve KYC verification.')
+      showAlert('error', t('alerts.kycApprovedError'), t('alerts.kycApprovedError'))
     }
   }
 
@@ -541,10 +543,10 @@ function AdminDashboard() {
       setAllKycRequests(prev => 
         prev.map(kyc => kyc.id === kycId ? { ...kyc, status: 'rejected' } : kyc)
       )
-      showAlert('error', 'KYC Rejected', 'KYC verification has been rejected.')
+      showAlert('error', t('alerts.kycRejectedTitle'), t('alerts.kycRejectedMessage'))
     } catch (error) {
       console.error('Error rejecting KYC:', error)
-      showAlert('error', 'Error', 'Failed to reject KYC verification.')
+      showAlert('error', t('alerts.kycRejectedError'), t('alerts.kycRejectedError'))
     }
   }
 
@@ -559,7 +561,7 @@ function AdminDashboard() {
     
     const balance = parseFloat(newBalance)
     if (isNaN(balance) || balance < 0) {
-      showAlert('error', 'Invalid Amount', 'Please enter a valid balance amount')
+      showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountError'))
       return
     }
 
@@ -580,7 +582,7 @@ function AdminDashboard() {
       setAllUsers(prev => prev.map(u => u.idnum === selectedUser.idnum ? { ...u, balance } : u));
       setSelectedUser({ ...selectedUser, balance });
     }
-    showAlert('success', 'Balance Updated', `Balance updated to $${balance.toLocaleString()}!`)
+    showAlert('success', t('alerts.balanceUpdatedTitle'), t('alerts.balanceUpdatedMessage', { balance: balance.toLocaleString() }))
   }
 
   // Calculate statistics
@@ -646,10 +648,10 @@ function AdminDashboard() {
       )
       await supabaseDb.updateLoan(loan.id, { status: 'approved', authStatus: 'approved' })
       setAllLoans(prev => prev.map(l => l.id === loan.id ? { ...l, status: 'approved', authStatus: 'approved' } : l))
-      showAlert('success', 'Loan Approved', `Loan of $${loan.amount?.toLocaleString()} has been approved.`)
+      showAlert('success', t('alerts.loanApprovedTitle'), t('alerts.loanApprovedMessage', { amount: loan.amount?.toLocaleString() }))
     } catch (error) {
       console.error('Error approving loan:', error)
-      showAlert('error', 'Error', 'Failed to approve loan')
+      showAlert('error', t('alerts.approvalFailedTitle'), t('alerts.approvalFailedMessage'))
     }
   }
 
@@ -665,10 +667,10 @@ function AdminDashboard() {
       )
       await supabaseDb.updateLoan(loan.id, { status: 'rejected', authStatus: 'rejected' })
       setAllLoans(prev => prev.map(l => l.id === loan.id ? { ...l, status: 'rejected', authStatus: 'rejected' } : l))
-      showAlert('success', 'Loan Rejected', `Loan request has been rejected.`)
+      showAlert('success', t('alerts.loanRejectedTitle'), t('alerts.loanRejectedMessage'))
     } catch (error) {
       console.error('Error rejecting loan:', error)
-      showAlert('error', 'Error', 'Failed to reject loan')
+      showAlert('error', t('alerts.rejectionFailedTitle'), t('alerts.rejectionFailedMessage'))
     }
   }
 
@@ -682,7 +684,7 @@ function AdminDashboard() {
 
   const handleConfirmAddBonus = async () => {
     if (!selectedBonusUser || !bonusAmount || parseFloat(bonusAmount) <= 0) {
-      showAlert('error', 'Invalid Amount', 'Please enter a valid bonus amount')
+      showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountError'))
       return
     }
 
@@ -709,14 +711,14 @@ function AdminDashboard() {
         selectedBonusUser.bonus || 0
       )
 
-      showAlert('success', 'Bonus Added', `$${parseFloat(bonusAmount).toLocaleString()} bonus added to ${selectedBonusUser.name || selectedBonusUser.email}`)
+      showAlert('success', t('alerts.bonusAddedTitle'), t('alerts.bonusAddedMessage', { bonus: parseFloat(bonusAmount).toLocaleString(), name: selectedBonusUser.name || selectedBonusUser.email }))
       setShowAddBonusModal(false)
       setSelectedBonusUser(null)
       setBonusAmount('')
       setBonusReason('')
     } catch (error) {
       console.error('Error adding bonus:', error)
-      showAlert('error', 'Error', 'Failed to add bonus')
+      showAlert('error', t('alerts.addBonusError'), t('alerts.addBonusError'))
     }
   }
 
@@ -725,7 +727,7 @@ function AdminDashboard() {
     if (!amount || parseFloat(amount) <= 0) return
 
     if (parseFloat(amount) > (user.bonus || 0)) {
-      showAlert('error', 'Invalid Amount', 'Cannot remove more than current bonus')
+      showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.cannotRemoveMoreThanCurrentBonus'))
       return
     }
 
@@ -743,10 +745,10 @@ function AdminDashboard() {
           : u
       ))
 
-      showAlert('success', 'Bonus Removed', `$${parseFloat(amount).toLocaleString()} bonus removed from ${user.name || user.email}`)
+      showAlert('success', t('alerts.bonusRemovedTitle'), t('alerts.bonusRemovedMessage', { amount: parseFloat(amount).toLocaleString(), name: user.name || user.email }))
     } catch (error) {
       console.error('Error removing bonus:', error)
-      showAlert('error', 'Error', 'Failed to remove bonus')
+      showAlert('error', t('alerts.failedToRemoveBonusTitle'), t('alerts.failedToRemoveBonusMessage'))
     }
   }
 
@@ -1989,7 +1991,7 @@ function AdminDashboard() {
                         fontWeight: 600,
                         cursor: 'pointer'
                       }}
-                      onClick={() => showAlert('info', 'Coming Soon', 'Role management will be available in a future update.')}
+                      onClick={() => showAlert('info', t('alerts.roleManagementComingSoonTitle'), t('alerts.roleManagementComingSoonMessage'))}
                     >
                       Update Role
                     </button>
@@ -2066,7 +2068,7 @@ function AdminDashboard() {
                             setCurrentAdmin(updatedAdmin)
                             localStorage.setItem('adminData', JSON.stringify(updatedAdmin))
                             localStorage.setItem('activeUser', JSON.stringify(updatedAdmin))
-                            showAlert('success', 'Avatar Updated', 'Your admin avatar has been updated successfully!')
+                            showAlert('success', t('alerts.avatarUpdatedTitle'), t('alerts.avatarUpdatedMessage'))
                           }
                         }}
                         style={{
@@ -2096,7 +2098,7 @@ function AdminDashboard() {
                             setCurrentAdmin(updatedAdmin)
                             localStorage.setItem('adminData', JSON.stringify(updatedAdmin))
                             localStorage.setItem('activeUser', JSON.stringify(updatedAdmin))
-                            showAlert('success', 'Avatar Updated', 'Your admin avatar has been updated successfully!')
+                            showAlert('success', t('alerts.avatarUpdatedTitle'), t('alerts.avatarUpdatedMessage'))
                           }
                         }}
                         style={{
@@ -2126,7 +2128,7 @@ function AdminDashboard() {
                             setCurrentAdmin(updatedAdmin)
                             localStorage.setItem('adminData', JSON.stringify(updatedAdmin))
                             localStorage.setItem('activeUser', JSON.stringify(updatedAdmin))
-                            showAlert('success', 'Avatar Updated', 'Your admin avatar has been updated successfully!')
+                            showAlert('success', t('alerts.avatarUpdatedTitle'), t('alerts.avatarUpdatedMessage'))
                           }
                         }}
                         style={{
@@ -2209,15 +2211,15 @@ function AdminDashboard() {
                         cursor: 'pointer'
                       }}
                       onClick={() => showConfirm(
-                        'Clear All Pending Investments',
-                        'This will reject all pending investments. This action cannot be undone.',
+                        t('confirm.clearPendingInvestmentsTitle'),
+                        t('confirm.clearPendingInvestmentsMessage'),
                         () => {
                           setAllInvestments(prev => prev.map(inv => inv.status === 'Pending' ? { ...inv, status: 'Rejected' } : inv))
-                          showAlert('warning', 'Investments Cleared', 'All pending investments have been rejected.')
+                            showAlert('warning', t('alerts.investmentsClearedTitle'), t('alerts.investmentsClearedMessage'))
                         }
                       )}
                     >
-                      Clear Pending Investments
+                      {t('buttons.clearPendingInvestments')}
                     </button>
                     <button
                       style={{
@@ -2230,15 +2232,15 @@ function AdminDashboard() {
                         cursor: 'pointer'
                       }}
                       onClick={() => showConfirm(
-                        'Clear All Pending Withdrawals',
-                        'This will reject all pending withdrawals. This action cannot be undone.',
+                        t('confirm.clearPendingWithdrawalsTitle'),
+                        t('confirm.clearPendingWithdrawalsMessage'),
                         () => {
                           setAllWithdrawals(prev => prev.map(w => w.status === 'Pending' ? { ...w, status: 'Rejected' } : w))
-                          showAlert('warning', 'Withdrawals Cleared', 'All pending withdrawals have been rejected.')
+                          showAlert('warning', t('alerts.withdrawalsClearedTitle'), t('alerts.withdrawalsClearedMessage'))
                         }
                       )}
                     >
-                      Clear Pending Withdrawals
+                      {t('buttons.clearPendingWithdrawals')}
                     </button>
                   </div>
                 </div>
@@ -2408,23 +2410,21 @@ function AdminDashboard() {
               <button
                 onClick={() => {
                   showConfirm(
-                    'Delete User Account',
-                    'Are you sure you want to delete this user account? This action cannot be undone.',
+                    t('confirm.deleteUserTitle'),
+                    t('confirm.deleteUserMessage'),
                     () => {
-                      setAllUsers(prev => prev.filter(u => u.idnum !== selectedUser.idnum))
-                      setShowUserModal(false)
-                      showAlert('success', 'User Deleted', 'User account deleted successfully')
+                      setAllUsers(prev => prev.filter(u => u.idnum !== selectedUser.idnum));
+                      setShowUserModal(false);
+                      showAlert('success', t('alerts.userDeletedTitle'), t('alerts.userDeletedMessage'));
                     },
                     () => {
                       // Cancelled
                     },
                     'Delete Account',
                     'Cancel'
-                  )
+                  );
                 }}
                 style={{
-                  flex: 1,
-                  padding: '0.75rem',
                   background: 'rgba(239,68,68,0.1)',
                   border: '1px solid rgba(239,68,68,0.3)',
                   borderRadius: '8px',
@@ -2434,7 +2434,7 @@ function AdminDashboard() {
                   cursor: 'pointer'
                 }}
               >
-                <i className="icofont-trash"></i> Delete User
+                <i className="icofont-trash"></i> {t('buttons.deleteUserAccount')}
               </button>
               <button
                 onClick={() => setShowUserModal(false)}

@@ -199,7 +199,7 @@ Successfully converted the legacy Binance clone (HTML/CSS/JS) into a modern Reac
   
   **2. Email Support**
   - Response time: 24 hours
-  - Email: support@binance-clone.com
+  - Email: Cyphervault6@gmail.com
   - "Send Email" button (opens default email client)
   
   **3. Submit Ticket**

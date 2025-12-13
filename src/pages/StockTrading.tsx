@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createChart, IChartApi, ISeriesApi, CandlestickData, ColorType } from 'lightweight-charts';
 import {
   fetchStockPrices,
@@ -16,6 +17,7 @@ import {
 interface StockTradingProps {}
 
 function StockTrading() {
+  const { t } = useTranslation();
   // State management
   const [stockPrices, setStockPrices] = useState<StockPrices>({
     AAPL: 0, MSFT: 0, GOOGL: 0, AMZN: 0, TSLA: 0, NVDA: 0, META: 0, NFLX: 0
@@ -198,7 +200,7 @@ function StockTrading() {
     const price = selectedStock.current_price;
     const total = qty * price;
 
-    showAlert('success', 'Order Placed', `${tradeType.toUpperCase()} Order: ${qty} shares of ${selectedStock.symbol} at $${price.toFixed(2)} = $${total.toFixed(2)}`);
+    showAlert('success', t('alerts.orderPlacedTitle'), t('alerts.orderPlacedMessage', { orderType: tradeType.toUpperCase(), qty, symbol: selectedStock.symbol, price: price.toFixed(2), total: total.toFixed(2) }));
     // Here you would integrate with your trading backend
   };
 
@@ -250,10 +252,10 @@ function StockTrading() {
           marginBottom: '1rem'
         }}>
           <i className="icofont-chart-line" style={{ marginRight: '0.5rem', color: '#f59e0b' }}></i>
-          Stock Trading
+          {t('pages.stockTrading.title')}
         </h1>
         <p style={{ color: '#94a3b8', fontSize: window.innerWidth <= 768 ? '0.875rem' : '1rem' }}>
-          Trade stocks with real-time data and advanced charting
+          {t('pages.stockTrading.description')}
         </p>
       </div>
 

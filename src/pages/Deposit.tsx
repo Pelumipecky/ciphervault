@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 const paymentMethods = [
   {
     name: 'Bitcoin (BTC)',
-    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    address: '14nkRtKqATBXudhd9yqSpLMZyy8JETmStH',
     network: 'Bitcoin Network',
     icon: '₿',
   },
   {
     name: 'Ethereum (ETH)',
-    address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
+    address: '0x33a056a59729fda369c03eff8e075c1f2537b41b',
     network: 'Ethereum Network (ERC-20)',
     icon: 'Ξ',
   },

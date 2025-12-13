@@ -13,6 +13,9 @@ import AdminLogin from '@/pages/AdminLogin'
 import AdminDashboard from '@/pages/dashboard/AdminDashboard'
 import UserDashboard from '@/pages/dashboard/UserDashboard'
 import Markets from '@/pages/Markets'
+import Downloads from '@/pages/Downloads'
+import PDFGuides from '@/pages/PDFGuides'
+import YouTubeVideos from '@/pages/YouTubeVideos'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import RoleProtectedRoute, { AdminRoute, SuperAdminRoute, UserRoute } from '@/components/RoleProtectedRoute'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
@@ -79,6 +82,33 @@ function App() {
             <Navbar />
             <main className="app-layout__content">
               <FAQ />
+            </main>
+            <Footer />
+          </div>
+        } />
+        <Route path="/downloads" element={
+          <div className="app-layout">
+            <Navbar />
+            <main className="app-layout__content">
+              <Downloads />
+            </main>
+            <Footer />
+          </div>
+        } />
+        <Route path="/downloads/guides" element={
+          <div className="app-layout">
+            <Navbar />
+            <main className="app-layout__content">
+              <PDFGuides />
+            </main>
+            <Footer />
+          </div>
+        } />
+        <Route path="/downloads/videos" element={
+          <div className="app-layout">
+            <Navbar />
+            <main className="app-layout__content">
+              <YouTubeVideos />
             </main>
             <Footer />
           </div>

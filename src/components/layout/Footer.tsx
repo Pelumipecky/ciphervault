@@ -13,7 +13,7 @@ const footerLinks = [
   {
     title: 'Services',
     links: [
-      { label: 'Downloads', href: '/downloads.html' },
+      { label: 'Downloads', href: '/downloads' },
       { label: 'Invest Now', href: '/bank-deposit.html' },
       { label: 'OTC Trading', href: '/otc.html' },
       { label: 'Historical Market Data', href: '/trading-data.html' },

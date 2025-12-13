@@ -2,12 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 // import ThemeToggle from './ThemeToggle'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
 
 const navLinks = [
-  { label: 'Markets', href: '/markets' },
-  { label: 'Packages', href: '/packages' },
-  { label: 'FAQ', href: '/faq' },
   { label: 'About', href: '/about' },
+  { label: 'Packages', href: '/packages' },
+  { label: 'Markets', href: '/markets' },
+  { label: 'FAQ', href: '/faq' },
   { label: 'Contact', href: '/contact' }
 ]
 
@@ -17,6 +19,7 @@ function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const { t } = useTranslation()
 
   const closeMenu = () => setIsOpen(false)
 
@@ -59,17 +62,20 @@ function Navbar() {
           <img src="/images/ciphervaultlogobig.svg" alt="CipherVault Investments" height={36} />
         </Link>
         <nav className={`navbar__links ${isOpen ? 'navbar__links--open' : ''}`}>
+          
+          <div className="navbar__links-list">
           {navLinks.map(({ label, href }) => (
             href.startsWith('/#') ? (
               <a key={label} href={href} onClick={handleNavClick}>
-                {label}
+                {t(`nav.${label.toLowerCase()}`)}
               </a>
             ) : (
               <NavLink key={label} to={href} onClick={handleNavClick}>
-                {label}
+                {t(`nav.${label.toLowerCase()}`)}
               </NavLink>
             )
           ))}
+          </div>
           <div className="navbar__cta-group">
             {isAuthenticated && user ? (
               <div 
@@ -254,7 +260,7 @@ function Navbar() {
                         }}
                       >
                         <i className="icofont-dashboard" style={{ fontSize: '18px', width: '20px' }}></i>
-                        <span>Dashboard</span>
+                        <span>{t('nav.dashboard')}</span>
                       </button>
 
                       <button
@@ -285,7 +291,7 @@ function Navbar() {
                         }}
                       >
                         <i className="icofont-logout" style={{ fontSize: '18px', width: '20px' }}></i>
-                        <span>Log Out</span>
+                        <span>{t('nav.logout')}</span>
                       </button>
                     </div>
                   </div>
@@ -294,14 +300,21 @@ function Navbar() {
             ) : (
               <>
                 <Link className="btn btn--primary" to="/signup" onClick={handleNavClick}>
-                  Sign Up
+                  {t('nav.signup')}
                 </Link>
                 <Link className="btn btn--ghost" to="/login" onClick={handleNavClick}>
-                  Log In
+                  {t('nav.login')}
                 </Link>
               </>
             )}
-            {/* <ThemeToggle /> */}
+            {/* Desktop-only Language switcher should be after signin links */}
+            <div className="navbar__lang-wrap">
+              <LanguageSwitcher variant="navbar" />
+            </div>
+          </div>
+          {/* For mobile overlay: Language switcher shown after CTA group */}
+          <div className="navbar__mobile-lang md:hidden">
+            <LanguageSwitcher variant="navbar" />
           </div>
         </nav>
         <button

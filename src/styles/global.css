@@ -239,9 +239,6 @@ button, input {
   color: var(--accent);
   border-left: 3px solid var(--accent);
 }
-  color: var(--accent);
-  font-weight: 600;
-}
 
 .navbar__cta-group {
   display: flex;
@@ -256,6 +253,67 @@ button, input {
   width: 100%;
   justify-content: center;
   padding: 0.75rem 1.4rem;
+}
+
+/* Language button in navbar */
+.navbar__lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 0.8rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.navbar__lang-btn:hover {
+  background: rgba(240, 185, 11, 0.06);
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(240, 185, 11, 0.08);
+}
+
+.navbar__links-list {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Display/hide language switcher explicitly */
+.navbar__lang-wrap {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.25rem;
+  flex: 0 0 auto; /* don't let this item shrink */
+  order: 99; /* ensure it appears last in CTA group */
+  z-index: 1100; /* raise above other items if overlapping */
+}
+
+@media (max-width: 767px) {
+  /* Hide desktop lang wrap on mobile, show mobile lang below menu */
+  .navbar__lang-wrap {
+    display: none;
+  }
+  .navbar__mobile-lang {
+    display: block;
+  }
+}
+@media (min-width: 768px) {
+  /* Ensure mobile lang wrapper is hidden on desktop */
+  .navbar__mobile-lang {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar__links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -279,7 +337,7 @@ button, input {
     max-width: none;
     height: auto;
     overflow-y: visible;
-    justify-content: space-between;
+    justify-content: center;
   }
 
   .navbar__links--open {
@@ -311,6 +369,11 @@ button, input {
     flex-direction: row;
     gap: 1rem;
     align-items: center;
+    margin-left: auto; /* push CTA to right on desktop */
+    margin-top: 0; /* remove extra spacing on desktop */
+    padding-top: 0;
+    border-top: none; /* remove the long line on desktop */
+    flex-shrink: 0; /* keep CTA fixed to the right, avoid overlap */
   }
 
   .navbar__cta-group .btn {
@@ -329,6 +392,11 @@ button, input {
   .navbar__toggle span {
     width: 18px;
     height: 1.5px;
+  }
+
+  .navbar__mobile-lang {
+    margin-bottom: 1rem;
+    padding: 0 1rem;
   }
 
   .navbar__links {

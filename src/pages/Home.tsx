@@ -2,47 +2,18 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { fetchDetailedCryptoPrices, formatPrice, CryptoPrice } from '@/utils/cryptoPrices'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
-const stats = [
-  { label: '24h Volume', value: '$38B', detail: 'Traded across spot, futures, and structured products.' },
-  { label: 'Listed Assets', value: '350+', detail: 'Curated coins and tokenized yield strategies.' },
-  { label: 'Clients', value: '120M', detail: 'Global wallets, treasuries, and family offices.' },
-  { label: 'Fees', value: '0.10%', detail: 'Institutional pricing with maker rebates.' }
-]
+// `stats` will be built inside the component to ensure translations are applied via `t()`
 
-const packages = PLAN_CONFIG.map(plan => ({
-  name: plan.name,
-  badge: plan.featured ? 'Featured' : 'Standard',
-  description: plan.subtitle,
-  bullets: [
-    `Duration: ${plan.durationLabel}`,
-    `Daily ROI: ${formatPercent(plan.dailyRate)}`,
-    `Min Investment: $${plan.minCapital.toLocaleString()}`,
-    `Max Investment: ${plan.maxCapital ? `$${plan.maxCapital.toLocaleString()}` : 'Unlimited'}`,
-    `Total Return: ${plan.totalReturnPercent}%`
-  ]
-}))
+// The packages view will also be built inside the component so labels can be localized.
 
-const helpTiles = [
-  {
-    title: '24/7 Desk',
-    copy: 'Message advisors anytime for rebalancing help or treasury workflows.',
-    cta: { label: 'Chat Now', href: '/contact.html' }
-  },
-  {
-    title: 'FAQ Library',
-    copy: 'Browse custody, staking, and on/off-ramp guidance in our docs.',
-    cta: { label: 'View FAQ', href: '/#faq' }
-  },
-  {
-    title: 'Blog + Research',
-    copy: 'Weekly on-chain insights and macro notes straight from the quant floor.',
-    cta: { label: 'Read Insights', href: '/blog.html' }
-  }
-]
+// Help tiles will be built inside the component and localized using `t()`.
 
 function Home() {
   console.log('🏠 Home component rendering...')
+  const { t } = useTranslation()
   
   // Live crypto prices
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrice[]>([])
@@ -77,8 +48,51 @@ function Home() {
 
     return () => clearInterval(interval);
   }, []);
+  // Build slider & UI content using translations and localized labels
+  const localizedStats = [
+    { label: t('home.stats.volume'), value: '$38B', detail: t('home.stats.volumeDetail') },
+    { label: t('home.stats.assets'), value: '350+', detail: t('home.stats.listedAssetsDetail') },
+    { label: t('home.stats.clients'), value: '120M', detail: t('home.stats.clientsDetail') },
+    { label: t('home.stats.fees'), value: '0.10%', detail: t('home.stats.feesDetail') }
+  ]
+
+  const localizedPackages = PLAN_CONFIG.map(plan => ({
+    name: plan.name,
+    badge: plan.featured ? t('home.packages.badge.featured') : t('home.packages.badge.standard'),
+    description: plan.subtitle,
+    bullets: [
+      t('home.packages.bullets.duration', { duration: plan.durationLabel }),
+      t('home.packages.bullets.dailyRoi', { daily: formatPercent(plan.dailyRate) }),
+      t('home.packages.bullets.min', { min: plan.minCapital.toLocaleString() }),
+      t('home.packages.bullets.max', { max: plan.maxCapital ? plan.maxCapital.toLocaleString() : t('home.packages.bullets.unlimited') }),
+      t('home.packages.bullets.totalReturn', { total: plan.totalReturnPercent })
+    ]
+  }))
+
+  const localizedHelpTiles = [
+    {
+      title: t('home.help.desk.title'),
+      copy: t('home.help.desk.copy'),
+      cta: { label: t('home.help.desk.cta'), href: '/contact.html' }
+    },
+    {
+      title: t('home.help.faq.title'),
+      copy: t('home.help.faq.copy'),
+      cta: { label: t('home.help.faq.cta'), href: '/#faq' }
+    },
+    {
+      title: t('home.help.blog.title'),
+      copy: t('home.help.blog.copy'),
+      cta: { label: t('home.help.blog.cta'), href: '/blog.html' }
+    }
+  ]
+
   return (
     <div className="home">
+      {/* Language Switcher for Home page */}
+      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 100 }}>
+        <LanguageSwitcher variant="home" />
+      </div>
       {/* Live Crypto Ticker */}
       {cryptoPrices.length > 0 && (
         <div style={{
@@ -139,24 +153,24 @@ function Home() {
 
       <section className="hero" id="hero">
         <div className="hero__content">
-          <p className="eyebrow">Institutional crypto platform</p>
-          <h1>Disciplined exposure for serious digital-asset teams.</h1>
+          <p className="eyebrow">{t('home.hero.eyebrow')}</p>
+          <h1>{t('home.hero.title')}</h1>
           <p className="lead">
-            CipherVault blends custody, quantitative research, and transparent reporting so every allocation is as resilient as a vault.
+            {t('home.hero.subtitle')}
           </p>
           <div className="hero__actions">
             <Link className="btn btn--primary btn--lg" to="/signup">
-              Open an account
+              {t('home.hero.cta')}
             </Link>
             <Link className="btn btn--ghost btn--lg" to="/packages">
-              Explore packages
+              {t('home.hero.ctaExplore')}
             </Link>
           </div>
           <div className="hero__pill">
             <img src="/images/gift.svg" alt="gift" height={32} />
             <div>
-              <p className="hero__pill-title">Trade Bitcoin with zero fees</p>
-              <p className="hero__pill-copy">Available for new clients through Q1.</p>
+              <p className="hero__pill-title">{t('home.hero.pillTitle')}</p>
+              <p className="hero__pill-copy">{t('home.hero.pillCopy')}</p>
             </div>
           </div>
         </div>
@@ -166,7 +180,7 @@ function Home() {
       </section>
 
       <section className="stats" aria-label="Key metrics">
-        {stats.map((item) => (
+        {localizedStats.map((item) => (
           <article key={item.label}>
             <p className="stats__value">{item.value}</p>
             <p className="stats__label">{item.label}</p>
@@ -177,44 +191,41 @@ function Home() {
 
       <section className="panel" id="about">
         <div>
-          <p className="eyebrow">About CipherVault</p>
-          <h2>Security-first infrastructure with data-driven allocations.</h2>
-          <p>
-            Every wallet is verified, every counterparty audited, and every rebalance recorded. Family offices, treasuries, and protocol foundations trust us to
-            scale exposure without compromising governance.
-          </p>
+          <p className="eyebrow">{t('home.about.eyebrow')}</p>
+          <h2>{t('home.about.title')}</h2>
+          <p>{t('home.about.lead')}</p>
           <ul className="checklist">
-            <li>Custody partners meeting SOC 2 + insurance standards</li>
-            <li>Quant research spanning DeFi, RWA, and AI infrastructure</li>
-            <li>Dedicated advisors with institutional reporting cadences</li>
+            <li>{t('home.about.checklist.custody')}</li>
+            <li>{t('home.about.checklist.quantResearch')}</li>
+            <li>{t('home.about.checklist.advisors')}</li>
           </ul>
           <div className="panel__cta">
             <Link className="btn btn--primary" to="/signup">
-              Talk to an advisor
+              {t('home.about.ctaAdvisor')}
             </Link>
             <a className="btn btn--ghost" href="/about.html">
-              More about us
+              {t('home.about.ctaMore')}
             </a>
           </div>
         </div>
         <div className="mission-card">
-          <p className="eyebrow">Mission</p>
-          <h3>Unlock long-term financial growth with disciplined crypto exposure.</h3>
+            <p className="eyebrow">{t('home.about.mission.eyebrow')}</p>
+          <h3>{t('home.about.mission.title')}</h3>
           <p>
             We pair rigorous risk analytics with insurance-backed custody so teams can deploy capital confidently — even during volatility.
           </p>
           <div className="mission-grid">
             <div>
-              <p className="mission-grid__title">Security First</p>
-              <p>Every asset is vetted for compliance, custody, and counterparty risk.</p>
+              <p className="mission-grid__title">{t('home.about.mission.grid.security.title')}</p>
+              <p>{t('home.about.mission.grid.security.copy')}</p>
             </div>
             <div>
-              <p className="mission-grid__title">Data Driven</p>
-              <p>Quant models, on-chain telemetry, and AI insights guide allocation.</p>
+              <p className="mission-grid__title">{t('home.about.mission.grid.data.title')}</p>
+              <p>{t('home.about.mission.grid.data.copy')}</p>
             </div>
             <div>
-              <p className="mission-grid__title">Transparent</p>
-              <p>Real-time dashboards, blockchain proofs, and monthly letters.</p>
+              <p className="mission-grid__title">{t('home.about.mission.grid.transparent.title')}</p>
+              <p>{t('home.about.mission.grid.transparent.copy')}</p>
             </div>
           </div>
         </div>
@@ -222,14 +233,14 @@ function Home() {
 
       <section className="packages" id="packages">
         <div className="section-heading">
-          <p className="eyebrow">Investment Plans</p>
-          <h2>Six investment plans for every growth strategy.</h2>
+          <p className="eyebrow">{t('home.packages.title')}</p>
+          <h2>{t('home.packages.subtitle')}</h2>
           <p>
-            Choose the plan that matches your investment goals and timeline. Each plan offers daily ROI with automatic compounding.
+            {t('home.packages.description')}
           </p>
         </div>
         <div className="package-grid">
-          {packages.map((pkg) => (
+          {localizedPackages.map((pkg) => (
             <article key={pkg.name} className="package-card">
               <span className="package-card__badge">{pkg.badge}</span>
               <h3>{pkg.name}</h3>
@@ -241,10 +252,10 @@ function Home() {
               </ul>
               <div className="package-card__actions">
                 <Link className="btn btn--primary" to="/dashboard">
-                  Go to dashboard
+                  {t('nav.dashboard')}
                 </Link>
                 <Link className="btn btn--ghost" to="/signup">
-                  Allocate now
+                  {t('home.packages.ctaAllocate') || 'Allocate now'}
                 </Link>
               </div>
             </article>
@@ -254,34 +265,34 @@ function Home() {
 
       <section className="investment-guide" id="investment-guide">
         <div className="guide-content">
-          <h2 className="guide-title">Build your investment portfolio</h2>
-          <p className="guide-lead">Start your first investment with these easy steps.</p>
+          <h2 className="guide-title">{t('home.guide.title')}</h2>
+          <p className="guide-lead">{t('home.guide.lead')}</p>
           <div className="guide-steps">
             <div className="guide-step">
               <img src="/images/card.svg" alt="Verify identity" width="48" height="48" />
               <div className="guide-step-content">
-                <h3>Verify your identity</h3>
-                <p>Complete the identity verification process to secure your account and transactions.</p>
+                <h3>{t('home.guide.steps.verify.title')}</h3>
+                <p>{t('home.guide.steps.verify.copy')}</p>
               </div>
             </div>
             <div className="guide-step">
               <img src="/images/person.svg" alt="Fund account" width="48" height="48" />
               <div className="guide-step-content">
-                <h3>Fund your account</h3>
-                <p>Add funds to your crypto account to start investing. You can add funds with a variety of payment methods.</p>
+                <h3>{t('home.guide.steps.fund.title')}</h3>
+                <p>{t('home.guide.steps.fund.copy')}</p>
               </div>
             </div>
             <div className="guide-step">
               <img src="/images/money.svg" alt="Start investing" width="48" height="48" />
               <div className="guide-step-content">
-                <h3>Start investing</h3>
-                <p>You're good to go! Buy/sell crypto, set up recurring buys for your investments, and discover what CipherVault Investments has to offer.</p>
+                <h3>{t('home.guide.steps.start.title')}</h3>
+                <p>{t('home.guide.steps.start.copy')}</p>
               </div>
             </div>
           </div>
           <div className="guide-cta">
             <Link className="btn btn--primary btn--lg" to="/signup">
-              Get Started
+              {t('home.guide.ctaGetStarted')}
             </Link>
           </div>
         </div>
@@ -289,11 +300,11 @@ function Home() {
 
       <section className="help" id="faq">
         <div className="section-heading">
-          <p className="eyebrow">Need help?</p>
-          <h2>Advisors, docs, and research on standby.</h2>
+          <p className="eyebrow">{t('home.helpSection.eyebrow')}</p>
+          <h2>{t('home.helpSection.title')}</h2>
         </div>
         <div className="help-grid">
-          {helpTiles.map((tile) => (
+          {localizedHelpTiles.map((tile) => (
             <article key={tile.title}>
               <h3>{tile.title}</h3>
               <p>{tile.copy}</p>

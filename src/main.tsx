@@ -5,6 +5,8 @@ import App from './App'
 import './styles/global.css'
 // IcoFont Icons
 import 'icofont/dist/icofont.min.css'
+// i18n
+import './i18n'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

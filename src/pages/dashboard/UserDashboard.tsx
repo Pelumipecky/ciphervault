@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
@@ -51,6 +53,7 @@ interface Investment {
 }
 
 function UserDashboard() {
+  const { t } = useTranslation();
       // Notification type
       interface Notification {
         id: number;
@@ -217,8 +220,8 @@ function UserDashboard() {
             if (parsedNotifications.length === 0) {
               const welcomeNotification: Notification = {
                 id: Date.now(),
-                title: 'Welcome!',
-                message: 'Welcome to your dashboard! Start by exploring investment plans.',
+                title: t('notifications.welcomeTitle'),
+                message: t('notifications.welcomeMessage'),
                 type: 'info',
                 read: false,
                 created_at: new Date().toISOString()
@@ -232,8 +235,8 @@ function UserDashboard() {
             // First time user - set welcome notification
             const welcomeNotification: Notification = {
               id: Date.now(),
-              title: 'Welcome!',
-              message: `Welcome ${userData.name || userData.userName || 'to your dashboard'}! Start exploring our investment plans.`,
+              title: t('notifications.welcomeTitle'),
+              message: t('notifications.welcomeMessageWithName', { name: userData.name || userData.userName || 'to your dashboard' }),
               type: 'success',
               read: false,
               created_at: new Date().toISOString()
@@ -283,18 +286,18 @@ function UserDashboard() {
                   // Show notification for status change
                   if (latestKyc.status === 'approved') {
                     addNotification(
-                      'KYC Approved! ✅',
-                      'Your KYC verification has been approved. You can now access all platform features.',
-                      'success'
-                    );
-                    showAlert('success', 'KYC Approved!', 'Your KYC verification has been approved.');
+                        t('alerts.titleKycApproved') + ' ✅',
+                        t('alerts.kycApproved'),
+                        'success'
+                      );
+                      showAlert('success', t('alerts.titleKycApproved'), t('alerts.kycApproved'));
                   } else if (latestKyc.status === 'rejected') {
                     addNotification(
-                      'KYC Update',
-                      'Your KYC verification was not approved. Please check your email for details and resubmit.',
+                      t('alerts.titleKycUpdate'),
+                      t('alerts.kycUpdate'),
                       'warning'
                     );
-                    showAlert('warning', 'KYC Update', 'Your KYC verification requires attention.');
+                    showAlert('warning', t('alerts.titleKycUpdate'), t('alerts.kycUpdate'));
                   }
                 }
               } catch (error) {
@@ -356,9 +359,20 @@ function UserDashboard() {
   })
   const [copied, setCopied] = useState(false)
   
+  // Deposit states
+  const [depositAmount, setDepositAmount] = useState('');
+  const [selectedDepositMethod, setSelectedDepositMethod] = useState('Bitcoin');
+  
+  // Helper function for copying deposit details
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
   // Investment modal states
   const [showInvestmentModal, setShowInvestmentModal] = useState(false)
-  const [investmentStep, setInvestmentStep] = useState<'select' | 'confirm' | 'payment' | 'success'>('select')
+  const [investmentStep, setInvestmentStep] = useState<'select' | 'confirm' | 'choose-method' | 'payment' | 'success'>('select')
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   const [investmentForm, setInvestmentForm] = useState({
     capital: '',
@@ -429,14 +443,14 @@ function UserDashboard() {
     try {
       // Validate required fields
       if (!editForm.email || !editForm.email.trim()) {
-        showAlert('error', 'Validation Error', 'Email is required.')
+        showAlert('error', t('alerts.titleValidationError'), t('alerts.validationErrorEmailRequired'))
         return
       }
 
       // Basic email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(editForm.email)) {
-        showAlert('error', 'Validation Error', 'Please enter a valid email address.')
+        showAlert('error', t('alerts.titleValidationError'), t('alerts.validationErrorInvalidEmail'))
         return
       }
 
@@ -455,13 +469,13 @@ function UserDashboard() {
         sessionStorage.setItem('activeUser', JSON.stringify(updatedUser))
 
         setEditMode(false)
-        addNotification('Profile Updated', 'Your profile information has been updated successfully.', 'success')
-        showAlert('success', 'Profile Updated!', 'Your profile has been updated successfully.')
+        addNotification('Profile Updated', t('alerts.profileUpdated'), 'success')
+        showAlert('success', t('alerts.titleProfileUpdated'), t('alerts.profileUpdated'))
       }
     } catch (error) {
       console.error('Error updating profile:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      showAlert('error', 'Update Failed', `Failed to update profile: ${errorMessage}`)
+      showAlert('error', t('alerts.titleUpdateFailed'), t('alerts.updateFailed', { errorMessage }))
     }
   }
 
@@ -469,12 +483,12 @@ function UserDashboard() {
     e.preventDefault()
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      showAlert('error', 'Password Mismatch', 'New passwords do not match!')
+      showAlert('error', t('alerts.titlePasswordMismatch'), t('alerts.passwordMismatch'))
       return
     }
 
     if (passwordForm.newPassword.length < 6) {
-      showAlert('error', 'Password Too Short', 'Password must be at least 6 characters long!')
+      showAlert('error', t('alerts.titlePasswordTooShort'), t('alerts.passwordTooShort'))
       return
     }
 
@@ -485,38 +499,38 @@ function UserDashboard() {
         'A password change was requested on your account. If this was not you, please contact support.',
         'warning'
       )
-      showAlert('info', 'Feature Coming Soon', 'Password change feature will be implemented soon.')
+      showAlert('info', t('alerts.titleFeatureComingSoon'), t('alerts.featureComingSoon'))
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error) {
       console.error('Error changing password:', error)
-      showAlert('error', 'Password Change Failed', 'Failed to change password. Please try again.')
+      showAlert('error', t('alerts.titlePasswordChangeFailed'), t('alerts.passwordChangeFailed'))
     }
   }
 
   const handleDeleteAccount = async () => {
     showConfirm(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone!',
+      t('confirm.deleteAccountTitle'),
+      t('confirm.deleteAccountMessage'),
       () => {
         // First confirmation passed, show second confirmation
-        showConfirm(
-          'Final Warning',
-          'This will permanently delete all your data including investments and withdrawals. Are you absolutely sure?',
+          showConfirm(
+          t('confirm.finalWarningTitle'),
+          t('confirm.finalWarningMessage'),
           async () => {
             // Proceed with account deletion
             try {
               // You'll need to implement account deletion in supabaseUtils
-              showAlert('info', 'Feature Coming Soon', 'Account deletion feature will be implemented soon.')
+              showAlert('info', t('alerts.titleAccountDeletionComingSoon'), t('alerts.accountDeletionComingSoon'))
             } catch (error) {
               console.error('Error deleting account:', error)
-              showAlert('error', 'Deletion Failed', 'Failed to delete account. Please contact support.')
+              showAlert('error', t('alerts.titleDeletionFailed'), t('alerts.deletionFailed'))
             }
           },
           () => {
             // Second confirmation cancelled
           },
-          'Yes, Delete Everything',
-          'Cancel'
+          t('confirm.finalWarningConfirmText'),
+          t('common.cancel')
         )
       },
       () => {
@@ -531,13 +545,13 @@ function UserDashboard() {
   const paymentMethods = {
     Bitcoin: {
       name: 'Bitcoin (BTC)',
-      address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+      address: '14nkRtKqATBXudhd9yqSpLMZyy8JETmStH',
       network: 'Bitcoin Network',
       icon: '₿'
     },
     Ethereum: {
       name: 'Ethereum (ETH)',
-      address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
+      address: '0x33a056a59729fda369c03eff8e075c1f2537b41b',
       network: 'Ethereum Network (ERC-20)',
       icon: 'Ξ'
     },
@@ -574,22 +588,24 @@ function UserDashboard() {
     if (investmentStep === 'confirm') {
       const capital = parseFloat(investmentForm.capital)
       if (!capital || capital < selectedPlan.minCapital) {
-        showAlert('error', 'Invalid Amount', `Minimum investment is $${selectedPlan.minCapital.toLocaleString()}`)
+        showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountMin', { min: selectedPlan.minCapital.toLocaleString() }))
         return
       }
       if (selectedPlan.maxCapital && capital > selectedPlan.maxCapital) {
-        showAlert('error', 'Invalid Amount', `Maximum investment is $${selectedPlan.maxCapital.toLocaleString()}`)
+        showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountMax', { max: selectedPlan.maxCapital.toLocaleString() }))
         return
       }
+      setInvestmentStep('choose-method')
+    } else if (investmentStep === 'choose-method') {
       setInvestmentStep('payment')
     } else if (investmentStep === 'payment') {
       // Validate payment proof before submitting
       if (!investmentForm.transactionHash || investmentForm.transactionHash.trim() === '') {
-        showAlert('error', 'Transaction Hash Required', 'Please enter your transaction hash/ID to verify payment')
+        showAlert('error', t('alerts.titleTransactionHashRequired'), t('alerts.transactionHashRequired'))
         return
       }
       if (!investmentForm.bankSlip) {
-        showAlert('error', 'Payment Proof Required', 'Please upload a screenshot or photo of your payment as proof')
+        showAlert('error', t('alerts.titlePaymentProofRequired'), t('alerts.paymentProofRequired'))
         return
       }
       // Payment proof validated, proceed to submit
@@ -602,7 +618,7 @@ function UserDashboard() {
           duration: selectedPlan.duration,
           paymentOption: investmentForm.paymentMethod,
           transactionHash: investmentForm.transactionHash,
-          status: 'pending',
+          status: 'Pending',
           authStatus: 'unseen',
         })
         // Refetch investments from Supabase to ensure persistence
@@ -617,13 +633,15 @@ function UserDashboard() {
           `Your ${selectedPlan.name} investment of $${parseFloat(investmentForm.capital).toLocaleString()} has been created. You'll earn $${selectedPlan.dailyRoi.toLocaleString()} daily for ${selectedPlan.duration} days once activated.`
         )
       } catch (err) {
-        showAlert('error', 'Error', 'Failed to create investment. Please try again.')
+        showAlert('error', t('alerts.titleFailedToCreateInvestment'), t('alerts.failedToCreateInvestment'))
       }
     }
   }
 
   const handleInvestmentBack = () => {
     if (investmentStep === 'payment') {
+      setInvestmentStep('choose-method')
+    } else if (investmentStep === 'choose-method') {
       setInvestmentStep('confirm')
     } else if (investmentStep === 'confirm') {
       setShowInvestmentModal(false)
@@ -641,13 +659,13 @@ function UserDashboard() {
       setKycStep('personal')
     } else if (kycStep === 'personal') {
       if (!kycForm.idNumber || !kycForm.idType) {
-        showAlert('error', 'Missing Information', 'Please fill in all required fields')
+        showAlert('error', t('alerts.titleMissingInformation'), t('alerts.missingInformation'))
         return
       }
       setKycStep('documents')
     } else if (kycStep === 'documents') {
       if (!kycForm.idDocument || !kycForm.addressDocument || !kycForm.selfieDocument) {
-        showAlert('error', 'Missing Documents', 'Please upload all required documents')
+        showAlert('error', t('alerts.missingDocumentsTitle'), t('alerts.missingDocumentsMessage'))
         return
       }
       setKycStep('review')
@@ -796,7 +814,7 @@ function UserDashboard() {
         setWithdrawalStep('success')
       } catch (error) {
         console.error('Error creating withdrawal:', error)
-        showAlert('error', 'Error', 'Failed to submit withdrawal request. Please try again.')
+        showAlert('error', t('alerts.failedToSubmitWithdrawalTitle'), t('alerts.failedToSubmitWithdrawalMessage'))
       }
     }
   }
@@ -836,17 +854,17 @@ function UserDashboard() {
       const amount = parseFloat(loanForm.amount)
       const maxLoan = totalCapital * 0.5
       if (!amount || amount < 100) {
-        showAlert('error', 'Invalid Amount', 'Minimum loan amount is $100')
+        showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountMin', { min: 100 }))
         return
       }
       if (amount > maxLoan) {
-        showAlert('error', 'Invalid Amount', `Maximum loan amount is $${maxLoan.toLocaleString()}`)
+        showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountMax', { max: maxLoan.toLocaleString() }))
         return
       }
       setLoanStep('terms')
     } else if (loanStep === 'terms') {
       if (!loanForm.purpose) {
-        showAlert('error', 'Missing Information', 'Please specify the loan purpose')
+        showAlert('error', t('alerts.titleMissingInformation'), t('alerts.missingInformation'))
         return
       }
       setLoanStep('confirm')
@@ -893,7 +911,7 @@ function UserDashboard() {
         setLoanStep('success')
       } catch (error) {
         console.error('Error creating loan:', error)
-        showAlert('error', 'Error', 'Failed to submit loan request. Please try again.')
+        showAlert('error', t('alerts.loanSubmitFailedTitle'), t('alerts.loanSubmitFailedMessage'))
       }
     }
   }
@@ -981,13 +999,13 @@ function UserDashboard() {
       
       // Add notification for investment creation
       addNotification(
-        'New Investment Created',
-        `You invested $${capital.toLocaleString()} in ${selectedPlan.name}. Daily earnings: $${dailyRoi.toLocaleString()} for ${selectedPlan.durationDays} days.`,
+        t('notifications.investmentCreatedTitle'),
+        t('notifications.investmentCreatedMessage', { capital: capital.toLocaleString(), plan: selectedPlan.name, daily: dailyRoi.toLocaleString(), duration: selectedPlan.durationDays }),
         'success'
       )
       
-      showAlert('success', 'Investment Created!', 
-        `Your ${selectedPlan.name} investment of $${capital.toLocaleString()} has been created. You'll earn $${dailyRoi.toLocaleString()} daily for ${selectedPlan.durationDays} days once activated.`)
+      showAlert('success', t('alerts.investmentCreatedTitle'),
+        t('alerts.investmentCreatedMessage', { planName: selectedPlan.name, capital: capital.toLocaleString(), daily: dailyRoi.toLocaleString(), duration: selectedPlan.durationDays }))
       
       setInvestmentStep('success')
       
@@ -1000,8 +1018,7 @@ function UserDashboard() {
       }, 3000)
     } catch (error) {
       console.error('Error creating investment:', error)
-      showAlert('error', 'Investment Failed', 
-        'Unable to create investment. Please check your details and try again.')
+      showAlert('error', t('alerts.investmentFailedTitle'), t('alerts.investmentFailedMessage'))
     }
   }
 
@@ -1023,6 +1040,31 @@ function UserDashboard() {
   const totalBonus = approvedInvestments.reduce((sum, inv) => sum + (inv.bonus || 0), 0)
   const totalBalance = (currentUser?.balance || 0) + (currentUser?.bonus || 0)
 
+  // Deposit submit handler
+  const handleDepositSubmit = async () => {
+    if (!depositAmount || parseFloat(depositAmount) < 10) {
+      showAlert('error', t('alerts.titleInvalidAmount'), 'Minimum deposit amount is $10')
+      return
+    }
+
+    try {
+      // For now, just show success message and reset form
+      // TODO: Implement actual deposit creation in database
+      
+      // Reset form
+      setDepositAmount('')
+      setSelectedDepositMethod('Bitcoin')
+      
+      showAlert('success', 'Deposit Request Submitted', 'Your deposit request has been submitted successfully. Please complete the payment and upload proof in your Wallet section.')
+      
+      // Refresh user balance (in case it changes)
+      refreshUserBalance()
+    } catch (error) {
+      console.error('Error creating deposit:', error)
+      showAlert('error', 'Deposit Failed', 'Failed to submit deposit request. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <div className="dashboard-loading">
@@ -1037,6 +1079,10 @@ function UserDashboard() {
       {/* Sidebar */}
       <aside className={`dashboard-sidebar ${showSidePanel ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
+          {/* Language Switcher for Dashboard sidebar */}
+          <div style={{ marginTop: 8, marginBottom: 8 }}>
+            <LanguageSwitcher variant="dashboard" />
+          </div>
           <Link to="/" className="logo-link">
             <img src="/images/ciphervaultlogobig.svg" alt="CipherVault" className="sidebar-logo" />
           </Link>
@@ -1072,8 +1118,8 @@ function UserDashboard() {
             <span>Dashboard</span>
           </button>
           <button
-            className="nav-item"
-            onClick={() => { navigate('/deposit'); setShowSidePanel(false); }}
+            className={`nav-item ${profileState === 'Deposit' ? 'active' : ''}`}
+            onClick={() => { setProfileState('Deposit'); setShowSidePanel(false); }}
           >
             <i className="icofont-plus-circle"></i>
             <span>Deposit Funds</span>
@@ -1268,7 +1314,7 @@ function UserDashboard() {
                   <h3>Quick Actions</h3>
                 </div>
                 <div className="actions-grid">
-                  <button className="action-card" onClick={() => navigate('/deposit')}>
+                  <button className="action-card" onClick={() => setProfileState('Deposit')}>
                     <i className="icofont-plus-circle"></i>
                     <h4>Deposit Funds</h4>
                     <p>Add money to your wallet</p>
@@ -1296,6 +1342,127 @@ function UserDashboard() {
                 </div>
               </div>
             </>
+          )}
+
+          {profileState === 'Deposit' && (
+            <div className="page-section">
+              <div className="page-header">
+                <h2><i className="icofont-plus-circle"></i> Deposit Funds</h2>
+              </div>
+              <div className="deposit-form" style={{ background: 'linear-gradient(135deg, #181a20 0%, #23272f 100%)', borderRadius: 16, padding: '2rem', boxShadow: '0 2px 12px rgba(0,0,0,0.12)', maxWidth: 600, margin: '0 auto' }}>
+                <label style={{ fontWeight: 600, marginBottom: 8, display: 'block', color: 'var(--text)' }}>Amount (USD)</label>
+                <input
+                  type="number"
+                  min="10"
+                  step="0.01"
+                  value={depositAmount}
+                  onChange={e => setDepositAmount(e.target.value)}
+                  placeholder="Enter deposit amount"
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: 8, border: '1px solid var(--accent)', marginBottom: '1.5rem', fontSize: '1rem', background: 'var(--surface)', color: 'var(--text)' }}
+                />
+                <label style={{ fontWeight: 600, marginBottom: 8, display: 'block', color: 'var(--text)' }}>Select Payment Method</label>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                  {Object.entries(paymentMethods).map(([key, method]) => (
+                    <button
+                      key={key}
+                      className={`method-btn${selectedDepositMethod === key ? ' selected' : ''}`}
+                      style={{
+                        padding: '0.75rem 1.25rem',
+                        borderRadius: 8,
+                        border: selectedDepositMethod === key ? '2px solid var(--accent)' : '1px solid var(--border)',
+                        background: selectedDepositMethod === key ? 'rgba(240,185,11,0.08)' : 'var(--surface)',
+                        color: 'var(--text)',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}
+                      onClick={() => setSelectedDepositMethod(key)}
+                    >
+                      <span style={{ fontSize: '1.25rem' }}>{method.icon}</span> {method.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="deposit-details" style={{ marginBottom: '2rem', background: 'rgba(240,185,11,0.05)', borderRadius: 12, padding: '1rem' }}>
+                  {'address' in paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] ? (
+                    <>
+                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
+                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Address:</span>
+                        <div className="address-box">
+                          <code style={{ color: 'var(--accent)' }}>
+                            {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).address}
+                          </code>
+                          <button 
+                            className="copy-btn" 
+                            onClick={() => handleCopy((paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).address || '')}
+                          >
+                            {copied ? <i className="icofont-check"></i> : <i className="icofont-copy"></i>}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Network:</span>
+                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
+                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).network}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
+                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Account Name:</span>
+                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
+                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).accountName}
+                        </span>
+                      </div>
+                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
+                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Account Number:</span>
+                        <div className="address-box">
+                          <code style={{ color: 'var(--accent)' }}>
+                            {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).accountNumber}
+                          </code>
+                          <button 
+                            className="copy-btn" 
+                            onClick={() => handleCopy((paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).accountNumber || '')}
+                          >
+                            {copied ? <i className="icofont-check"></i> : <i className="icofont-copy"></i>}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
+                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Bank Name:</span>
+                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
+                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).bankName}
+                        </span>
+                      </div>
+                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
+                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Routing Number:</span>
+                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
+                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).routingNumber}
+                        </span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>SWIFT Code:</span>
+                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
+                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).swiftCode}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <button className="primary-btn" style={{ width: '100%', padding: '1rem', borderRadius: 8, background: 'linear-gradient(135deg, var(--accent), #d4a50a)', color: 'var(--bg)', fontWeight: 700, fontSize: '1.1rem', border: 'none', cursor: 'pointer' }} onClick={handleDepositSubmit}>
+                  Submit Deposit Request
+                </button>
+                <p style={{ marginTop: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                  After submitting, upload your payment proof in the Wallet section for faster approval.
+                </p>
+                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                  <button onClick={() => setProfileState('Wallet')} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Go to Wallet</button>
+                </div>
+              </div>
+            </div>
           )}
 
           {profileState === 'Wallet' && (
@@ -3364,7 +3531,7 @@ function UserDashboard() {
             <div className="page-section">
               <div className="page-header">
                 <h2><i className="icofont-headphone-alt"></i> Support Center</h2>
-                <button className="primary-btn" onClick={() => window.location.href = 'mailto:support@binance-clone.com'}>
+                <button className="primary-btn" onClick={() => window.location.href = 'mailto:Cyphervault6@gmail.com'}>
                   <i className="icofont-envelope"></i> Contact Us
                 </button>
               </div>
@@ -3455,7 +3622,7 @@ function UserDashboard() {
                     <button 
                       className="secondary-btn" 
                       style={{ width: '100%', padding: '0.75rem' }}
-                      onClick={() => window.location.href = 'mailto:support@binance-clone.com'}
+                      onClick={() => window.location.href = 'mailto:Cyphervault6@gmail.com'}
                     >
                       <i className="icofont-envelope"></i> Send Email
                     </button>
@@ -3574,8 +3741,8 @@ function UserDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
                   <div>
                     <p style={{ color: '#64748b', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Email</p>
-                    <a href="mailto:support@binance-clone.com" style={{ color: '#f0b90b', textDecoration: 'none', fontWeight: 500 }}>
-                      support@binance-clone.com
+                    <a href="mailto:Cyphervault6@gmail.com" style={{ color: '#f0b90b', textDecoration: 'none', fontWeight: 500 }}>
+                      Cyphervault6@gmail.com
                     </a>
                   </div>
                   <div>
@@ -3783,6 +3950,69 @@ function UserDashboard() {
               </div>
             )}
 
+            {/* Step 2.5: Choose Payment Method */}
+            {investmentStep === 'choose-method' && (
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h2><i className="icofont-wallet"></i> Select Payment Method</h2>
+                  <p>Please choose your preferred payment method to continue.</p>
+                </div>
+                <div className="modal-body">
+                  <div className="payment-methods-list" style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                    {Object.entries(paymentMethods).map(([key, method]) => (
+                      <div
+                        key={key}
+                        className={`payment-method-card${investmentForm.paymentMethod === key ? ' selected' : ''}`}
+                        style={{
+                          border: investmentForm.paymentMethod === key ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                          borderRadius: 8,
+                          padding: '0.5rem 0.9rem',
+                          minWidth: 0,
+                          minHeight: 0,
+                          cursor: 'pointer',
+                          background: investmentForm.paymentMethod === key
+                            ? 'linear-gradient(90deg, rgba(240,185,11,0.10) 0%, rgba(24,26,32,0.95) 100%)'
+                            : 'var(--surface)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          boxShadow: investmentForm.paymentMethod === key ? '0 2px 8px rgba(240,185,11,0.10)' : '0 1px 3px rgba(0,0,0,0.03)',
+                          transition: 'all 0.18s',
+                          fontSize: 15,
+                          marginBottom: 0,
+                          marginRight: 0,
+                          flex: '1 0 140px',
+                          maxWidth: 180
+                        }}
+                        onClick={() => setInvestmentForm({ ...investmentForm, paymentMethod: key })}
+                        onMouseOver={e => (e.currentTarget.style.background = investmentForm.paymentMethod === key ? 'linear-gradient(90deg, rgba(240,185,11,0.13) 0%, rgba(24,26,32,1) 100%)' : 'var(--bg)')}
+                        onMouseOut={e => (e.currentTarget.style.background = investmentForm.paymentMethod === key ? 'linear-gradient(90deg, rgba(240,185,11,0.10) 0%, rgba(24,26,32,0.95) 100%)' : 'var(--surface)')}
+                      >
+                        <span style={{ fontSize: 22, marginRight: 6 }}>{method.icon}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                          <span style={{ fontWeight: 500, fontSize: 15, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{method.name}</span>
+                          {'network' in method && (
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{method.network}</span>
+                          )}
+                          {'bankName' in method && (
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{method.bankName}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-secondary" onClick={handleInvestmentBack}>
+                    <i className="icofont-arrow-left"></i> Back
+                  </button>
+                  <button className="btn-primary" onClick={handleInvestmentNext}>
+                    Continue <i className="icofont-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Step 3: Payment Details */}
             {investmentStep === 'payment' && (
               <div className="modal-content">
@@ -3822,12 +4052,7 @@ function UserDashboard() {
                             </button>
                           </div>
                         </div>
-                        <div className="qr-placeholder">
-                          <div className="qr-box">
-                            <i className="icofont-qr-code"></i>
-                            <p>QR Code</p>
-                          </div>
-                        </div>
+                        {/* QR code removed as requested */}
                         {/* Transaction Hash Input - Required for crypto */}
                         <div className="detail-row" style={{ marginTop: '1.5rem' }}>
                           <span className="detail-label">Transaction Hash / TXID <span style={{ color: '#ef4444' }}>*</span></span>
