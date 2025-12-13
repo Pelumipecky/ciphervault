@@ -104,6 +104,8 @@ CREATE TABLE IF NOT EXISTS loans (
   "interestRate" NUMERIC NOT NULL,
   duration INTEGER NOT NULL,
   "authStatus" TEXT DEFAULT 'pending',
+  purpose TEXT,
+  "totalRepayment" NUMERIC,
   date TIMESTAMP DEFAULT NOW(),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
