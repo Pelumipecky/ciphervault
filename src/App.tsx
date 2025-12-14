@@ -1,3 +1,4 @@
+import TelegramChatButton from './components/ui/TelegramChatButton'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -21,6 +22,11 @@ import RoleProtectedRoute, { AdminRoute, SuperAdminRoute, UserRoute } from '@/co
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { getDashboardRoute } from '@/utils/roles'
+import ThirdPartyChatbotWidget from '@/components/ui/ThirdPartyChatbotWidget'
+import SmartsuppWidget from '@/components/ui/SmartsuppWidget'
+import FloatingChatRow from '@/components/ui/FloatingChatRow'
+import WhatsAppChatButton from '@/components/ui/WhatsAppChatButton'
+import DevIndicator from '@/components/DevIndicator'
 
 function RoleBasedRedirect() {
   const { user, isAuthenticated } = useAuth()
@@ -180,7 +186,15 @@ function App() {
         {/* Catch all route - redirects based on user role */}
         <Route path="*" element={<RoleBasedRedirect />} />
       </Routes>
+
+      {/* Dev mount indicator (visible in development only) */}
+      <DevIndicator />
       </AuthProvider>
+      {/* Floating third-party chatbot widget (Tawk.to, Intercom, etc.) */}
+      {/* Always show chatbot widget unless you want to restrict by env */}
+
+      <SmartsuppWidget />
+      <FloatingChatRow />
     </ThemeProvider>
   )
 }
