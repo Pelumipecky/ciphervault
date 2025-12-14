@@ -24,7 +24,8 @@ import { ThemeProvider } from '@/theme/ThemeProvider'
 import { getDashboardRoute } from '@/utils/roles'
 import ThirdPartyChatbotWidget from '@/components/ui/ThirdPartyChatbotWidget'
 import SmartsuppWidget from '@/components/ui/SmartsuppWidget'
-import FloatingChatRow from '@/components/ui/FloatingChatRow'
+import WhatsAppChatButton from '@/components/ui/WhatsAppChatButton'
+import TelegramChatButton from '@/components/ui/TelegramChatButton'
 import WhatsAppChatButton from '@/components/ui/WhatsAppChatButton'
 import DevIndicator from '@/components/DevIndicator'
 
@@ -194,7 +195,8 @@ function App() {
       {/* Always show chatbot widget unless you want to restrict by env */}
 
       <SmartsuppWidget />
-      <FloatingChatRow />
+      <WhatsAppChatButton />
+      <TelegramChatButton />
     </ThemeProvider>
   )
 }
