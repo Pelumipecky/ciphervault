@@ -15,8 +15,8 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Investment plan configurations (should match the ones in planConfig.ts)
 const PLAN_CONFIG = {
-  '3-Day Plan': { durationDays: 3, dailyRate: 0.02, bonus: 0.05 },
-  '7-Day Plan': { durationDays: 7, dailyRate: 0.025, bonus: 0.075 },
+  '3-Day Plan': { durationDays: 3, dailyRate: 0.10, bonus: 0.05 },
+  '7-Day Plan': { durationDays: 7, dailyRate: 0.10, bonus: 0.075 },
   '12-Day Plan': { durationDays: 12, dailyRate: 0.03, bonus: 0.09 },
   '15-Day Plan': { durationDays: 15, dailyRate: 0.035, bonus: 0.105 },
   '3-Month Plan': { durationDays: 90, dailyRate: 0.04, bonus: 0.12 },
