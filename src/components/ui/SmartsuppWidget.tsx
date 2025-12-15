@@ -21,9 +21,25 @@ const SmartsuppWidget: React.FC = () => {
     c.src = 'https://www.smartsuppchat.com/loader.js?'
     s.parentNode?.insertBefore(c, s)
 
+    // Add CSS to move Smartsupp launcher to the left side when it appears
+    const style = document.createElement('style')
+    style.id = 'smartsupp-left-style'
+    style.innerHTML = `
+      /* Move Smartsupp launcher to bottom-left */
+      .smartsupp-launcher, .smartsupp-chat, [id^="smartsupp"], .smartsupp-widget {
+        right: auto !important;
+        left: 24px !important;
+        bottom: 24px !important;
+        z-index: 99999 !important;
+      }
+    `
+    document.head.appendChild(style)
+
     return () => {
-      // cleanup: remove injected script if present
+      // cleanup: remove injected script and injected style if present
       if (c.parentNode) c.parentNode.removeChild(c)
+      const existing = document.getElementById('smartsupp-left-style')
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing)
     }
   }, [])
 

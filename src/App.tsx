@@ -1,4 +1,3 @@
-import TelegramChatButton from './components/ui/TelegramChatButton'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -24,9 +23,9 @@ import { ThemeProvider } from '@/theme/ThemeProvider'
 import { getDashboardRoute } from '@/utils/roles'
 import ThirdPartyChatbotWidget from '@/components/ui/ThirdPartyChatbotWidget'
 import SmartsuppWidget from '@/components/ui/SmartsuppWidget'
-import WhatsAppChatButton from '@/components/ui/WhatsAppChatButton'
-import TelegramChatButton from '@/components/ui/TelegramChatButton'
-import WhatsAppChatButton from '@/components/ui/WhatsAppChatButton'
+import SmartsuppChatButton from '@/components/ui/SmartsuppChatButton'
+import WhatsAppFloatingButton from '@/components/ui/WhatsAppFloatingButton'
+import TelegramFloatingButton from '@/components/ui/TelegramFloatingButton'
 import DevIndicator from '@/components/DevIndicator'
 
 function RoleBasedRedirect() {
@@ -195,8 +194,9 @@ function App() {
       {/* Always show chatbot widget unless you want to restrict by env */}
 
       <SmartsuppWidget />
-      <WhatsAppChatButton />
-      <TelegramChatButton />
+      <SmartsuppChatButton />
+      <WhatsAppFloatingButton />
+      <TelegramFloatingButton />
     </ThemeProvider>
   )
 }

@@ -929,17 +929,18 @@ function UserDashboard() {
           idnum: currentUser?.idnum,
           amount,
           method: withdrawalForm.method,
-          walletAddress: withdrawalForm.method !== 'Bank Transfer' ? withdrawalForm.walletAddress : null,
-          bankName: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.bankName : null,
-          accountNumber: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.accountNumber : null,
-          accountName: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.accountName : null,
-          routingNumber: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.routingNumber : null,
+          walletAddress: withdrawalForm.method !== 'Bank Transfer' ? withdrawalForm.walletAddress ?? undefined : undefined,
+          bankName: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.bankName ?? undefined : undefined,
+          accountNumber: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.accountNumber ?? undefined : undefined,
+          accountName: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.accountName ?? undefined : undefined,
+          routingNumber: withdrawalForm.method === 'Bank Transfer' ? withdrawalForm.routingNumber ?? undefined : undefined,
           status: 'pending',
           authStatus: 'pending',
           date: new Date().toISOString()
         }
         
-        const savedWithdrawal = await supabaseDb.createWithdrawal(newWithdrawal)
+        // Cast to any to satisfy TypeScript in environments where WithdrawalRecord may differ
+        const savedWithdrawal = await supabaseDb.createWithdrawal(newWithdrawal as any)
         
         // Send email notification
         await sendWithdrawalNotification(

@@ -58,11 +58,11 @@ export interface WithdrawalRecord {
   idnum?: string
   amount?: number
   wallet?: string
-  walletAddress?: string
-  bankName?: string
-  accountNumber?: string
-  accountName?: string
-  routingNumber?: string
+  walletAddress?: string | null
+  bankName?: string | null
+  accountNumber?: string | null
+  accountName?: string | null
+  routingNumber?: string | null
   status?: string
   method?: string
   authStatus?: string
