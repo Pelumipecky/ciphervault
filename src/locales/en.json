@@ -88,6 +88,31 @@
         }
       }
     }
+    ,
+    "mobileApps": {
+      "title": "Invest on the go. Anywhere, anytime.",
+      "lead": "Stay in touch with our app and desktop client.",
+      "platforms": {
+        "appStore": "App Store",
+        "android": "Android APK",
+        "googlePlay": "Google Play",
+        "mac": "MacOS",
+        "windows": "Windows",
+        "linux": "Linux"
+      }
+    },
+    "helpSection2": {
+      "title": "Need Help?",
+      "chatTitle": "24/7 Chat Support",
+      "chatCopy": "Get 24/7 chat support with our friendly customer service agents.",
+      "chatCta": "Chat Now",
+      "faqTitle": "FAQ",
+      "faqCopy": "View FAQs for detailed instructions on specific features.",
+      "faqCta": "Learn More",
+      "blogTitle": "Blogs",
+      "blogCopy": "Stay up to date with the latest stories and commentary.",
+      "blogCta": "Learn More"
+    }
   },
   "dashboard": {
     "welcome": "Welcome back",

@@ -773,16 +773,7 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* Mobile Hamburger Button (floating) */}
-      <button 
-        className="mobile-menu-btn"
-        onClick={() => setShowSidePanel(!showSidePanel)}
-        aria-label="Toggle menu"
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
+      {/* Mobile header controls handle sidebar toggle; removed floating button for consistency */}
 
       {/* Admin Sidebar */}
       <aside className={`dashboard-sidebar ${showSidePanel ? 'show' : ''}`}>

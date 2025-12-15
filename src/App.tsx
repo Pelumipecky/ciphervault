@@ -21,6 +21,7 @@ import RoleProtectedRoute, { AdminRoute, SuperAdminRoute, UserRoute } from '@/co
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { getDashboardRoute } from '@/utils/roles'
+import SuppaChatLoader from '@/components/ui/SuppaChatLoader'
 
 function RoleBasedRedirect() {
   const { user, isAuthenticated } = useAuth()
@@ -39,6 +40,8 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        {/* Client-only lazy loader for Smartsupp widget */}
+        <SuppaChatLoader />
         <Routes>
         {/* Public routes with Navbar and Footer */}
         <Route path="/" element={

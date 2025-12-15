@@ -287,7 +287,7 @@ function Home() {
           </div>
           <div className="guide-cta">
             <Link className="btn btn--primary btn--lg" to="/signup">
-              {t('home.guide.ctaGetStarted')}
+              {t('GetStarted')}
             </Link>
           </div>
         </div>
@@ -295,8 +295,8 @@ function Home() {
 
       <section className="help" id="faq">
         <div className="section-heading">
-          <p className="eyebrow">{t('home.helpSection.eyebrow')}</p>
-          <h2>{t('home.helpSection.title')}</h2>
+          <p className="eyebrow">{t('helpSection')}</p>
+          <h2>{t('helpSection')}</h2>
         </div>
         <div className="help-grid">
           {localizedHelpTiles.map((tile) => (
@@ -317,71 +317,71 @@ function Home() {
             <img src="/images/img6.png" alt="Mobile Trading" />
           </div>
           <div className="mobile-apps__info">
-            <h2>Invest on the go. Anywhere, anytime.</h2>
-            <p className="lead">Stay in touch with our app and desktop client.</p>
+            <h2>{t('mobileApps.title')}</h2>
+            <p className="lead">{t('mobileApps.lead')}</p>
             <div className="platform-grid">
               <div className="platform-item">
                 <i className="platform-icon">📱</i>
-                <p>App Store</p>
+                <p>{t('mobileApps.platforms.appStore')}</p>
               </div>
               <div className="platform-item">
                 <i className="platform-icon">🤖</i>
-                <p>Android APK</p>
+                <p>{t('mobileApps.platforms.android')}</p>
               </div>
               <div className="platform-item">
                 <i className="platform-icon">▶️</i>
-                <p>Google Play</p>
+                <p>{t('mobileApps.platforms.googlePlay')}</p>
               </div>
               <div className="platform-item">
                 <i className="platform-icon">🍎</i>
-                <p>MacOS</p>
+                <p>{t('mobileApps.platforms.mac')}</p>
               </div>
               <div className="platform-item">
                 <i className="platform-icon">🪟</i>
-                <p>Windows</p>
+                <p>{t('mobileApps.platforms.windows')}</p>
               </div>
               <div className="platform-item">
                 <i className="platform-icon">🐧</i>
-                <p>Linux</p>
+                <p>{t('mobileApps.platforms.linux')}</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="help" id="faq">
+      <section className="help" id="help-section">
         <div className="section-heading">
-          <h2>Need Help?</h2>
+          <h2>{t('helpSection2.title')}</h2>
         </div>
         <div className="help-grid">
           <article>
             <div className="help-icon">
               <img src="/images/customer care.svg" alt="Customer Care" height={40} />
             </div>
-            <h3>24/7 Chat Support</h3>
-            <p>Get 24/7 chat support with our friendly customer service agents at your service.</p>
+            <h3>{t('helpSection2.chatTitle')}</h3>
+            <p>{t('helpSection2.chatCopy')}</p>
             <a className="btn btn--primary" href="/chat.html">
-              Chat Now
+              {t('helpSection2.chatCta')}
             </a>
           </article>
           <article>
             <div className="help-icon">
               <img src="/images/faq.svg" alt="FAQ" height={40} />
             </div>
-            <h3>FAQ</h3>
-            <p>View FAQs for detailed instructions on specific features.</p>
+            <h3>{t('helpSection2.faqTitle')}</h3>
+            <p>{t('helpSection2.faqCopy')}</p>
             <a className="btn btn--primary" href="/faq.html">
-              Learn More
+              {t('helpSection2.faqCta')}
             </a>
           </article>
           <article>
             <div className="help-icon">
               <img src="/images/blog.svg" alt="Blog" height={40} />
             </div>
-            <h3>Blogs</h3>
-            <p>Stay up to date with the latest stories and commentary.</p>
+            <h3>{t('helpSection2.blogTitle')}</h3>
+            <p>{t('helpSection2.blogCopy')}</p>
             <a className="btn btn--primary" href="/blog.html">
-              Learn More
+              {t('helpSection2.blogCta')}
             </a>
           </article>
         </div>
@@ -404,6 +404,25 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* Social Media Buttons */}
+      <div style={{
+        position: 'fixed',
+        left: '10px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        zIndex: 1000
+      }}>
+        <a href="https://t.me/your_telegram_channel" target="_blank" rel="noopener noreferrer">
+          <img src="/images/telegram-icon.svg" alt="Telegram" style={{ width: '40px', height: '40px' }} />
+        </a>
+        <a href="https://wa.me/your_whatsapp_number" target="_blank" rel="noopener noreferrer">
+          <img src="/images/whatsapp-icon.svg" alt="WhatsApp" style={{ width: '40px', height: '40px' }} />
+        </a>
+      </div>
     </div>
   )
 }

@@ -45,6 +45,9 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
+    // Explicit list of supported languages prevents language detector from
+    // using malformed or unexpected locale values from localStorage.
+    supportedLngs: ['en', 'es', 'fr', 'de', 'zh', 'ja', 'pt', 'pt-BR'],
     debug: false,
 
     interpolation: {
@@ -58,3 +61,16 @@ i18n
   })
 
 export default i18n
+
+// Ensure any invalid or legacy language value stored in localStorage doesn't
+// break content. If a stored value is present but unsupported, reset it to
+// the default so the UI shows English text again.
+try {
+  const stored = localStorage.getItem('i18nextLng')
+  const allowed = ['en', 'es', 'fr', 'de', 'zh', 'ja', 'pt', 'pt-BR']
+  if (stored && !allowed.includes(stored)) {
+    localStorage.setItem('i18nextLng', 'en')
+  }
+} catch (e) {
+  // localStorage may not be available in some test environments — ignore.
+}

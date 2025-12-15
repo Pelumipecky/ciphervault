@@ -1311,6 +1311,20 @@ function UserDashboard() {
 
   return (
     <div className="modern-dashboard">
+      {/* Mobile Header Bar (mobile UX parity with AdminDashboard) */}
+      <div className="mobile-header">
+        <button
+          className="mobile-header-btn"
+          onClick={() => setShowSidePanel(!showSidePanel)}
+          aria-label="Toggle menu"
+        >
+          <i className="icofont-navigation-menu"></i>
+        </button>
+        <h1 className="mobile-header-title">{profileState}</h1>
+        <div className="mobile-header-logo">
+          <span style={{ color: '#f0b90b', fontWeight: 700 }}>CV</span>
+        </div>
+      </div>
       {/* Sidebar */}
       <aside className={`dashboard-sidebar ${showSidePanel ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
@@ -1376,9 +1390,10 @@ function UserDashboard() {
           <button
             className={`nav-item ${profileState === 'Stocks' ? 'active' : ''}`}
             onClick={() => { setProfileState('Stocks'); setShowSidePanel(false); }}
+            title="Stock Trading — Coming Soon"
           >
             <i className="icofont-chart-line"></i>
-            <span>Stock Trading</span>
+            <span>Stock Trading (Coming Soon)</span>
           </button>
           <button
             className={`nav-item ${profileState === 'Profile' ? 'active' : ''}`}
@@ -1770,64 +1785,41 @@ function UserDashboard() {
                   </span>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <table className="wallet-table">
                     <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>#</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>Asset</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>Price</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>24h Change</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>Market Cap</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: '500' }}>24h High/Low</th>
+                      <tr className="wallet-table-header">
+                        <th>#</th>
+                        <th>Asset</th>
+                        <th style={{ textAlign: 'right' }}>Price</th>
+                        <th style={{ textAlign: 'right' }}>24h Change</th>
+                        <th style={{ textAlign: 'right' }}>Market Cap</th>
+                        <th style={{ textAlign: 'right' }}>24h High/Low</th>
                       </tr>
                     </thead>
                     <tbody>
                       {cryptoDetails.map((crypto, idx) => (
-                        <tr 
-                          key={crypto.id} 
-                          style={{ 
-                            borderBottom: '1px solid rgba(255,255,255,0.05)',
-                            transition: 'background 0.2s'
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,185,11,0.05)')}
-                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                        >
-                          <td style={{ padding: '14px 16px', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{idx + 1}</td>
-                          <td style={{ padding: '14px 16px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <img 
-                                src={crypto.image} 
-                                alt={crypto.name} 
-                                style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+                        <tr key={crypto.id} className="wallet-row">
+                          <td data-label="#" className="index">{idx + 1}</td>
+                          <td data-label="Asset">
+                            <div className="asset">
+                              <img
+                                src={crypto.image}
+                                alt={crypto.name}
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />
                               <div>
-                                <div style={{ color: '#fff', fontWeight: '600', fontSize: '14px' }}>{crypto.name}</div>
-                                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', textTransform: 'uppercase' }}>{crypto.symbol}</div>
+                                <div className="asset-name">{crypto.name}</div>
+                                <div className="asset-symbol">{crypto.symbol}</div>
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right', color: '#fff', fontWeight: '600', fontSize: '14px' }}>
-                            ${formatPrice(crypto.current_price)}
+                          <td data-label="Price" className="price">${formatPrice(crypto.current_price)}</td>
+                          <td data-label="24h Change" className={crypto.price_change_percentage_24h >= 0 ? 'change-positive' : 'change-negative'}>
+                            <i className={crypto.price_change_percentage_24h >= 0 ? 'icofont-arrow-up' : 'icofont-arrow-down'}></i>
+                            {Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
                           </td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                            <span style={{ 
-                              color: crypto.price_change_percentage_24h >= 0 ? '#4ade80' : '#f87171',
-                              fontWeight: '600',
-                              fontSize: '13px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'flex-end',
-                              gap: '4px'
-                            }}>
-                              <i className={crypto.price_change_percentage_24h >= 0 ? 'icofont-arrow-up' : 'icofont-arrow-down'}></i>
-                              {Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
-                            </span>
-                          </td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right', color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>
-                            {formatMarketCap(crypto.market_cap)}
-                          </td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: '12px' }}>
+                          <td data-label="Market Cap" className="marketcap">{formatMarketCap(crypto.market_cap)}</td>
+                          <td data-label="24h High/Low" className="high-low">
                             <div style={{ color: '#4ade80' }}>${formatPrice(crypto.high_24h)}</div>
                             <div style={{ color: '#f87171' }}>${formatPrice(crypto.low_24h)}</div>
                           </td>
@@ -1983,71 +1975,8 @@ function UserDashboard() {
                 <div style={{ padding: '20px' }}>
                   <div style={{ display: 'grid', gap: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{ 
-                        width: '32px', 
-                        height: '32px', 
-                        borderRadius: '50%', 
-                        background: 'rgba(16, 185, 129, 0.1)', 
-                        color: '#10b981',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        flexShrink: 0
-                      }}>
-                        <i className="icofont-chart-growth"></i>
-                      </div>
-                      <div>
-                        <h4 style={{ margin: '0 0 4px 0', color: '#fff' }}>Investment Bonus</h4>
-                        <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-                          Earn bonus rewards on your successful investments. Higher plans offer better bonus rates.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{ 
-                        width: '32px', 
-                        height: '32px', 
-                        borderRadius: '50%', 
-                        background: 'rgba(245, 158, 11, 0.1)', 
-                        color: '#f59e0b',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        flexShrink: 0
-                      }}>
-                        <i className="icofont-users-social"></i>
-                      </div>
-                      <div>
-                        <h4 style={{ margin: '0 0 4px 0', color: '#fff' }}>Referral Bonus</h4>
-                        <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-                          Earn additional bonus when your referrals make investments. Build your network for more rewards.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{ 
-                        width: '32px', 
-                        height: '32px', 
-                        borderRadius: '50%', 
-                        background: 'rgba(99, 102, 241, 0.1)', 
-                        color: '#6366f1',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        flexShrink: 0
-                      }}>
-                        <i className="icofont-money"></i>
-                      </div>
-                      <div>
-                        <h4 style={{ margin: '0 0 4px 0', color: '#fff' }}>Withdraw Anytime</h4>
-                        <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-                          Your bonus balance can be withdrawn at any time through the withdrawal section.
-                        </p>
+                      <div style={{ overflowX: 'auto' }}>
+                        <p style={{ color: '#94a3b8' }}>No additional bonus details available.</p>
                       </div>
                     </div>
                   </div>
@@ -2891,23 +2820,23 @@ function UserDashboard() {
                       <tbody>
                         {loans.map((loan, index) => (
                           <tr key={loan.id || index}>
-                            <td style={{ fontWeight: 600, color: '#f0b90b' }}>
-                              ${loan.amount?.toLocaleString() || '0'}
-                            </td>
-                            <td>{loan.duration || 30} days</td>
-                            <td>{loan.interestRate || 5}%</td>
-                            <td>
-                              <span className={`status-badge ${
-                                loan.status === 'approved' || loan.status === 'active' ? 'success' :
-                                loan.status === 'rejected' ? 'danger' : 'pending'
-                              }`}>
-                                {loan.status || 'Pending'}
-                              </span>
-                            </td>
-                            <td style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-                              {loan.date ? new Date(loan.date).toLocaleDateString() : 'N/A'}
-                            </td>
-                          </tr>
+                              <td data-label="Amount" style={{ fontWeight: 600, color: '#f0b90b' }}>
+                                ${loan.amount?.toLocaleString() || '0'}
+                              </td>
+                              <td data-label="Duration">{loan.duration || 30} days</td>
+                              <td data-label="Interest">{loan.interestRate || 5}%</td>
+                              <td data-label="Status">
+                                <span className={`status-badge ${
+                                  loan.status === 'approved' || loan.status === 'active' ? 'success' :
+                                  loan.status === 'rejected' ? 'danger' : 'pending'
+                                }`}>
+                                  {loan.status || 'Pending'}
+                                </span>
+                              </td>
+                              <td data-label="Date" style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                {loan.date ? new Date(loan.date).toLocaleDateString() : 'N/A'}
+                              </td>
+                            </tr>
                         ))}
                       </tbody>
                     </table>
@@ -3836,7 +3765,7 @@ function UserDashboard() {
                       </div>
                     </div>
                     <p style={{ color: '#94a3b8', fontSize: '0.8125rem', marginBottom: '1rem' }}>Chat with our team in real-time</p>
-                    <button className="primary-btn" style={{ width: '100%', padding: '0.75rem' }}>
+                    <button className="primary-btn" style={{ width: '100%', padding: '0.75rem' }} onClick={() => (window as any).openSuppaChat && (window as any).openSuppaChat()}>
                       <i className="icofont-speech-comments"></i> Start Chat
                     </button>
                   </div>
@@ -3995,29 +3924,60 @@ function UserDashboard() {
             </div>
           )}
 
+          {profileState === 'Referrals' && (
+            <div className="page-section">
+              <div className="page-header">
+                <h2><i className="icofont-share"></i> Referrals</h2>
+                <div>
+                  <button className="primary-btn" onClick={copyReferralLink}><i className="icofont-copy"></i> Copy Link</button>
+                </div>
+              </div>
+
+              <div className="profile-card">
+                <h4>Your Referral Link</h4>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <code style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem 1rem', borderRadius: 8, color: '#f8fafc' }}>
+                    {`${window.location.origin}/signup?ref=${currentUser?.referralCode || currentUser?.idnum || ''}`}
+                  </code>
+                  <button className="primary-btn" onClick={copyReferralLink}>Copy Link</button>
+                </div>
+
+                <div style={{ marginTop: '1rem' }}>
+                  <p style={{ color: '#94a3b8' }}><strong>Referrals:</strong> {currentUser?.referralCount || 0}</p>
+                  <p style={{ color: '#94a3b8' }}><strong>Referral Bonus:</strong> ${(currentUser?.referralBonusTotal || 0).toLocaleString()}</p>
+                  <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>Share this link and earn commission when your referees invest.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {profileState === 'Stocks' && (
             <div className="page-section">
-              <StockTrading />
+              <div className="page-header">
+                <h2><i className="icofont-chart-line"></i> Stock Trading</h2>
+              </div>
+
+              <div className="profile-card">
+                <h4>Coming Soon</h4>
+                <p style={{ color: '#94a3b8' }}>The Stock Trading feature is coming soon. Join the waitlist to be notified when it launches.</p>
+                <div style={{ marginTop: '1rem' }}>
+                  <button
+                    className="primary-btn"
+                    onClick={() => {
+                      try {
+                        localStorage.setItem('waitlist_stock_trading', 'true')
+                      } catch {}
+                      showAlert('success', 'Joined Waitlist', 'You have been added to the Stock Trading waitlist.')
+                    }}
+                  >Join Waitlist</button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </main>
 
-      {/* Mobile Menu Button */}
-      <button
-        className="mobile-menu-btn"
-        onClick={() => setShowSidePanel(!showSidePanel)}
-        aria-label="Toggle menu"
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      {/* Mobile Overlay */}
-      {showSidePanel && (
-        <div className="mobile-overlay" onClick={() => setShowSidePanel(false)}></div>
-      )}
+      {/* Mobile overlay handled by CSS + sidebar show state (mobile header toggles sidebar) */}
 
       {/* Investment Modal */}
       {showInvestmentModal && selectedPlan && (
