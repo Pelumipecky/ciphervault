@@ -55,18 +55,7 @@ function Home() {
     { label: t('home.stats.fees'), value: '0.10%', detail: t('home.stats.feesDetail') }
   ]
 
-  const localizedPackages = PLAN_CONFIG.map(plan => ({
-    name: plan.name,
-    badge: plan.featured ? t('home.packages.badge.featured') : t('home.packages.badge.standard'),
-    description: plan.subtitle,
-    bullets: [
-      t('home.packages.bullets.duration', { duration: plan.durationLabel }),
-      t('home.packages.bullets.dailyRoi', { daily: formatPercent(plan.dailyRate) }),
-      t('home.packages.bullets.min', { min: plan.minCapital.toLocaleString() }),
-      t('home.packages.bullets.max', { max: plan.maxCapital ? plan.maxCapital.toLocaleString() : t('home.packages.bullets.unlimited') }),
-      t('home.packages.bullets.totalReturn', { total: plan.totalReturnPercent })
-    ]
-  }))
+  // Packages removed per request: the package listing and related mapping were deleted to simplify the homepage.
 
   const localizedHelpTiles = [
     {
@@ -170,7 +159,7 @@ function Home() {
           </div>
         </div>
         <div className="hero__visual">
-          <img src="/images/img1.png" alt="CipherVault dashboard" />
+          <img src="/images/img1.png" alt="Cypher Vault dashboard" />
         </div>
       </section>
 
@@ -226,37 +215,6 @@ function Home() {
         </div>
       </section>
 
-      <section className="packages" id="packages">
-        <div className="section-heading">
-          <p className="eyebrow">{t('home.packages.title')}</p>
-          <h2>{t('home.packages.subtitle')}</h2>
-          <p>
-            {t('home.packages.description')}
-          </p>
-        </div>
-        <div className="package-grid">
-          {localizedPackages.map((pkg) => (
-            <article key={pkg.name} className="package-card">
-              <span className="package-card__badge">{pkg.badge}</span>
-              <h3>{pkg.name}</h3>
-              <p>{pkg.description}</p>
-              <ul>
-                {pkg.bullets.map((bullet) => (
-                  <li key={bullet}>{bullet}</li>
-                ))}
-              </ul>
-              <div className="package-card__actions">
-                <Link className="btn btn--primary" to="/dashboard">
-                  {t('nav.dashboard')}
-                </Link>
-                <Link className="btn btn--ghost" to="/signup">
-                  {t('home.packages.ctaAllocate') || 'Allocate now'}
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
 
       <section className="investment-guide" id="investment-guide">
         <div className="guide-content">
