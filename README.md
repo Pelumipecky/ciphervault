@@ -290,6 +290,86 @@ npm run preview
 - ✅ Deployment platform configured (Vercel/Netlify auto-detect configs)
 - ✅ Test all routes after deployment
 
+## ⏰ Daily ROI Crediting System
+
+The application includes an automated system to credit daily ROI (Return on Investment) to active investments. This ensures users receive their earnings automatically.
+
+### How It Works
+
+1. **Investment Activation**: When investments are approved by admins, they become "active"
+2. **Daily Crediting**: A scheduled process runs daily to credit ROI based on the investment plan
+3. **Balance Updates**: ROI amounts are added to user's account balance
+4. **Completion**: When investment duration ends, final bonus is credited and investment is marked "completed"
+
+### Investment Plans & Rates
+
+| Plan | Duration | Daily ROI | Final Bonus |
+|------|----------|-----------|-------------|
+| 3-Day Plan | 3 days | 2.0% | 5.0% |
+| 7-Day Plan | 7 days | 2.5% | 7.5% |
+| 12-Day Plan | 12 days | 3.0% | 9.0% |
+| 15-Day Plan | 15 days | 3.5% | 10.5% |
+| 3-Month Plan | 90 days | 4.0% | 12.0% |
+| 6-Month Plan | 180 days | 4.5% | 13.5% |
+
+### Setting Up Daily ROI Crediting
+
+#### Option 1: Cron Job (Recommended for Production)
+
+**On Linux/Mac:**
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line to run daily at 2 AM
+0 2 * * * cd /path/to/your/app && npm run credit-daily-roi
+```
+
+**On Windows (Task Scheduler):**
+1. Open Task Scheduler
+2. Create new task
+3. Set trigger to "Daily" at your preferred time
+4. Set action to "Start a program"
+5. Program: `cmd.exe`
+6. Arguments: `/c cd /path/to/your/app && npm run credit-daily-roi`
+
+#### Option 2: Server Endpoint (For Cloud Hosting)
+
+The server includes a `/api/credit-daily-roi` endpoint that can be called by external cron services:
+
+```bash
+# Manual execution
+curl -X POST http://your-server-url/api/credit-daily-roi
+
+# Or use services like:
+# - GitHub Actions scheduled workflows
+# - AWS Lambda scheduled functions
+# - Google Cloud Scheduler
+# - Cron-job.org
+```
+
+#### Option 3: Manual Execution
+
+For testing or one-time execution:
+```bash
+npm run credit-daily-roi
+```
+
+### Monitoring ROI Crediting
+
+- Check server logs for crediting activity
+- Monitor user balances in the dashboard
+- Verify investment `creditedRoi` and `creditedBonus` fields in database
+- The system prevents double-crediting on the same day
+
+### Important Notes
+
+- ✅ ROI is only credited once per day per investment
+- ✅ Completed investments receive final bonus automatically
+- ✅ System handles multiple active investments per user
+- ✅ All calculations use the original investment capital amount
+- ✅ Failed crediting attempts are logged but don't stop the process
+
 ## 🗄️ Database Schema
 
 The application uses the following Supabase tables:

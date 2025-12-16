@@ -21,7 +21,14 @@ import RoleProtectedRoute, { AdminRoute, SuperAdminRoute, UserRoute } from '@/co
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { getDashboardRoute } from '@/utils/roles'
+// Chat widgets: keep SuppaChatLoader for client-only lazy loading and also include the floating buttons
 import SuppaChatLoader from '@/components/ui/SuppaChatLoader'
+import ThirdPartyChatbotWidget from '@/components/ui/ThirdPartyChatbotWidget'
+import SmartsuppWidget from '@/components/ui/SmartsuppWidget'
+import SmartsuppChatButton from '@/components/ui/SmartsuppChatButton'
+import WhatsAppFloatingButton from '@/components/ui/WhatsAppFloatingButton'
+import TelegramFloatingButton from '@/components/ui/TelegramFloatingButton'
+import DevIndicator from '@/components/DevIndicator'
 
 function RoleBasedRedirect() {
   const { user, isAuthenticated } = useAuth()
@@ -183,7 +190,17 @@ function App() {
         {/* Catch all route - redirects based on user role */}
         <Route path="*" element={<RoleBasedRedirect />} />
       </Routes>
+
+      {/* Dev mount indicator (visible in development only) */}
+      <DevIndicator />
       </AuthProvider>
+      {/* Floating third-party chatbot widget (Tawk.to, Intercom, etc.) */}
+      {/* Always show chatbot widget unless you want to restrict by env */}
+
+      <SmartsuppWidget />
+      <SmartsuppChatButton />
+      <WhatsAppFloatingButton />
+      <TelegramFloatingButton />
     </ThemeProvider>
   )
 }

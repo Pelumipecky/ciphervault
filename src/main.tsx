@@ -7,6 +7,7 @@ import './styles/global.css'
 import 'icofont/dist/icofont.min.css'
 // i18n
 import './i18n'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {
@@ -18,7 +19,11 @@ console.log('🚀 React app starting...')
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <React.Suspense fallback={<div>Loading...</div>}>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </React.Suspense>
     </BrowserRouter>
   </React.StrictMode>
 )

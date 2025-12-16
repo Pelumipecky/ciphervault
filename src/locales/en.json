@@ -87,8 +87,7 @@
           "transparent": { "title": "Transparent", "copy": "Real-time dashboards, blockchain proofs, and monthly letters." }
         }
       }
-    }
-    ,
+    },
     "mobileApps": {
       "title": "Invest on the go. Anywhere, anytime.",
       "lead": "Stay in touch with our app and desktop client.",
@@ -100,6 +99,16 @@
         "windows": "Windows",
         "linux": "Linux"
       }
+    },
+    "guide": {
+      "title": "How to get started",
+      "lead": "A simple 3-step process to verify, fund, and start earning.",
+      "steps": {
+        "verify": { "title": "Verify identity", "copy": "Complete identity verification to unlock deposits and withdrawals." },
+        "fund": { "title": "Fund account", "copy": "Deposit funds via bank transfer or crypto to start investing." },
+        "start": { "title": "Start investing", "copy": "Choose a plan, allocate capital, and begin earning daily ROI." }
+      },
+      "ctaGetStarted": "Get started"
     },
     "helpSection2": {
       "title": "Need Help?",

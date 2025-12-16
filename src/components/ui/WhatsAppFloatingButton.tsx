@@ -1,10 +1,9 @@
-// src/components/ui/WhatsAppChatButton.tsx
+// src/components/ui/WhatsAppFloatingButton.tsx
 import React from 'react'
 
 const WHATSAPP_LINK = 'https://wa.me/1234567890'; // Replace with your WhatsApp number (in international format)
 
-// Define a uniquely named component for this file
-const WhatsAppChatButton: React.FC = () => (
+const WhatsAppFloatingButton: React.FC = () => (
   <a
     href={WHATSAPP_LINK}
     target="_blank"
@@ -38,4 +37,4 @@ const WhatsAppChatButton: React.FC = () => (
   </a>
 )
 
-export default WhatsAppChatButton
+export default WhatsAppFloatingButton

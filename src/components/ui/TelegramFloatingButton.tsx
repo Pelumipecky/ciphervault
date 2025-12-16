@@ -1,10 +1,9 @@
-// src/components/ui/TelegramChatButton.tsx
+// src/components/ui/TelegramFloatingButton.tsx
 import React from 'react'
 
 const TELEGRAM_LINK = 'https://t.me/your_telegram_group'; // Replace with your actual Telegram group or bot link
 
-// Define a uniquely named component for this file
-const TelegramChatButton: React.FC = () => (
+const TelegramFloatingButton: React.FC = () => (
   <a
     href={TELEGRAM_LINK}
     target="_blank"
@@ -37,4 +36,4 @@ const TelegramChatButton: React.FC = () => (
   </a>
 )
 
-export default TelegramChatButton
+export default TelegramFloatingButton
