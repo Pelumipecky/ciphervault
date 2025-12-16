@@ -18,9 +18,9 @@ function About() {
   return (
     <div className="about">
       <div className="about__hero">
-        <h1>About CipherVault Investments</h1>
+        <h1>About Cypher Vault Investments</h1>
         <p className="lead">
-          CipherVault Investments is a digital asset investment firm focused on secure, data-driven crypto portfolios. 
+          Cypher Vault Investments is a digital asset investment firm focused on secure, data-driven crypto portfolios. 
           We deliver risk-managed funds, tokenized asset strategies, and institutional-grade advisory services for 
           institutions and high-net-worth investors.
         </p>
@@ -57,7 +57,7 @@ function About() {
           <section>
             <h3>Our Story</h3>
             <p>
-              CipherVault was founded by financial analysts, cybersecurity engineers, and blockchain strategists who saw 
+              Cypher Vault was founded by financial analysts, cybersecurity engineers, and blockchain strategists who saw 
               the same problem in crypto: investing driven by hype, and fragile security that harmed investors' trust. 
               The firm's origin traces to 2020 after a founder lost assets in a platform breach. That experience led to 
               a mission: build an investment model where every asset is secured and verified — like storing value in a 
@@ -66,7 +66,7 @@ function About() {
           </section>
 
           <section>
-            <h3>Why Choose CipherVault?</h3>
+            <h3>Why Choose Cypher Vault?</h3>
             <p>
               We combine institutional controls, encryption-aware custody practices, and AI-powered research to deliver 
               investment solutions that prioritize capital preservation and measurable, long-term growth.
@@ -104,7 +104,7 @@ function About() {
         <h3>Investment Packages</h3>
         <p className="lead">
           Choose from six curated portfolios that balance risk and opportunity across DeFi, blue-chip assets, and 
-          tokenized real-world exposure. Each package is monitored daily by CipherVault's research desk.
+          tokenized real-world exposure. Each package is monitored daily by Cypher Vault's research desk.
         </p>
         
         <div className="package-grid">

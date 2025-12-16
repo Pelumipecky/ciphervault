@@ -86,7 +86,7 @@ function Signup() {
     <div className="binance-auth">
       <div className="binance-auth__container">
         <Link to="/" className="binance-auth__logo">
-          <img src="/images/ciphervaultlogobig.svg" alt="CipherVault" />
+          <img src="/images/ciphervaultlogobig.svg" alt="Cypher Vault" />
         </Link>
         
         <div className="binance-auth__header">
@@ -212,7 +212,7 @@ function Signup() {
               required
             />
             <label htmlFor="terms">
-              I agree to CipherVault's <a href="/terms.html" target="_blank">Terms of Service</a> and <a href="/privacy.html" target="_blank">Privacy Policy</a>
+              I agree to Cypher Vault's <a href="/terms.html" target="_blank">Terms of Service</a> and <a href="/privacy.html" target="_blank">Privacy Policy</a>
             </label>
           </div>
 

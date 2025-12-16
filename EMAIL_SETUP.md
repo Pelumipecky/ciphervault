@@ -1,7 +1,7 @@
 # Email Notification Setup Guide
 
 ## Overview
-CipherVault now supports automated email notifications for all user actions and admin decisions. Users receive emails when:
+Cypher Vault now supports automated email notifications for all user actions and admin decisions. Users receive emails when:
 - Investments are created, approved, or rejected
 - Withdrawals are created, approved, or rejected
 - KYC verification is submitted, approved, or rejected
@@ -127,7 +127,7 @@ For production apps with high email volume, use a backend email service.
 ## Email Templates
 
 All emails use a professional template with:
-- CipherVault branding
+- Cypher Vault branding
 - Gradient header with gold accent
 - Status-specific colors (green/red/yellow/blue)
 - Responsive design
@@ -251,4 +251,4 @@ For issues or questions:
 
 ## License
 
-Email service integration is part of the CipherVault project and follows the same license.
+Email service integration is part of the Cypher Vault project and follows the same license.

@@ -39,7 +39,7 @@ const faqs = [
     category: 'Fees & Pricing',
     questions: [
       {
-        q: 'What fees does CipherVault charge?',
+        q: 'What fees does Cypher Vault charge?',
         a: 'Management fees range from 0.75%–2% AUM annually depending on package. Performance fees apply to certain growth strategies (typically 15–20% above high-water mark).'
       },
       {
@@ -101,7 +101,7 @@ function FAQ() {
       <div className="faq-page__header">
         <h1>Frequently Asked Questions</h1>
         <p className="lead">
-          Find answers to common questions about CipherVault accounts, custody, fees, and investment strategies.
+          Find answers to common questions about Cypher Vault accounts, custody, fees, and investment strategies.
         </p>
       </div>
 

@@ -13,8 +13,8 @@ const videoCategories = [
 const videos = [
   {
     id: 1,
-    title: 'Getting Started with CipherVault - Complete Beginner Guide',
-    description: 'Learn the basics of trading on CipherVault platform. Perfect for newcomers to cryptocurrency trading.',
+    title: 'Getting Started with Cypher Vault - Complete Beginner Guide',
+    description: 'Learn the basics of trading on Cypher Vault platform. Perfect for newcomers to cryptocurrency trading.',
     duration: '12:34',
     views: '125K',
     likes: '8.2K',
@@ -73,7 +73,7 @@ const videos = [
   },
   {
     id: 6,
-    title: 'Setting Up Your First Trade on CipherVault',
+    title: 'Setting Up Your First Trade on Cypher Vault',
     description: 'Step-by-step tutorial on how to place your first trade on our platform.',
     duration: '8:12',
     views: '267K',

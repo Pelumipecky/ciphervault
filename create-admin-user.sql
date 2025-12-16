@@ -1,4 +1,4 @@
--- Create Admin User for CipherVault
+-- Create Admin User for Cypher Vault
 -- Run this in your Supabase SQL Editor to create an admin account with comprehensive data
 
 -- First, create the admin user
@@ -69,7 +69,7 @@ INSERT INTO transactions (idnum, type, amount, status, description, reference, c
 
 -- Create sample notifications for the admin
 INSERT INTO notifications (idnum, title, message, type, read, created_at) VALUES
-('ADM001', 'Welcome to CipherVault', 'Your admin account has been successfully created!', 'success', true, NOW() - INTERVAL '30 days'),
+('ADM001', 'Welcome to Cypher Vault', 'Your admin account has been successfully created!', 'success', true, NOW() - INTERVAL '30 days'),
 ('ADM001', 'Investment Approved', 'Your Premium Plan investment of $10,000 has been approved.', 'success', true, NOW() - INTERVAL '15 days'),
 ('ADM001', 'ROI Credited', 'Your ROI of $2,500 has been credited to your account.', 'info', true, NOW() - INTERVAL '10 days'),
 ('ADM001', 'Withdrawal Processed', 'Your Bitcoin withdrawal of $2,000 has been processed.', 'success', true, NOW() - INTERVAL '20 days'),
@@ -155,7 +155,7 @@ INSERT INTO transactions (idnum, type, amount, status, description, reference, c
 
 -- Create notifications for regular users
 INSERT INTO notifications (idnum, title, message, type, read, created_at) VALUES
-('USR001', 'Welcome to CipherVault', 'Welcome! Your account has been created successfully.', 'success', true, NOW() - INTERVAL '25 days'),
+('USR001', 'Welcome to Cypher Vault', 'Welcome! Your account has been created successfully.', 'success', true, NOW() - INTERVAL '25 days'),
 ('USR003', 'KYC Verification Required', 'Please complete your KYC verification to unlock all features.', 'warning', false, NOW() - INTERVAL '5 days'),
 ('USR006', 'KYC Verification Required', 'Please complete your KYC verification to unlock all features.', 'warning', false, NOW() - INTERVAL '3 days'),
 ('USR008', 'KYC Verification Required', 'Please complete your KYC verification to unlock all features.', 'warning', false, NOW() - INTERVAL '2 days');

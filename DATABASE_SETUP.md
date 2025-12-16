@@ -1,12 +1,12 @@
-# 🗄️ Database Setup Guide - CipherVault
+# 🗄️ Database Setup Guide - Cypher Vault
 
-This guide will help you connect your CipherVault application to Supabase database.
+This guide will help you connect your Cypher Vault application to Supabase database.
 
 ## 📋 Prerequisites
 
 - A Supabase account (free tier works fine)
 - Node.js and npm installed
-- The CipherVault application cloned locally
+- The Cypher Vault application cloned locally
 
 ## 🚀 Step-by-Step Setup
 
@@ -15,7 +15,7 @@ This guide will help you connect your CipherVault application to Supabase databa
 1. Go to [https://app.supabase.com](https://app.supabase.com)
 2. Click **"New Project"**
 3. Fill in the details:
-   - **Name**: CipherVault (or your preferred name)
+   - **Name**: Cypher Vault (or your preferred name)
    - **Database Password**: Choose a strong password (save this!)
    - **Region**: Choose the closest to your users
    - **Pricing Plan**: Free tier is sufficient for development

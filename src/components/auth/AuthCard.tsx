@@ -11,14 +11,14 @@ function AuthCard({ title, subtitle, helper, children }: AuthCardProps) {
   return (
     <section className="auth">
       <div className="auth__card">
-        <p className="eyebrow">CipherVault</p>
+        <p className="eyebrow">Cypher Vault</p>
         <h1>{title}</h1>
         <p className="lead">{subtitle}</p>
         {children}
         {helper && <div className="auth__helper">{helper}</div>}
       </div>
       <div className="auth__panel">
-        <img src="/images/img4.png" alt="CipherVault app" />
+        <img src="/images/img4.png" alt="Cypher Vault app" />
         <div>
           <h2>Security-first architecture</h2>
           <p>Institutional custody, audited smart contracts, and 24/7 monitoring keep assets safe.</p>

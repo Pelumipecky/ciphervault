@@ -1,7 +1,7 @@
 # Responsiveness Improvements Guide
 
 ## Overview
-This document outlines the comprehensive responsiveness improvements made to the entire CipherVault website for optimal viewing on mobile, tablet, and desktop devices.
+This document outlines the comprehensive responsiveness improvements made to the entire Cypher Vault website for optimal viewing on mobile, tablet, and desktop devices.
 
 ## Breakpoints Used
 - **Mobile**: 320px - 640px (sm:)

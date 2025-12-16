@@ -1,4 +1,4 @@
-# CipherVault - Server (development)
+# Cypher Vault - Server (development)
 
 This tiny Express server is intended to run locally during development. It uses a Supabase **service_role** key for server-side operations (do not commit this key).
 

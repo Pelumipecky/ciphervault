@@ -58,7 +58,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Logo */}
           <div className="p-4 sm:p-5 md:p-6 border-b border-border flex-shrink-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-accent truncate">CipherVault</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-accent truncate">Cypher Vault</h2>
             <p className="text-xs sm:text-sm text-text-muted mt-1 truncate">Investment Dashboard</p>
           </div>
           
