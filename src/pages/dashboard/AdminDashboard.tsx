@@ -65,6 +65,7 @@ function AdminDashboard() {
   const [showAddBonusModal, setShowAddBonusModal] = useState(false)
   const [bonusAmount, setBonusAmount] = useState('')
   const [bonusReason, setBonusReason] = useState('')
+  const [bonusType, setBonusType] = useState<'bonus' | 'balance'>('bonus')
   const [selectedBonusUser, setSelectedBonusUser] = useState<any>(null)
   const [bonusSearchTerm, setBonusSearchTerm] = useState('')
 
@@ -689,36 +690,57 @@ function AdminDashboard() {
     }
 
     try {
-      const currentBonus = selectedBonusUser.bonus || 0
-      const newBonusAmount = currentBonus + parseFloat(bonusAmount)
+      const amount = parseFloat(bonusAmount)
+      let updateData: any = {}
+      let successMessage = ''
 
-      await supabaseDb.updateUser(selectedBonusUser.idnum, { 
-        bonus: newBonusAmount 
-      })
+      if (bonusType === 'bonus') {
+        const currentBonus = selectedBonusUser.bonus || 0
+        const newBonusAmount = currentBonus + amount
+        updateData.bonus = newBonusAmount
 
-      // Update local state
-      setAllUsers(prev => prev.map(u => 
-        u.idnum === selectedBonusUser.idnum 
-          ? { ...u, bonus: newBonusAmount }
-          : u
-      ))
+        // Update local state
+        setAllUsers(prev => prev.map(u => 
+          u.idnum === selectedBonusUser.idnum 
+            ? { ...u, bonus: newBonusAmount }
+            : u
+        ))
+
+        successMessage = t('alerts.bonusAddedMessage', { bonus: amount.toLocaleString(), name: selectedBonusUser.name || selectedBonusUser.email })
+      } else {
+        const currentBalance = selectedBonusUser.balance || 0
+        const newBalanceAmount = currentBalance + amount
+        updateData.balance = newBalanceAmount
+
+        // Update local state
+        setAllUsers(prev => prev.map(u => 
+          u.idnum === selectedBonusUser.idnum 
+            ? { ...u, balance: newBalanceAmount }
+            : u
+        ))
+
+        successMessage = t('alerts.balanceAddedMessage', { defaultValue: 'Successfully added ${{amount}} to available balance for {{name}}', amount: amount.toLocaleString(), name: selectedBonusUser.name || selectedBonusUser.email })
+      }
+
+      await supabaseDb.updateUser(selectedBonusUser.idnum, updateData)
 
       // Send notification
       await sendBalanceUpdateNotification(
         selectedBonusUser.email,
         selectedBonusUser.name || selectedBonusUser.userName,
-        (selectedBonusUser.bonus || 0) + parseFloat(bonusAmount),
-        selectedBonusUser.bonus || 0
+        bonusType === 'bonus' ? (selectedBonusUser.bonus || 0) + amount : selectedBonusUser.balance || 0,
+        bonusType === 'bonus' ? selectedBonusUser.bonus || 0 : selectedBonusUser.balance || 0
       )
 
-      showAlert('success', t('alerts.bonusAddedTitle'), t('alerts.bonusAddedMessage', { bonus: parseFloat(bonusAmount).toLocaleString(), name: selectedBonusUser.name || selectedBonusUser.email }))
+      showAlert('success', t('alerts.amountAddedTitle', { defaultValue: 'Amount Added' }), successMessage)
       setShowAddBonusModal(false)
       setSelectedBonusUser(null)
       setBonusAmount('')
       setBonusReason('')
+      setBonusType('bonus')
     } catch (error) {
-      console.error('Error adding bonus:', error)
-      showAlert('error', t('alerts.addBonusError'), t('alerts.addBonusError'))
+      console.error('Error adding amount:', error)
+      showAlert('error', t('alerts.addAmountError', { defaultValue: 'Addition Failed' }), t('alerts.addAmountErrorMessage', { defaultValue: 'Failed to add amount. Please try again.' }))
     }
   }
 
@@ -752,7 +774,45 @@ function AdminDashboard() {
     }
   }
 
-  // Calculate loan stats
+  const handleConvertBonusToBalance = async (user: any) => {
+    if (!user.bonus || user.bonus <= 0) {
+      showAlert('error', t('alerts.noBonusToConvertTitle', { defaultValue: 'No Bonus Available' }), t('alerts.noBonusToConvertMessage', { defaultValue: 'This user has no bonus to convert.' }))
+      return
+    }
+
+    const confirmConvert = window.confirm(`Convert $${user.bonus.toLocaleString()} bonus to available balance for ${user.name || user.email}?`)
+    if (!confirmConvert) return
+
+    try {
+      const bonusAmount = user.bonus
+      const newBalance = (user.balance || 0) + bonusAmount
+
+      await supabaseDb.updateUser(user.idnum, { 
+        balance: newBalance,
+        bonus: 0
+      })
+
+      // Update local state
+      setAllUsers(prev => prev.map(u => 
+        u.idnum === user.idnum 
+          ? { ...u, balance: newBalance, bonus: 0 }
+          : u
+      ))
+
+      // Send notification
+      await sendBalanceUpdateNotification(
+        user.email,
+        user.name || user.userName,
+        newBalance,
+        user.balance || 0
+      )
+
+      showAlert('success', t('alerts.bonusConvertedTitle', { defaultValue: 'Bonus Converted' }), t('alerts.bonusConvertedMessage', { defaultValue: 'Successfully converted ${{bonus}} bonus to available balance for {{name}}', bonus: bonusAmount.toLocaleString(), name: user.name || user.email }))
+    } catch (error) {
+      console.error('Error converting bonus:', error)
+      showAlert('error', t('alerts.convertBonusError', { defaultValue: 'Conversion Failed' }), t('alerts.convertBonusErrorMessage', { defaultValue: 'Failed to convert bonus. Please try again.' }))
+    }
+  }
   const pendingLoans = allLoans.filter(l => l.status === 'pending').length
   const totalLoanAmount = allLoans.filter(l => l.status === 'approved').reduce((sum, l) => sum + (l.amount || 0), 0)
 
@@ -1906,6 +1966,20 @@ function AdminDashboard() {
                               >
                                 <i className="icofont-minus"></i> Remove
                               </button>
+                              <button
+                                onClick={() => handleConvertBonusToBalance(user)}
+                                style={{
+                                  padding: '0.375rem 0.75rem',
+                                  background: 'rgba(59, 130, 246, 0.1)',
+                                  color: '#3b82f6',
+                                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <i className="icofont-exchange"></i> Convert
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -2527,6 +2601,8 @@ function AdminDashboard() {
                   marginBottom: '0.5rem'
                 }}>
                   Current Bonus: <span style={{ color: '#f59e0b', fontWeight: 600 }}>${selectedBonusUser.bonus?.toLocaleString() || '0'}</span>
+                  <br />
+                  Current Balance: <span style={{ color: '#10b981', fontWeight: 600 }}>${selectedBonusUser.balance?.toLocaleString() || '0'}</span>
                 </label>
               </div>
 
@@ -2538,13 +2614,49 @@ function AdminDashboard() {
                   fontWeight: 500,
                   marginBottom: '0.5rem'
                 }}>
-                  Bonus Amount ($)
+                  Add to:
+                </label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f8fafc', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="bonusType"
+                      value="bonus"
+                      checked={bonusType === 'bonus'}
+                      onChange={(e) => setBonusType(e.target.value as 'bonus' | 'balance')}
+                      style={{ accentColor: '#f59e0b' }}
+                    />
+                    Bonus (Promotional)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f8fafc', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="bonusType"
+                      value="balance"
+                      checked={bonusType === 'balance'}
+                      onChange={(e) => setBonusType(e.target.value as 'bonus' | 'balance')}
+                      style={{ accentColor: '#10b981' }}
+                    />
+                    Available Balance
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#f8fafc',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  marginBottom: '0.5rem'
+                }}>
+                  Amount ($)
                 </label>
                 <input
                   type="number"
                   value={bonusAmount}
                   onChange={(e) => setBonusAmount(e.target.value)}
-                  placeholder="Enter bonus amount"
+                  placeholder={`Enter ${bonusType} amount`}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2587,7 +2699,10 @@ function AdminDashboard() {
 
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <button
-                  onClick={() => setShowAddBonusModal(false)}
+                  onClick={() => {
+                    setShowAddBonusModal(false)
+                    setBonusType('bonus')
+                  }}
                   style={{
                     flex: 1,
                     padding: '0.75rem',

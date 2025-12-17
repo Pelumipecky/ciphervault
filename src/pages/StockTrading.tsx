@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createChart, IChartApi, ISeriesApi, CandlestickData, ColorType } from 'lightweight-charts';
+import { useAuth } from '@/context/AuthContext';
+import { supabaseDb } from '@/lib/supabaseUtils';
 import {
   fetchStockPrices,
   fetchStockDetails,
@@ -18,6 +20,7 @@ interface StockTradingProps {}
 
 function StockTrading() {
   const { t } = useTranslation();
+  const { user, setUser } = useAuth();
   // State management
   const [stockPrices, setStockPrices] = useState<StockPrices>({
     AAPL: 0, MSFT: 0, GOOGL: 0, AMZN: 0, TSLA: 0, NVDA: 0, META: 0, NFLX: 0
@@ -193,15 +196,76 @@ function StockTrading() {
     }
   };
 
-  const handleTrade = () => {
-    if (!selectedStock || !quantity) return;
+  const handleTrade = async () => {
+    if (!selectedStock || !quantity || !user) return;
 
     const qty = parseFloat(quantity);
     const price = selectedStock.current_price;
     const total = qty * price;
 
-    showAlert('success', t('alerts.orderPlacedTitle'), t('alerts.orderPlacedMessage', { orderType: tradeType.toUpperCase(), qty, symbol: selectedStock.symbol, price: price.toFixed(2), total: total.toFixed(2) }));
-    // Here you would integrate with your trading backend
+    try {
+      // Check balance for buy orders
+      if (tradeType === 'buy' && total > (user.balance || 0)) {
+        showAlert('error', t('alerts.insufficientBalanceTitle', { defaultValue: 'Insufficient Balance' }), t('alerts.insufficientBalanceMessage', { defaultValue: 'You do not have enough balance for this trade.' }));
+        return;
+      }
+
+      // Process the trade
+      let newBalance = user.balance || 0;
+      if (tradeType === 'buy') {
+        newBalance -= total;
+      } else {
+        newBalance += total;
+      }
+
+      // Update user balance and increment completed trades
+      const currentCompletedTrades = user.completedTrades || 0;
+      const newCompletedTrades = currentCompletedTrades + 1;
+
+      await supabaseDb.updateUser(user.idnum || '', {
+        balance: newBalance,
+        completedTrades: newCompletedTrades
+      });
+
+      // Check for bonus conversion (after 5 completed trades)
+      let bonusConverted = false;
+      let bonusToBalance = 0;
+      if (newCompletedTrades >= 5 && (user.bonus || 0) > 0) {
+        bonusToBalance = user.bonus || 0;
+        newBalance += bonusToBalance;
+
+        // Convert bonus to balance and reset bonus
+        await supabaseDb.updateUser(user.idnum || '', {
+          balance: newBalance,
+          bonus: 0
+        });
+
+        bonusConverted = true;
+      }
+
+      // Update local user state
+      setUser({
+        ...user,
+        balance: newBalance,
+        completedTrades: newCompletedTrades,
+        bonus: bonusConverted ? 0 : user.bonus
+      });
+
+      // Show success message
+      let successMessage = t('alerts.orderPlacedMessage', { orderType: tradeType.toUpperCase(), qty, symbol: selectedStock.symbol, price: price.toFixed(2), total: total.toFixed(2) });
+      if (bonusConverted) {
+        successMessage += ` ${t('alerts.bonusConverted', { defaultValue: 'Bonus of ${{bonusToBalance}} has been converted to your available balance!', bonusToBalance: bonusToBalance.toFixed(2) })}`;
+      }
+
+      showAlert('success', t('alerts.orderPlacedTitle', { defaultValue: 'Order Placed' }), successMessage);
+
+      // Reset form
+      setQuantity('');
+
+    } catch (error) {
+      console.error('Trade processing error:', error);
+      showAlert('error', t('alerts.tradeFailedTitle', { defaultValue: 'Trade Failed' }), t('alerts.tradeFailedMessage', { defaultValue: 'Failed to process your trade. Please try again.' }));
+    }
   };
 
   // Alert functions

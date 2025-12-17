@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   address TEXT,
   balance NUMERIC DEFAULT 0,
   bonus NUMERIC DEFAULT 0,
+  "completedTrades" INTEGER DEFAULT 0,
   date TIMESTAMP DEFAULT NOW(),
   avatar TEXT,
   "investmentCount" INTEGER DEFAULT 0,

@@ -21,6 +21,7 @@ export interface UserRecord {
   address?: string
   balance?: number
   bonus?: number
+  completedTrades?: number
   date?: string
   avatar?: string
   investmentCount?: number
@@ -123,6 +124,7 @@ const mapUserRecord = (record: any): UserRecord => {
     referral_code_issued_at,
     referred_by_code,
     referral_level,
+    completed_trades,
     ...rest
   } = record
   return {
@@ -135,6 +137,7 @@ const mapUserRecord = (record: any): UserRecord => {
     referralCodeIssuedAt: referral_code_issued_at ?? rest.referralCodeIssuedAt ?? null,
     referredByCode: referred_by_code ?? rest.referredByCode ?? null,
     referralLevel: referral_level ?? rest.referralLevel ?? 0,
+    completedTrades: completed_trades ?? rest.completedTrades ?? 0,
   }
 }
 

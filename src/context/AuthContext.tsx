@@ -12,6 +12,7 @@ interface User {
   bonus?: number
   referralCount?: number
   avatar?: string
+  completedTrades?: number
 }
 
 interface AuthContextType {
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 bonus: freshUserData.bonus,
                 referralCount: freshUserData.referralCount,
                 avatar: freshUserData.avatar,
+                completedTrades: freshUserData.completedTrades,
               }
               setUser(mappedUser)
               localStorage.setItem('activeUser', JSON.stringify(mappedUser))
