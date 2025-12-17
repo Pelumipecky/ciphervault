@@ -168,13 +168,6 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
 
   return defaultPrices;
 }
-    console.warn('⚠️ CoinMarketCap API failed or not configured:', error);
-  }
-
-  // Ultimate fallback - return zeros but log the issue
-  console.error('❌ All crypto price APIs failed - returning default values');
-  return defaultPrices;
-}
 
 // Fetch detailed price data with 24h changes - Multiple APIs for maximum reliability
 export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
