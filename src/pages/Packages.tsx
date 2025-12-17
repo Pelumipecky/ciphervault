@@ -48,7 +48,7 @@ function Packages() {
         </div>
       </div>
 
-      <div className="package-grid">
+      <div className="package-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         {packages.map((pkg) => (
           <article key={pkg.name} className="package-card">
             <div className="package-card__body">
