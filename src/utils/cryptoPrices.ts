@@ -50,9 +50,9 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
     console.log('🔄 Fetching prices from Binance API...');
     const binanceResponse = await fetch('https://api.binance.com/api/v3/ticker/price', {
       method: 'GET',
-      headers: {
+        headers: {
         'Accept': 'application/json',
-        'User-Agent': 'CipherVault-App/1.0'
+        'User-Agent': 'CypherVault-App/1.0'
       }
     });
 
@@ -93,7 +93,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'CipherVault-App/1.0'
+          'User-Agent': 'CypherVault-App/1.0'
         }
       }
     );
@@ -127,7 +127,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
         headers: {
           'Accept': 'application/json',
           'X-CMC_PRO_API_KEY': import.meta.env.VITE_CMC_API_KEY || '',
-          'User-Agent': 'CipherVault-App/1.0'
+          'User-Agent': 'CypherVault-App/1.0'
         }
       }
     );
@@ -235,16 +235,15 @@ export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'CipherVault-App/1.0'
+          'User-Agent': 'CypherVault-App/1.0'
         }
       }
     );
 
     if (response.ok) {
-      const data: CryptoPrice[] = await response.json();
+      const data = await response.json();
 
-      // Transform CoinGecko data to our format
-      const transformedData = data.map((coin: any) => ({
+      const transformedData: CryptoPrice[] = data.map((coin: any) => ({
         id: coin.id,
         symbol: coin.symbol,
         name: coin.name,

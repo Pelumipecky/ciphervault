@@ -59,7 +59,7 @@ function Navbar() {
     <header className="navbar">
       <div className="navbar__inner">
         <Link to="/" className="navbar__brand" onClick={closeMenu}>
-          <img src="/images/ciphervaultlogobig.svg" alt="CipherVault Investments" height={36} />
+          <img src="/images/ciphervaultlogobig.svg" alt="Cypher Vault Investments" height={36} />
         </Link>
         <nav className={`navbar__links ${isOpen ? 'navbar__links--open' : ''}`}>
           

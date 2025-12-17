@@ -1,7 +1,7 @@
 # Database Schema Setup Guide
 
 ## Overview
-This document describes all the required database tables for the CipherVault application and how to set them up in Supabase.
+This document describes all the required database tables for the Cypher Vault application and how to set them up in Supabase.
 
 ## Required Tables
 

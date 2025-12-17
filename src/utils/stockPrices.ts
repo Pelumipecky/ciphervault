@@ -86,7 +86,7 @@ export async function fetchStockPrices(): Promise<StockPrices> {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'CipherVault-App/1.0'
+          'User-Agent': 'CypherVault-App/1.0'
         }
       }
     );
@@ -128,9 +128,9 @@ export async function fetchStockPrices(): Promise<StockPrices> {
             {
               method: 'GET',
               headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'CipherVault-App/1.0'
-              }
+                  'Accept': 'application/json',
+                  'User-Agent': 'CypherVault-App/1.0'
+                }
             }
           );
 
@@ -175,7 +175,7 @@ export async function fetchStockDetails(symbol: string): Promise<StockPrice | nu
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'CipherVault-App/1.0'
+          'User-Agent': 'CypherVault-App/1.0'
         }
       }
     );
@@ -244,7 +244,7 @@ export async function fetchStockChartData(
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'CipherVault-App/1.0'
+          'User-Agent': 'CypherVault-App/1.0'
         }
       }
     );
@@ -291,7 +291,7 @@ export async function searchStocks(query: string): Promise<{ symbol: string; nam
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'CipherVault-App/1.0'
+          'User-Agent': 'CypherVault-App/1.0'
         }
       }
     );

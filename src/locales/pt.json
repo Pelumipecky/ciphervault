@@ -14,14 +14,14 @@
     "hero": {
       "eyebrow": "Plataforma institucional de criptomoedas",
       "title": "Exposição disciplinada para equipes sérias de ativos digitais.",
-      "subtitle": "CipherVault combina custódia, pesquisa quantitativa e relatórios transparentes para que cada alocação seja tão resiliente quanto um cofre.",
+      "subtitle": "Cypher Vault combina custódia, pesquisa quantitativa e relatórios transparentes para que cada alocação seja tão resiliente quanto um cofre.",
       "cta": "Abra uma conta",
       "ctaExplore": "Explorar planos",
       "pillTitle": "Negocie Bitcoin sem taxas",
       "pillCopy": "Disponível para novos clientes no primeiro trimestre."
     },
     "features": {
-      "title": "Por que escolher a CipherVault?",
+      "title": "Por que escolher a Cypher Vault?",
       "security": { "title": "Segurança bancária", "description": "Criptografia avançada e autenticação multifator protegem seus investimentos" },
       "returns": { "title": "Altos Retornos", "description": "Taxas de ROI competitivas com histórico comprovado de sucesso" },
       "support": { "title": "Suporte 24/7", "description": "Suporte ao cliente 24 horas por dia para todas as suas necessidades de negociação" }
@@ -60,7 +60,7 @@
       "steps": {
         "verify": { "title": "Verifique sua identidade", "copy": "Complete o processo de verificação de identidade para proteger sua conta e transações." },
         "fund": { "title": "Financie sua conta", "copy": "Adicione fundos à sua conta cripto para começar a investir. Você pode adicionar fundos com vários métodos de pagamento." },
-        "start": { "title": "Comece a investir", "copy": "Você está pronto! Compre/venda cripto, configure compras recorrentes e descubra o que a CipherVault Investments tem a oferecer." }
+        "start": { "title": "Comece a investir", "copy": "Você está pronto! Compre/venda cripto, configure compras recorrentes e descubra o que a Cypher Vault Investments tem a oferecer." }
       },
       "ctaGetStarted": "Começar"
     },
@@ -72,7 +72,7 @@
       "blog": { "title": "Blog + Pesquisa", "copy": "Insights semanais on-chain e notas macro diretamente do time de quant.", "cta": "Ler Insights" }
     },
     "about": {
-      "eyebrow": "Sobre CipherVault",
+      "eyebrow": "Sobre Cypher Vault",
       "title": "Infraestrutura com foco em segurança e alocações orientadas a dados.",
       "lead": "Cada carteira é verificada, cada contraparte auditada e cada rebalanceamento registrado. Family offices, tesourarias e fundações confiam em nós para escalar a exposição sem comprometer a governança.",
       "checklist": { "custody": "Parceiros de custódia com SOC 2 + padrões de seguro", "quantResearch": "Pesquisa quantitativa abrangendo DeFi, RWA e infraestrutura de IA", "advisors": "Consultores dedicados com cadências de relatórios institucionais" },

@@ -78,7 +78,7 @@ function Footer() {
         </div>
       </div>
       <div className="site-footer__meta">
-        <p>© {new Date().getFullYear()} CipherVault Investments. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Cypher Vault Investments. All rights reserved.</p>
       </div>
     </footer>
   )

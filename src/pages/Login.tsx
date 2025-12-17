@@ -60,12 +60,12 @@ function Login() {
     <div className="binance-auth">
       <div className="binance-auth__container">
         <Link to="/" className="binance-auth__logo">
-          <img src="/images/ciphervaultlogobig.svg" alt="CipherVault" />
+          <img src="/images/ciphervaultlogobig.svg" alt="Cypher Vault" />
         </Link>
         
         <div className="binance-auth__header">
           <h1>Log In</h1>
-          <p>Welcome back to CipherVault Investments</p>
+          <p>Welcome back to Cypher Vault Investments</p>
         </div>
 
         <form className="binance-form" onSubmit={handleSubmit}>
@@ -119,7 +119,7 @@ function Login() {
         </form>
 
         <div className="binance-auth__footer">
-          New to CipherVault? <Link to="/signup">Sign Up</Link>
+          New to Cypher Vault? <Link to="/signup">Sign Up</Link>
         </div>
         
         <div style={{

@@ -833,13 +833,7 @@ function AdminDashboard() {
             <i className="icofont-dashboard-web"></i>
             <span>Overview</span>
           </button>
-          <button
-            className="nav-item"
-            onClick={() => { setShowSidePanel(false); navigate('/deposit'); }}
-          >
-            <i className="icofont-plus-circle"></i>
-            <span>Deposit Funds</span>
-          </button>
+          {/* Deposit removed from Admin sidebar per request */}
           <button
             className={`nav-item ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => { setActiveTab('users'); setShowSidePanel(false); navigate('/admin/users-management'); }}
@@ -917,9 +911,9 @@ function AdminDashboard() {
         </nav>
 
         <div className="sidebar-footer">
-          <button className="nav-item" onClick={() => navigate('/dashboard')}>
+          <button className="nav-item" onClick={() => navigate('/') }>
             <i className="icofont-ui-user"></i>
-            <span>User Dashboard</span>
+            <span>View Website</span>
           </button>
           <button className="logout-btn" onClick={handleLogout}>
             <i className="icofont-sign-out"></i>
@@ -999,22 +993,7 @@ function AdminDashboard() {
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                   gap: '1rem'
                 }}>
-                    <button
-                      onClick={() => navigate('/deposit')}
-                      style={{
-                        padding: '1.5rem',
-                        background: 'rgba(240,185,11,0.1)',
-                        border: '1px solid rgba(240,185,11,0.3)',
-                        borderRadius: '12px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <i className="icofont-plus-circle" style={{ fontSize: '1.5rem', color: '#f0b90b', display: 'block', marginBottom: '0.5rem' }}></i>
-                      <div style={{ color: '#f8fafc', fontWeight: 600, fontSize: '1rem' }}>Deposit Funds</div>
-                      <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Add money to wallet</div>
-                    </button>
+                    {/* Deposit quick-action removed for admin */}
                   <button
                     onClick={() => setActiveTab('investments')}
                     style={{

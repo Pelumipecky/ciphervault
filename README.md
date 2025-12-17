@@ -1,6 +1,6 @@
-# CipherVault Investments — Modern Investment Dashboard
+# Cypher Vault Investments — Modern Investment Dashboard
 
-CipherVault is a comprehensive investment platform built with React, TypeScript, Vite, and Supabase. It features a modern dark-themed UI with complete database integration for user authentication, investment management, KYC verification, and portfolio tracking.
+Cypher Vault is a comprehensive investment platform built with React, TypeScript, Vite, and Supabase. It features a modern dark-themed UI with complete database integration for user authentication, investment management, KYC verification, and portfolio tracking.
 
 ## 🌟 Key Features
 

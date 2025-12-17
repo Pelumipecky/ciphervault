@@ -43,7 +43,7 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
         subject: notification.subject,
         message: notification.message,
         notification_type: notification.type,
-        app_name: 'CipherVault',
+        app_name: 'Cypher Vault',
         year: new Date().getFullYear(),
       };
 
@@ -95,17 +95,17 @@ export async function sendInvestmentNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ Investment Approved - CipherVault',
+      subject: '✅ Investment Approved - Cypher Vault',
       message: `Great news! Your investment of $${amount.toLocaleString()} in the ${plan} plan has been approved and is now active. Your earnings will start accumulating immediately.`,
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ Investment Update - CipherVault',
+      subject: '❌ Investment Update - Cypher Vault',
       message: `Your investment request of $${amount.toLocaleString()} for the ${plan} plan has been reviewed. Please contact support for more details.`,
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ Investment Received - CipherVault',
+      subject: '⏳ Investment Received - Cypher Vault',
       message: `We've received your investment request of $${amount.toLocaleString()} for the ${plan} plan. Our team is reviewing it and will notify you once processed.`,
       type: 'info' as const,
     },
@@ -134,17 +134,17 @@ export async function sendWithdrawalNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ Withdrawal Approved - CipherVault',
+      subject: '✅ Withdrawal Approved - Cypher Vault',
       message: `Your withdrawal request of $${amount.toLocaleString()} via ${method} has been approved and processed. Funds should arrive within 1-3 business days.`,
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ Withdrawal Update - CipherVault',
+      subject: '❌ Withdrawal Update - Cypher Vault',
       message: `Your withdrawal request of $${amount.toLocaleString()} could not be processed. Please contact support for assistance.`,
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ Withdrawal Request Received - CipherVault',
+      subject: '⏳ Withdrawal Request Received - Cypher Vault',
       message: `We've received your withdrawal request of $${amount.toLocaleString()} via ${method}. Our team is processing it and will notify you once completed.`,
       type: 'info' as const,
     },
@@ -171,17 +171,17 @@ export async function sendKYCNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ KYC Verified - CipherVault',
-      message: `Congratulations! Your identity verification has been completed successfully. You now have full access to all CipherVault features.`,
+      subject: '✅ KYC Verified - Cypher Vault',
+      message: `Congratulations! Your identity verification has been completed successfully. You now have full access to all Cypher Vault features.`,
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ KYC Verification Update - CipherVault',
+      subject: '❌ KYC Verification Update - Cypher Vault',
       message: `Your KYC verification could not be completed. Please resubmit your documents or contact support for assistance.`,
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ KYC Submitted - CipherVault',
+      subject: '⏳ KYC Submitted - Cypher Vault',
       message: `We've received your KYC documents and are currently reviewing them. This typically takes 24-48 hours. We'll notify you once complete.`,
       type: 'info' as const,
     },
@@ -210,17 +210,17 @@ export async function sendLoanNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ Loan Approved - CipherVault',
+      subject: '✅ Loan Approved - Cypher Vault',
       message: `Great news! Your loan request of $${amount.toLocaleString()} for ${duration} days has been approved. The funds will be credited to your account shortly.`,
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ Loan Application Update - CipherVault',
+      subject: '❌ Loan Application Update - Cypher Vault',
       message: `Your loan request of $${amount.toLocaleString()} could not be approved at this time. Please contact support for more information.`,
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ Loan Application Received - CipherVault',
+      subject: '⏳ Loan Application Received - Cypher Vault',
       message: `We've received your loan request of $${amount.toLocaleString()} for ${duration} days. Our team is reviewing your application and will notify you soon.`,
       type: 'info' as const,
     },
@@ -252,7 +252,7 @@ export async function sendBalanceUpdateNotification(
   return sendEmailNotification({
     to_email: userEmail,
     to_name: userName,
-    subject: '💰 Balance Update - CipherVault',
+    subject: '💰 Balance Update - Cypher Vault',
     message: `Your account balance has been ${changeType} by $${Math.abs(difference).toLocaleString()}. New balance: $${newBalance.toLocaleString()}`,
     type: 'info',
   });
@@ -268,8 +268,8 @@ export async function sendWelcomeEmail(
   return sendEmailNotification({
     to_email: userEmail,
     to_name: userName,
-    subject: '🎉 Welcome to CipherVault!',
-    message: `Welcome to CipherVault, ${userName}! We're excited to have you join our investment platform. Start exploring our investment plans and grow your wealth with us.`,
+    subject: '🎉 Welcome to Cypher Vault!',
+    message: `Welcome to Cypher Vault, ${userName}! We're excited to have you join our investment platform. Start exploring our investment plans and grow your wealth with us.`,
     type: 'success',
   });
 }
@@ -309,7 +309,7 @@ function generateEmailHTML(notification: EmailNotification): string {
               <tr>
                 <td style="background: linear-gradient(135deg, #f0b90b 0%, #d19e09 100%); padding: 30px; text-align: center;">
                   <h1 style="margin: 0; color: #0f172a; font-size: 28px; font-weight: bold;">
-                    ${iconMap[notification.type]} CipherVault
+                    ${iconMap[notification.type]} Cypher Vault
                   </h1>
                 </td>
               </tr>
@@ -332,7 +332,7 @@ function generateEmailHTML(notification: EmailNotification): string {
                   </p>
                   
                   <div style="text-align: center; margin-top: 30px;">
-                    <a href="${import.meta.env.VITE_APP_URL || 'https://ciphervault.com'}" style="display: inline-block; background: linear-gradient(135deg, #f0b90b 0%, #d19e09 100%); color: #0f172a; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+                      <a href="${import.meta.env.VITE_APP_URL || 'https://ciphervault.com'}" style="display: inline-block; background: linear-gradient(135deg, #f0b90b 0%, #d19e09 100%); color: #0f172a; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px;">
                       Visit Dashboard
                     </a>
                   </div>
@@ -342,8 +342,8 @@ function generateEmailHTML(notification: EmailNotification): string {
               <!-- Footer -->
               <tr>
                 <td style="background-color: #0f172a; padding: 20px 30px; text-align: center;">
-                  <p style="margin: 0 0 10px 0; color: #64748b; font-size: 12px;">
-                    © ${new Date().getFullYear()} CipherVault. All rights reserved.
+                    <p style="margin: 0 0 10px 0; color: #64748b; font-size: 12px;">
+                    © ${new Date().getFullYear()} Cypher Vault. All rights reserved.
                   </p>
                   <p style="margin: 0; color: #475569; font-size: 11px;">
                     This is an automated notification. Please do not reply to this email.

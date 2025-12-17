@@ -22,7 +22,7 @@ const paymentMethods = [
   },
   {
     name: 'Bank Transfer',
-    accountName: 'CipherVault Investments Ltd.',
+    accountName: 'Cypher Vault Investments Ltd.',
     accountNumber: '1234567890',
     bankName: 'Global Trust Bank',
     routingNumber: 'GTB001234',

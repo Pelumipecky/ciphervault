@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import Home from '@/pages/Home'
@@ -28,7 +28,6 @@ import SmartsuppWidget from '@/components/ui/SmartsuppWidget'
 import SmartsuppChatButton from '@/components/ui/SmartsuppChatButton'
 import WhatsAppFloatingButton from '@/components/ui/WhatsAppFloatingButton'
 import TelegramFloatingButton from '@/components/ui/TelegramFloatingButton'
-import DevIndicator from '@/components/DevIndicator'
 
 function RoleBasedRedirect() {
   const { user, isAuthenticated } = useAuth()
@@ -43,12 +42,14 @@ function RoleBasedRedirect() {
 
 function App() {
   console.log('🎨 App component rendering...')
-  
+  const location = useLocation()
+  const isAdminRoute = location.pathname.startsWith('/admin')
+
   return (
     <ThemeProvider>
       <AuthProvider>
-        {/* Client-only lazy loader for Smartsupp widget */}
-        <SuppaChatLoader />
+        {/* Client-only lazy loader for Smartsupp widget - hide on admin routes */}
+        {!isAdminRoute && <SuppaChatLoader />}
         <Routes>
         {/* Public routes with Navbar and Footer */}
         <Route path="/" element={
@@ -191,16 +192,18 @@ function App() {
         <Route path="*" element={<RoleBasedRedirect />} />
       </Routes>
 
-      {/* Dev mount indicator (visible in development only) */}
-      <DevIndicator />
+      {/* Dev mount indicator removed */}
       </AuthProvider>
       {/* Floating third-party chatbot widget (Tawk.to, Intercom, etc.) */}
-      {/* Always show chatbot widget unless you want to restrict by env */}
-
-      <SmartsuppWidget />
-      <SmartsuppChatButton />
-      <WhatsAppFloatingButton />
-      <TelegramFloatingButton />
+      {/* Hide floating chat widgets on admin routes */}
+      {!isAdminRoute && (
+        <>
+          <SmartsuppWidget />
+          <SmartsuppChatButton />
+          <WhatsAppFloatingButton />
+          <TelegramFloatingButton />
+        </>
+      )}
     </ThemeProvider>
   )
 }

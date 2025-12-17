@@ -32,7 +32,7 @@ const BASE_PLANS = [
     subtitle: "Weekly growth",
     durationDays: 7,
     durationLabel: "7 days",
-    dailyRate: 0.10,
+    dailyRate: 0.03,
     featured: false,
     minCapital: 599,
     maxCapital: 3999,

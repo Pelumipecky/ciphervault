@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { fetchDetailedCryptoPrices, formatPrice, CryptoPrice } from '@/utils/cryptoPrices'
-import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
+// packages data handled in Packages page
+import Packages from './Packages'
 import { useTranslation } from 'react-i18next'
 
 // `stats` will be built inside the component to ensure translations are applied via `t()`
@@ -55,7 +56,7 @@ function Home() {
     { label: t('home.stats.fees'), value: '0.10%', detail: t('home.stats.feesDetail') }
   ]
 
-  // Packages removed per request: the package listing and related mapping were deleted to simplify the homepage.
+  // Packages are rendered via the canonical Packages page component
 
   const localizedHelpTiles = [
     {
@@ -161,6 +162,11 @@ function Home() {
         <div className="hero__visual">
           <img src="/images/img1.png" alt="Cypher Vault dashboard" />
         </div>
+      </section>
+
+      {/* Packages section — use canonical Packages page component */}
+      <section id="packages" aria-label="Investment plans">
+        <Packages />
       </section>
 
       <section className="stats" aria-label="Key metrics">
@@ -269,81 +275,9 @@ function Home() {
         </div>
       </section>
 
-      <section className="mobile-apps">
-        <div className="mobile-apps__content">
-          <div className="mobile-apps__image">
-            <img src="/images/img6.png" alt="Mobile Trading" />
-          </div>
-          <div className="mobile-apps__info">
-            <h2>{t('mobileApps.title')}</h2>
-            <p className="lead">{t('mobileApps.lead')}</p>
-            <div className="platform-grid">
-              <div className="platform-item">
-                <i className="platform-icon">📱</i>
-                <p>{t('mobileApps.platforms.appStore')}</p>
-              </div>
-              <div className="platform-item">
-                <i className="platform-icon">🤖</i>
-                <p>{t('mobileApps.platforms.android')}</p>
-              </div>
-              <div className="platform-item">
-                <i className="platform-icon">▶️</i>
-                <p>{t('mobileApps.platforms.googlePlay')}</p>
-              </div>
-              <div className="platform-item">
-                <i className="platform-icon">🍎</i>
-                <p>{t('mobileApps.platforms.mac')}</p>
-              </div>
-              <div className="platform-item">
-                <i className="platform-icon">🪟</i>
-                <p>{t('mobileApps.platforms.windows')}</p>
-              </div>
-              <div className="platform-item">
-                <i className="platform-icon">🐧</i>
-                <p>{t('mobileApps.platforms.linux')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Mobile apps section removed per request */}
 
-      <section className="help" id="help-section">
-        <div className="section-heading">
-          <h2>{t('helpSection2.title')}</h2>
-        </div>
-        <div className="help-grid">
-          <article>
-            <div className="help-icon">
-              <img src="/images/customer care.svg" alt="Customer Care" height={40} />
-            </div>
-            <h3>{t('helpSection2.chatTitle')}</h3>
-            <p>{t('helpSection2.chatCopy')}</p>
-            <a className="btn btn--primary" href="/chat.html">
-              {t('helpSection2.chatCta')}
-            </a>
-          </article>
-          <article>
-            <div className="help-icon">
-              <img src="/images/faq.svg" alt="FAQ" height={40} />
-            </div>
-            <h3>{t('helpSection2.faqTitle')}</h3>
-            <p>{t('helpSection2.faqCopy')}</p>
-            <a className="btn btn--primary" href="/faq.html">
-              {t('helpSection2.faqCta')}
-            </a>
-          </article>
-          <article>
-            <div className="help-icon">
-              <img src="/images/blog.svg" alt="Blog" height={40} />
-            </div>
-            <h3>{t('helpSection2.blogTitle')}</h3>
-            <p>{t('helpSection2.blogCopy')}</p>
-            <a className="btn btn--primary" href="/blog.html">
-              {t('helpSection2.blogCta')}
-            </a>
-          </article>
-        </div>
-      </section>
+      {/* Second help section removed per request */}
 
       <section className="contact" id="contact">
         <div className="contact__card">
@@ -363,24 +297,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Social Media Buttons */}
-      <div style={{
-        position: 'fixed',
-        left: '10px',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        zIndex: 1000
-      }}>
-        <a href="https://t.me/your_telegram_channel" target="_blank" rel="noopener noreferrer">
-          <img src="/images/telegram-icon.svg" alt="Telegram" style={{ width: '40px', height: '40px' }} />
-        </a>
-        <a href="https://wa.me/your_whatsapp_number" target="_blank" rel="noopener noreferrer">
-          <img src="/images/whatsapp-icon.svg" alt="WhatsApp" style={{ width: '40px', height: '40px' }} />
-        </a>
-      </div>
+      {/* Floating social icons removed — chat widgets handled by dedicated components */}
     </div>
   )
 }

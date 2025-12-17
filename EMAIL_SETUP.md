@@ -1,7 +1,7 @@
 # Email Notification Setup Guide
 
 ## Overview
-CipherVault now supports automated email notifications for all user actions and admin decisions. Users receive emails when:
+Cipher Vault now supports automated email notifications for all user actions and admin decisions. Users receive emails when:
 - Investments are created, approved, or rejected
 - Withdrawals are created, approved, or rejected
 - KYC verification is submitted, approved, or rejected

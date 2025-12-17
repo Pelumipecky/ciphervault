@@ -101,10 +101,9 @@ function FAQ() {
       <div className="faq-page__header">
         <h1>Frequently Asked Questions</h1>
         <p className="lead">
-          Find answers to common questions about CipherVault accounts, custody, fees, and investment strategies.
-        </p>
+            Find answers to common questions about Cypher Vault accounts, custody, fees, and investment strategies.
+          </p>
       </div>
-
       <div className="faq-page__content">
         {faqs.map((category, catIndex) => (
           <section key={category.category} className="faq-category">

@@ -709,7 +709,7 @@ function UserDashboard() {
     },
     Bank: {
       name: 'Bank Transfer',
-      accountName: 'CipherVault Investments Ltd.',
+      accountName: 'Cypher Vault Investments Ltd.',
       accountNumber: '1234567890',
       bankName: 'Global Trust Bank',
       routingNumber: 'GTB001234',
@@ -1334,7 +1334,7 @@ function UserDashboard() {
             <LanguageSwitcher variant="dashboard" />
           </div>
           <Link to="/" className="logo-link">
-            <img src="/images/ciphervaultlogobig.svg" alt="CipherVault" className="sidebar-logo" />
+            <img src="/images/ciphervaultlogobig.svg" alt="Cypher Vault" className="sidebar-logo" />
           </Link>
         </div>
 
