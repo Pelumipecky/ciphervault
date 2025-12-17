@@ -1504,13 +1504,13 @@ function UserDashboard() {
                 </div>
 
                 <div className="stat-card">
-                  <div className="stat-icon">
-                    <i className="icofont-money-bag"></i>
+                  <div className="stat-icon" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }}>
+                    <i className="icofont-dollar"></i>
                   </div>
                   <div className="stat-details">
-                    <p className="stat-label">Total Invested</p>
-                    <h2 className="stat-value">${totalCapital.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
-                    <p className="stat-info">{investments.length} active investments</p>
+                    <p className="stat-label">Available Balance</p>
+                    <h2 className="stat-value">${(currentUser?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+                    <p className="stat-info">Ready for withdrawal</p>
                   </div>
                 </div>
 
