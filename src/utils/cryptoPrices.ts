@@ -1,8 +1,39 @@
-// Live Cryptocurrency Price Fetcher
-// Uses multiple real-time APIs for maximum reliability and data accuracy
-// Primary: Binance API (most reliable for browser requests)
-// Secondary: CoinGecko API (comprehensive data)
-// Tertiary: CoinMarketCap API (additional fallback)
+// Cache for crypto prices to improve performance
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+  ttl: number; // Time to live in milliseconds
+}
+
+class CryptoPriceCache {
+  private cache: Map<string, CacheEntry> = new Map();
+
+  set(key: string, data: any, ttl: number = 30000): void { // Default 30 seconds TTL
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl
+    });
+  }
+
+  get(key: string): any | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() - entry.timestamp > entry.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const priceCache = new CryptoPriceCache();
 
 export interface CryptoPrice {
   id: string;
@@ -43,18 +74,26 @@ export interface CryptoPriceDetails {
 
 // Fetch prices using multiple real-time APIs for maximum reliability
 export async function fetchCryptoPrices(): Promise<CryptoPrices> {
+  const cacheKey = 'crypto_prices_simple';
+  const cached = priceCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const defaultPrices: CryptoPrices = { BTC: 0, ETH: 0, USDT: 1, BNB: 0, XRP: 0, SOL: 0, DOGE: 0, ADA: 0 };
 
   // Try Binance API first (most reliable for browser requests, no CORS issues)
   try {
-    console.log('🔄 Fetching prices from Binance API...');
-    const binanceResponse = await fetch('https://api.binance.com/api/v3/ticker/price', {
-      method: 'GET',
+    const binanceResponse = await Promise.race([
+      fetch('https://api.binance.com/api/v3/ticker/price', {
+        method: 'GET',
         headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'CypherVault-App/1.0'
-      }
-    });
+          'Accept': 'application/json',
+          'User-Agent': 'CypherVault-App/1.0'
+        }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000)) // 5 second timeout
+    ]) as Response;
 
     if (binanceResponse.ok) {
       const binanceData = await binanceResponse.json();
@@ -76,7 +115,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
       // Validate that we got at least some real prices
       const validPrices = Object.values(prices).filter(p => p > 0).length;
       if (validPrices >= 3) {
-        console.log('✅ Binance prices fetched successfully:', prices);
+        priceCache.set(cacheKey, prices, 15000); // Cache for 15 seconds
         return prices;
       }
     }
@@ -84,25 +123,26 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
     console.warn('⚠️ Binance API failed:', binanceError);
   }
 
-  // Fallback to CoinGecko API (more comprehensive data)
+  // Fallback to CoinGecko API (more comprehensive data) - simplified endpoint
   try {
-    console.log('🔄 Fetching prices from CoinGecko API...');
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,ripple,solana,dogecoin,cardano&vs_currencies=usd&include_24hr_change=true',
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'CypherVault-App/1.0'
+    const response = await Promise.race([
+      fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,ripple,solana,dogecoin,cardano&vs_currencies=usd',
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'CypherVault-App/1.0'
+          }
         }
-      }
-    );
+      ),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+    ]) as Response;
 
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ CoinGecko prices fetched:', data);
 
-      return {
+      const prices = {
         BTC: data.bitcoin?.usd || 0,
         ETH: data.ethereum?.usd || 0,
         USDT: data.tether?.usd || 1,
@@ -112,42 +152,22 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
         DOGE: data.dogecoin?.usd || 0,
         ADA: data.cardano?.usd || 0,
       };
+
+      priceCache.set(cacheKey, prices, 15000);
+      return prices;
     }
   } catch (error) {
     console.warn('⚠️ CoinGecko API failed:', error);
   }
 
-  // Final fallback - try CoinMarketCap API if available
-  try {
-    console.log('🔄 Attempting CoinMarketCap API...');
-    const cmcResponse = await fetch(
-      'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC,ETH,USDT,BNB,XRP,SOL,DOGE,ADA',
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'X-CMC_PRO_API_KEY': import.meta.env.VITE_CMC_API_KEY || '',
-          'User-Agent': 'CypherVault-App/1.0'
-        }
-      }
-    );
+  // Return cached data if available, even if expired
+  const expiredCache = priceCache.get(cacheKey);
+  if (expiredCache) {
+    return expiredCache;
+  }
 
-    if (cmcResponse.ok) {
-      const cmcData = await cmcResponse.json();
-      console.log('✅ CoinMarketCap prices fetched');
-
-      return {
-        BTC: cmcData.data?.BTC?.quote?.USD?.price || 0,
-        ETH: cmcData.data?.ETH?.quote?.USD?.price || 0,
-        USDT: cmcData.data?.USDT?.quote?.USD?.price || 1,
-        BNB: cmcData.data?.BNB?.quote?.USD?.price || 0,
-        XRP: cmcData.data?.XRP?.quote?.USD?.price || 0,
-        SOL: cmcData.data?.SOL?.quote?.USD?.price || 0,
-        DOGE: cmcData.data?.DOGE?.quote?.USD?.price || 0,
-        ADA: cmcData.data?.ADA?.quote?.USD?.price || 0,
-      };
-    }
-  } catch (error) {
+  return defaultPrices;
+}
     console.warn('⚠️ CoinMarketCap API failed or not configured:', error);
   }
 
@@ -158,39 +178,39 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
 
 // Fetch detailed price data with 24h changes - Multiple APIs for maximum reliability
 export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
+  const cacheKey = 'crypto_prices_detailed';
+  const cached = priceCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // Reduced symbol map for faster loading - only top 8 cryptocurrencies
   const symbolMap: { [key: string]: { id: string; name: string; image: string } } = {
     'BTCUSDT': { id: 'bitcoin', name: 'Bitcoin', image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
     'ETHUSDT': { id: 'ethereum', name: 'Ethereum', image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
-    'USDTUSDC': { id: 'tether', name: 'Tether', image: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
     'BNBUSDT': { id: 'binancecoin', name: 'BNB', image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
     'XRPUSDT': { id: 'ripple', name: 'XRP', image: 'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png' },
     'SOLUSDT': { id: 'solana', name: 'Solana', image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
     'DOGEUSDT': { id: 'dogecoin', name: 'Dogecoin', image: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png' },
     'ADAUSDT': { id: 'cardano', name: 'Cardano', image: 'https://assets.coingecko.com/coins/images/975/large/cardano.png' },
-    'DOTUSDT': { id: 'polkadot', name: 'Polkadot', image: 'https://assets.coingecko.com/coins/images/12171/large/polkadot.png' },
     'AVAXUSDT': { id: 'avalanche', name: 'Avalanche', image: 'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png' },
-    'LINKUSDT': { id: 'chainlink', name: 'Chainlink', image: 'https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png' },
-    'MATICUSDT': { id: 'polygon', name: 'Polygon', image: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png' },
-    'LTCUSDT': { id: 'litecoin', name: 'Litecoin', image: 'https://assets.coingecko.com/coins/images/2/large/litecoin.png' },
-    'UNIUSDT': { id: 'uniswap', name: 'Uniswap', image: 'https://assets.coingecko.com/coins/images/12504/large/uniswap-uni.png' },
-    'TRXUSDT': { id: 'tron', name: 'TRON', image: 'https://assets.coingecko.com/coins/images/1094/large/tron-logo.png' },
-    'ATOMUSDT': { id: 'cosmos', name: 'Cosmos', image: 'https://assets.coingecko.com/coins/images/1481/large/cosmos_hub.png' },
   };
 
-  // Try Binance API first (most reliable for browser requests, no CORS issues)
+  // Try Binance API first with timeout
   try {
-    console.log('🔄 Fetching detailed prices from Binance API...');
-    const ticker24hResponse = await fetch('https://api.binance.com/api/v3/ticker/24hr', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'CipherVault-App/1.0'
-      }
-    });
+    const ticker24hResponse = await Promise.race([
+      fetch('https://api.binance.com/api/v3/ticker/24hr', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'CipherVault-App/1.0'
+        }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+    ]) as Response;
 
     if (ticker24hResponse.ok) {
       const ticker24h = await ticker24hResponse.json();
-
       const prices: CryptoPrice[] = [];
 
       ticker24h.forEach((item: any) => {
@@ -218,7 +238,7 @@ export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
       prices.sort((a, b) => b.total_volume - a.total_volume);
 
       if (prices.length > 0) {
-        console.log(`✅ Binance detailed prices fetched: ${prices.length} cryptocurrencies`);
+        priceCache.set(cacheKey, prices, 30000); // Cache for 30 seconds
         return prices;
       }
     }
@@ -226,19 +246,21 @@ export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
     console.warn('⚠️ Binance detailed API failed:', binanceError);
   }
 
-  // Fallback to CoinGecko API (more comprehensive data)
+  // Fallback to CoinGecko API (more comprehensive data) - simplified for speed
   try {
-    console.log('🔄 Fetching detailed prices from CoinGecko API...');
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,tether,binancecoin,ripple,solana,dogecoin,cardano,polkadot,avalanche-2,chainlink,matic-network,litecoin,uniswap,tron,cosmos&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h',
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'CypherVault-App/1.0'
+    const response = await Promise.race([
+      fetch(
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,binancecoin,ripple,solana,dogecoin,cardano,avalanche-2&order=market_cap_desc&per_page=8&page=1&sparkline=false&price_change_percentage=24h',
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'CypherVault-App/1.0'
+          }
         }
-      }
-    );
+      ),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+    ]) as Response;
 
     if (response.ok) {
       const data = await response.json();
@@ -264,11 +286,17 @@ export async function fetchDetailedCryptoPrices(): Promise<CryptoPrice[]> {
         atl_change_percentage: coin.atl_change_percentage,
       }));
 
-      console.log(`✅ CoinGecko detailed prices fetched: ${transformedData.length} cryptocurrencies`);
+      priceCache.set(cacheKey, transformedData, 30000);
       return transformedData;
     }
   } catch (error) {
     console.warn('⚠️ CoinGecko detailed API failed:', error);
+  }
+
+  // Return cached data if available, even if expired
+  const expiredCache = priceCache.get(cacheKey);
+  if (expiredCache) {
+    return expiredCache;
   }
 
   // Final fallback - return empty array

@@ -18,10 +18,12 @@ function Home() {
   // Live crypto prices
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrice[]>([])
   const [cryptoError, setCryptoError] = useState(false)
+  const [cryptoLoading, setCryptoLoading] = useState(true)
   
   useEffect(() => {
     async function loadPrices() {
       try {
+        setCryptoLoading(true);
         console.log('🏠 Loading real-time crypto prices...');
         const prices = await fetchDetailedCryptoPrices();
         if (prices && prices.length > 0) {
@@ -37,14 +39,16 @@ function Home() {
         console.error('❌ Failed to load crypto prices:', error);
         setCryptoError(true);
         setCryptoPrices([]);
+      } finally {
+        setCryptoLoading(false);
       }
     }
 
     // Initial load
     loadPrices();
 
-    // Update every 30 seconds for real-time data
-    const interval = setInterval(loadPrices, 30000);
+    // Update every 60 seconds for real-time data (reduced from 30s for better performance)
+    const interval = setInterval(loadPrices, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -79,7 +83,59 @@ function Home() {
   return (
     <div className="home">
       {/* Live Crypto Ticker */}
-      {cryptoPrices.length > 0 && (
+      {cryptoLoading ? (
+        <div style={{
+          background: 'linear-gradient(90deg, #181a20 0%, #1e2329 100%)',
+          borderBottom: '1px solid rgba(240, 185, 11, 0.1)',
+          padding: '10px 0',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            display: 'flex',
+            gap: '40px',
+            paddingLeft: '20px'
+          }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  background: 'rgba(240, 185, 11, 0.2)',
+                  animation: 'pulse 1.5s ease-in-out infinite'
+                }} />
+                <div style={{
+                  width: '40px',
+                  height: '14px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '4px',
+                  animation: 'pulse 1.5s ease-in-out infinite'
+                }} />
+                <div style={{
+                  width: '60px',
+                  height: '14px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '4px',
+                  animation: 'pulse 1.5s ease-in-out infinite'
+                }} />
+                <div style={{
+                  width: '50px',
+                  height: '14px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '4px',
+                  animation: 'pulse 1.5s ease-in-out infinite'
+                }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : cryptoPrices.length > 0 && (
         <div style={{
           background: 'linear-gradient(90deg, #181a20 0%, #1e2329 100%)',
           borderBottom: '1px solid rgba(240, 185, 11, 0.1)',

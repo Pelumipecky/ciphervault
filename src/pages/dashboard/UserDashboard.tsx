@@ -138,8 +138,8 @@ function UserDashboard() {
     // Initial load
     loadCryptoPrices();
 
-    // Update every 15 seconds for real-time trading data
-    const interval = setInterval(loadCryptoPrices, 15000);
+    // Update every 30 seconds for real-time trading data (reduced frequency for better performance)
+    const interval = setInterval(loadCryptoPrices, 30000);
     return () => clearInterval(interval);
   }, []);
 
