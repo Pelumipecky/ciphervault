@@ -900,6 +900,17 @@ function UserDashboard() {
         alert('Minimum withdrawal is $50')
         return
       }
+      
+      // Refresh balance from database before checking
+      try {
+        const dbUser = await supabaseDb.getUserByIdnum(currentUser?.idnum || '')
+        if (dbUser && currentUser) {
+          setCurrentUser({ ...currentUser, ...dbUser } as UserData)
+        }
+      } catch (error) {
+        console.error('Error refreshing balance:', error)
+      }
+      
       if (amount > (currentUser?.balance || 0)) {
         alert('Insufficient balance')
         return
