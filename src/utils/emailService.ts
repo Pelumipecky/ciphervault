@@ -10,11 +10,11 @@ interface EmailNotification {
   type: 'success' | 'error' | 'warning' | 'info';
 }
 
-// EmailJS Configuration - Replace with your actual credentials
+// EmailJS Configuration - Uses environment variables
 const EMAILJS_CONFIG = {
-  serviceId: 'service_ciphervault',  // Replace with your EmailJS service ID
-  templateId: 'template_notification', // Replace with your EmailJS template ID
-  publicKey: 'YOUR_EMAILJS_PUBLIC_KEY', // Replace with your EmailJS public key
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_ciphervault',
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_notification',
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_EMAILJS_PUBLIC_KEY',
 };
 
 // Alternative: Using a simple backend API endpoint

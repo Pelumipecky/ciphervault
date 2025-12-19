@@ -1,7 +1,7 @@
 // src/components/ui/TelegramFloatingButton.tsx
 import React from 'react'
 
-const TELEGRAM_LINK = 'https://t.me/your_telegram_group'; // Replace with your actual Telegram group or bot link
+const TELEGRAM_LINK = 'https://t.me/cyphervault6'; // Cypher Vault Telegram support
 
 const TelegramFloatingButton: React.FC = () => (
   <a

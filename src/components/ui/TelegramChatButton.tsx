@@ -1,7 +1,7 @@
 // src/components/ui/TelegramChatButton.tsx
 import React from 'react'
 
-const TELEGRAM_LINK = 'https://t.me/your_telegram_group'; // Replace with your actual Telegram group or bot link
+const TELEGRAM_LINK = 'https://t.me/cyphervault6'; // Cypher Vault Telegram support
 
 // Define a uniquely named component for this file
 const TelegramChatButton: React.FC = () => (

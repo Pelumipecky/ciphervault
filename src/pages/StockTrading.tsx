@@ -20,7 +20,7 @@ interface StockTradingProps {}
 
 function StockTrading() {
   const { t } = useTranslation();
-  const { user, setUser } = useAuth();
+  const { user } = useAuth();
   // State management
   const [stockPrices, setStockPrices] = useState<StockPrices>({
     AAPL: 0, MSFT: 0, GOOGL: 0, AMZN: 0, TSLA: 0, NVDA: 0, META: 0, NFLX: 0
@@ -243,13 +243,13 @@ function StockTrading() {
         bonusConverted = true;
       }
 
-      // Update local user state
-      setUser({
-        ...user,
-        balance: newBalance,
-        completedTrades: newCompletedTrades,
-        bonus: bonusConverted ? 0 : user.bonus
-      });
+      // User state will be updated via database refresh
+      // setUser({
+      //   ...user,
+      //   balance: newBalance,
+      //   completedTrades: newCompletedTrades,
+      //   bonus: bonusConverted ? 0 : user.bonus
+      // });
 
       // Show success message
       let successMessage = t('alerts.orderPlacedMessage', { orderType: tradeType.toUpperCase(), qty, symbol: selectedStock.symbol, price: price.toFixed(2), total: total.toFixed(2) });
