@@ -396,11 +396,12 @@ function AdminDashboard() {
   }, [navigate])
 
   const handleLogout = () => {
+    // Clear admin-only session keys, but do not touch regular user session (activeUser)
     localStorage.removeItem('adminData')
-    localStorage.removeItem('activeUser')
+    localStorage.removeItem('adminSession')
     sessionStorage.removeItem('adminData')
-    sessionStorage.removeItem('activeUser')
-    navigate('/login')
+    sessionStorage.removeItem('adminSession')
+    navigate('/admin/login')
   }
 
   const handleApproveInvestment = async (investmentId: string) => {
