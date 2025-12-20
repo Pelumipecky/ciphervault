@@ -270,14 +270,6 @@ function AdminDashboard() {
           setAllWithdrawals(withdrawalsWithUsers)
           setAllKycRequests(kycWithUsers)
           setAllLoans(loansWithUsers)
-          
-          console.log('✅ Admin data loaded:', {
-            users: users.length,
-            investments: investmentsWithUsers.length,
-            withdrawals: withdrawalsWithUsers.length,
-            kyc: kycWithUsers.length,
-            loans: loansWithUsers.length
-          })
 
           // Set up Supabase Realtime subscriptions for live updates
           try {
@@ -1347,7 +1339,14 @@ function AdminDashboard() {
                         </td>
                       </tr>
                     ) : (
-                      allInvestments.map((inv, idx) => (
+                      allInvestments
+                        .filter(inv => {
+                          // Find the user for this investment
+                          const user = allUsers.find(u => u.idnum === inv.idnum)
+                          // Filter out investments from admin/superadmin users
+                          return user && user.role !== 'admin' && user.role !== 'superadmin'
+                        })
+                        .map((inv, idx) => (
                       <tr
                         key={inv.id || idx}
                         style={{

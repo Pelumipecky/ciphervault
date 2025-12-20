@@ -248,10 +248,11 @@ function UserDashboard() {
         try {
           if (userData.idnum) {
             const userKyc = await supabaseDb.getKycByUser(userData.idnum);
-          if (userKyc && userKyc.length > 0) {
-            // Get the most recent KYC submission
-            const latestKyc = userKyc.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())[0];
-            setKycData(latestKyc);
+            if (userKyc && userKyc.length > 0) {
+              // Get the most recent KYC submission
+              const latestKyc = userKyc.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())[0];
+              setKycData(latestKyc);
+            }
           }
         } catch (dbError) {
           console.log('Could not fetch KYC data from database:', dbError);
@@ -262,8 +263,9 @@ function UserDashboard() {
         try {
           if (userData.idnum) {
             const userLoans = await supabaseDb.getLoansByUser(userData.idnum);
-          if (userLoans && userLoans.length > 0) {
-            setLoans(userLoans);
+            if (userLoans && userLoans.length > 0) {
+              setLoans(userLoans);
+            }
           }
         } catch (dbError) {
           console.log('Could not fetch loans from database:', dbError);
@@ -414,8 +416,9 @@ function UserDashboard() {
       } catch (error) {
         console.error('Error initializing dashboard:', error);
         navigate('/login');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     initDashboard();
   }, [navigate]);
