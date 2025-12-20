@@ -383,15 +383,21 @@ function AdminDashboard() {
 
   const handleApproveInvestment = async (investmentId: string) => {
     try {
-      // Update status in database
+      // Update status in database and set startDate to approval time
       await supabaseDb.updateInvestment(investmentId, { 
         status: 'Active',
-        authStatus: 'approved'
+        authStatus: 'approved',
+        startDate: new Date().toISOString()  // Set approval date for ROI calculations
       })
 
       // Update local state
       setAllInvestments(prev => 
-        prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Active', authStatus: 'approved' } : inv)
+        prev.map(inv => inv.id === investmentId ? { 
+          ...inv, 
+          status: 'Active', 
+          authStatus: 'approved',
+          startDate: new Date().toISOString()  // Update local state too
+        } : inv)
       )
 
       // Send email notification
