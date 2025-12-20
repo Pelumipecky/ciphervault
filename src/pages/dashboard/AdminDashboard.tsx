@@ -405,33 +405,46 @@ function AdminDashboard() {
 
   const handleApproveInvestment = async (investmentId: string) => {
     try {
+      console.log('Approving investment:', investmentId)
+      
       // Get investment details first to access capital amount
       const investment = allInvestments.find(inv => inv.id === investmentId)
       if (!investment) {
+        console.error('Investment not found:', investmentId)
         showAlert('error', t('alerts.investmentNotFoundTitle'), t('alerts.investmentNotFoundMessage'))
         return
       }
 
+      console.log('Found investment:', investment)
+
       // Update status in database and set startDate to approval time
+      console.log('Updating investment in database...')
       await supabaseDb.updateInvestment(investmentId, { 
         status: 'Active',
         authStatus: 'approved',
         startDate: new Date().toISOString()  // Set approval date for ROI calculations
       })
+      console.log('Investment updated successfully')
 
       // Add invested capital to user's balance
-      const currentUser = allUsers.find(u => u.id === investment.userId)
+      const currentUser = allUsers.find(u => u.idnum === investment.idnum)
       if (currentUser) {
+        console.log('Found user:', currentUser.idnum, 'current balance:', currentUser.balance)
         const newBalance = (currentUser.balance || 0) + (investment.capital || 0)
-        await supabaseDb.updateUser(investment.userId, { balance: newBalance })
+        console.log('New balance will be:', newBalance)
+        
+        await supabaseDb.updateUser(currentUser.idnum, { balance: newBalance })
+        console.log('User balance updated successfully')
 
         // Update local state for users
         setAllUsers(prev => 
-          prev.map(user => user.id === investment.userId ? { 
+          prev.map(user => user.idnum === investment.idnum ? { 
             ...user, 
             balance: newBalance 
           } : user)
         )
+      } else {
+        console.warn('User not found for investment:', investment.idnum)
       }
 
       // Update local state for investments
@@ -445,6 +458,7 @@ function AdminDashboard() {
       )
 
       // Send email notification
+      console.log('Sending email notification...')
       await sendInvestmentNotification(
         investment.userEmail,
         investment.userName,
@@ -452,6 +466,7 @@ function AdminDashboard() {
         investment.capital || 0,
         investment.plan || 'Investment Plan'
       )
+      console.log('Email sent successfully')
 
       showAlert('success', t('alerts.investmentApprovedTitle'), t('alerts.investmentApprovedMessage'))
     } catch (error) {
