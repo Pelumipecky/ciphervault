@@ -2100,19 +2100,19 @@ function UserDashboard() {
                           alignItems: 'center',
                           gap: '14px',
                           padding: '14px 16px',
-                          background: 'rgba(255,255,255,0.02)',
+                          background: inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255,255,255,0.02)',
                           borderRadius: '12px',
                           marginBottom: idx < investments.length - 1 ? '10px' : '0',
-                          border: '1px solid rgba(255,255,255,0.04)',
+                          border: `1px solid ${inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.04)'}`,
                           transition: 'background 0.2s, transform 0.2s',
                           cursor: 'pointer'
                         }}
                         onMouseEnter={e => {
-                          (e.currentTarget as HTMLDivElement).style.background = 'rgba(240, 185, 11, 0.06)';
+                          (e.currentTarget as HTMLDivElement).style.background = inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(240, 185, 11, 0.06)';
                           (e.currentTarget as HTMLDivElement).style.transform = 'translateX(4px)';
                         }}
                         onMouseLeave={e => {
-                          (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.02)';
+                          (e.currentTarget as HTMLDivElement).style.background = inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255,255,255,0.02)';
                           (e.currentTarget as HTMLDivElement).style.transform = 'none';
                         }}
                       >
@@ -2130,14 +2130,23 @@ function UserDashboard() {
                             ? 'rgba(16, 185, 129, 0.15)' 
                             : inv.status === 'completed'
                             ? 'rgba(59, 130, 246, 0.15)'
+                            : inv.status === 'Rejected'
+                            ? 'rgba(239, 68, 68, 0.15)'
                             : 'rgba(251, 191, 36, 0.15)',
                           color: inv.status === 'active' 
                             ? '#10b981' 
                             : inv.status === 'completed'
                             ? '#3b82f6'
+                            : inv.status === 'Rejected'
+                            ? '#ef4444'
                             : '#fbbf24'
                         }}>
-                          <i className={inv.status === 'active' ? 'icofont-chart-growth' : inv.status === 'completed' ? 'icofont-check-circled' : 'icofont-sand-clock'}></i>
+                          <i className={
+                            inv.status === 'active' ? 'icofont-chart-growth' : 
+                            inv.status === 'completed' ? 'icofont-check-circled' : 
+                            inv.status === 'Rejected' ? 'icofont-close' : 
+                            'icofont-sand-clock'
+                          }></i>
                         </div>
                         
                         {/* Details */}
@@ -2172,11 +2181,13 @@ function UserDashboard() {
                           gap: '6px'
                         }}>
                           <div style={{ 
-                            color: '#4ade80', 
+                            color: inv.status === 'Rejected' ? '#ef4444' : '#4ade80', 
                             fontSize: '13px', 
                             fontWeight: '700'
                           }}>
-                            {inv.status === 'active' 
+                            {inv.status === 'Rejected' 
+                              ? 'Rejected'
+                              : inv.status === 'active' 
                               ? `+$${(inv.earnedRoi || inv.roi || 0).toLocaleString()} earned`
                               : `+$${(inv.totalExpectedRoi || inv.roi || 0).toLocaleString()}`
                             }
@@ -2197,11 +2208,15 @@ function UserDashboard() {
                               ? 'rgba(16, 185, 129, 0.15)' 
                               : inv.status === 'completed'
                               ? 'rgba(59, 130, 246, 0.15)'
+                              : inv.status === 'Rejected'
+                              ? 'rgba(239, 68, 68, 0.15)'
                               : 'rgba(251, 191, 36, 0.15)',
                             color: inv.status === 'active' 
                               ? '#10b981' 
                               : inv.status === 'completed'
                               ? '#3b82f6'
+                              : inv.status === 'Rejected'
+                              ? '#ef4444'
                               : '#fbbf24'
                           }}>
                             {inv.status === 'active' && inv.daysCompleted !== undefined 
