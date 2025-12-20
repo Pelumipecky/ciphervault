@@ -250,18 +250,23 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_investments_updated_at ON investments;
 CREATE TRIGGER update_investments_updated_at BEFORE UPDATE ON investments
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_withdrawals_updated_at ON withdrawals;
 CREATE TRIGGER update_withdrawals_updated_at BEFORE UPDATE ON withdrawals
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_loans_updated_at ON loans;
 CREATE TRIGGER update_loans_updated_at BEFORE UPDATE ON loans
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_kyc_updated_at ON kyc_verifications;
 CREATE TRIGGER update_kyc_updated_at BEFORE UPDATE ON kyc_verifications
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -294,6 +299,7 @@ CREATE INDEX IF NOT EXISTS idx_deposits_authStatus ON deposits("authStatus");
 CREATE INDEX IF NOT EXISTS idx_deposits_created_at ON deposits(created_at);
 
 -- Add trigger for deposits table
+DROP TRIGGER IF EXISTS update_deposits_updated_at ON deposits;
 CREATE TRIGGER update_deposits_updated_at BEFORE UPDATE ON deposits
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
