@@ -72,6 +72,24 @@ export interface WithdrawalRecord {
   created_at?: string
 }
 
+export interface DepositRecord {
+  id?: string
+  idnum?: string
+  amount?: number
+  method?: string
+  walletAddress?: string | null
+  bankName?: string | null
+  accountNumber?: string | null
+  accountName?: string | null
+  routingNumber?: string | null
+  transactionHash?: string | null
+  paymentProofUrl?: string | null
+  status?: string
+  authStatus?: string
+  date?: string
+  created_at?: string
+}
+
 export interface LoanRecord {
   id?: string
   idnum?: string
@@ -465,6 +483,51 @@ export const supabaseDb = {
     return data
   },
 
+  // Deposit operations
+  async getAllDeposits(): Promise<DepositRecord[]> {
+    const { data, error } = await db
+      .from('deposits')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async getDepositsByUser(idnum: string): Promise<DepositRecord[]> {
+    const { data, error } = await db
+      .from('deposits')
+      .select('*')
+      .eq('idnum', idnum)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async createDeposit(depositData: Partial<DepositRecord>): Promise<DepositRecord> {
+    const { data, error } = await db
+      .from('deposits')
+      .insert([depositData])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async updateDeposit(id: string, updates: Partial<DepositRecord>): Promise<DepositRecord> {
+    const { data, error } = await db
+      .from('deposits')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
   // KYC operations
   async getAllKycRequests(): Promise<KycRecord[]> {
     const { data, error } = await db
@@ -624,6 +687,13 @@ export const supabaseRealtime = {
     return db
       .channel('withdrawals-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, callback)
+      .subscribe()
+  },
+
+  subscribeToDeposits(callback: (payload: any) => void) {
+    return db
+      .channel('deposits-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deposits' }, callback)
       .subscribe()
   },
 

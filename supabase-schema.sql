@@ -266,6 +266,38 @@ CREATE TRIGGER update_kyc_updated_at BEFORE UPDATE ON kyc_verifications
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ================================================
+-- DEPOSITS TABLE
+-- ================================================
+CREATE TABLE IF NOT EXISTS deposits (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  idnum TEXT NOT NULL REFERENCES users(idnum) ON DELETE CASCADE,
+  amount NUMERIC NOT NULL,
+  method TEXT NOT NULL,
+  "walletAddress" TEXT,
+  "bankName" TEXT,
+  "accountNumber" TEXT,
+  "accountName" TEXT,
+  "routingNumber" TEXT,
+  "transactionHash" TEXT,
+  "paymentProofUrl" TEXT,
+  status TEXT DEFAULT 'pending',
+  "authStatus" TEXT DEFAULT 'pending',
+  date TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create indexes for faster queries
+CREATE INDEX IF NOT EXISTS idx_deposits_idnum ON deposits(idnum);
+CREATE INDEX IF NOT EXISTS idx_deposits_status ON deposits(status);
+CREATE INDEX IF NOT EXISTS idx_deposits_authStatus ON deposits("authStatus");
+CREATE INDEX IF NOT EXISTS idx_deposits_created_at ON deposits(created_at);
+
+-- Add trigger for deposits table
+CREATE TRIGGER update_deposits_updated_at BEFORE UPDATE ON deposits
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ================================================
 
