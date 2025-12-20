@@ -208,6 +208,7 @@ function AdminDashboard() {
         }
 
         try {
+          console.log('🔄 Fetching admin data from database...')
           const [users, investments, withdrawals, kycRequests, loans] = await Promise.all([
             fetchWithTimeout(supabaseDb.getAllUsers()),
             fetchWithTimeout(supabaseDb.getAllInvestments()),
@@ -215,6 +216,14 @@ function AdminDashboard() {
             fetchWithTimeout(supabaseDb.getAllKycRequests()),
             fetchWithTimeout(supabaseDb.getAllLoans()),
           ])
+
+          console.log('✅ Database calls successful:', {
+            users: users?.length || 0,
+            investments: investments?.length || 0,
+            withdrawals: withdrawals?.length || 0,
+            kycRequests: kycRequests?.length || 0,
+            loans: loans?.length || 0
+          })
 
           // Join investments with user data
           const investmentsWithUsers = investments.map((investment: any) => {
@@ -261,81 +270,94 @@ function AdminDashboard() {
           setAllWithdrawals(withdrawalsWithUsers)
           setAllKycRequests(kycWithUsers)
           setAllLoans(loansWithUsers)
-          
-          console.log('✅ Admin data loaded:', {
-            users: users.length,
-            investments: investmentsWithUsers.length,
-            withdrawals: withdrawalsWithUsers.length,
-            kyc: kycWithUsers.length,
-            loans: loansWithUsers.length
-          })
 
           // Set up Supabase Realtime subscriptions for live updates
-          const investmentsSubscription = supabaseRealtime.subscribeToInvestments(async (payload) => {
+          try {
+            const investmentsSubscription = supabaseRealtime.subscribeToInvestments(async (payload) => {
             console.log('🔄 Investment change detected:', payload)
-            // Refresh investments data
-            const updatedInvestments = await supabaseDb.getAllInvestments()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedInvestmentsWithUsers = updatedInvestments.map(investment => {
-              const user = updatedUsers.find(u => u.idnum === investment.idnum)
-              return {
-                ...investment,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllInvestments(updatedInvestmentsWithUsers)
+            try {
+              // Refresh investments data
+              const updatedInvestments = await supabaseDb.getAllInvestments()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedInvestmentsWithUsers = updatedInvestments.map(investment => {
+                const user = updatedUsers.find(u => u.idnum === investment.idnum)
+                return {
+                  ...investment,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllInvestments(updatedInvestmentsWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh investments:', error)
+            }
           })
 
           const withdrawalsSubscription = supabaseRealtime.subscribeToWithdrawals(async (payload) => {
             console.log('🔄 Withdrawal change detected:', payload)
-            const updatedWithdrawals = await supabaseDb.getAllWithdrawals()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedWithdrawalsWithUsers = updatedWithdrawals.map(withdrawal => {
-              const user = updatedUsers.find(u => u.idnum === withdrawal.idnum)
-              return {
-                ...withdrawal,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllWithdrawals(updatedWithdrawalsWithUsers)
+            try {
+              const updatedWithdrawals = await supabaseDb.getAllWithdrawals()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedWithdrawalsWithUsers = updatedWithdrawals.map(withdrawal => {
+                const user = updatedUsers.find(u => u.idnum === withdrawal.idnum)
+                return {
+                  ...withdrawal,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllWithdrawals(updatedWithdrawalsWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh withdrawals:', error)
+            }
           })
 
           const usersSubscription = supabaseRealtime.subscribeToUsers(async (payload) => {
             console.log('🔄 User change detected:', payload)
-            const updatedUsers = await supabaseDb.getAllUsers()
-            setAllUsers(updatedUsers)
+            try {
+              const updatedUsers = await supabaseDb.getAllUsers()
+              setAllUsers(updatedUsers)
+            } catch (error) {
+              console.error('Failed to refresh users:', error)
+            }
           })
 
           const loansSubscription = supabaseRealtime.subscribeToLoans(async (payload) => {
             console.log('🔄 Loan change detected:', payload)
-            const updatedLoans = await supabaseDb.getAllLoans()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedLoansWithUsers = updatedLoans.map(loan => {
-              const user = updatedUsers.find(u => u.idnum === loan.idnum)
-              return {
-                ...loan,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllLoans(updatedLoansWithUsers)
+            try {
+              const updatedLoans = await supabaseDb.getAllLoans()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedLoansWithUsers = updatedLoans.map(loan => {
+                const user = updatedUsers.find(u => u.idnum === loan.idnum)
+                return {
+                  ...loan,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllLoans(updatedLoansWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh loans:', error)
+            }
           })
 
           const kycSubscription = supabaseRealtime.subscribeToKyc(async (payload) => {
             console.log('🔄 KYC change detected:', payload)
-            const updatedKyc = await supabaseDb.getAllKycRequests()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedKycWithUsers = updatedKyc.map(kyc => {
-              const user = updatedUsers.find(u => u.idnum === kyc.idnum)
-              return {
-                ...kyc,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllKycRequests(updatedKycWithUsers)
+            try {
+              const updatedKyc = await supabaseDb.getAllKycRequests()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedKycWithUsers = updatedKyc.map(kyc => {
+                const user = updatedUsers.find(u => u.idnum === kyc.idnum)
+                return {
+                  ...kyc,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllKycRequests(updatedKycWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh KYC requests:', error)
+            }
           })
 
           // Cleanup subscriptions on unmount
@@ -346,19 +368,19 @@ function AdminDashboard() {
             loansSubscription.unsubscribe()
             kycSubscription.unsubscribe()
           }
+          } catch (error) {
+            console.error('❌ Failed to set up real-time subscriptions:', error)
+            showAlert('error', 'Subscription Error', 'Failed to set up real-time updates. Some data may not update automatically.')
+          }
         } catch (error) {
-          console.log('Could not fetch admin data (Supabase may not be configured):', error)
-          // Set mock data for demo
-          setAllUsers([
-            { idnum: '001', userName: 'Demo User', email: 'demo@example.com', balance: 5000 },
-            { idnum: '002', userName: 'Test User', email: 'test@example.com', balance: 10000 },
-          ])
-          setAllInvestments([
-            { id: 1, userName: 'Demo User', plan: 'Starter Plan', capital: 1000, status: 'Pending', date: new Date().toISOString() },
-          ])
-          setAllWithdrawals([
-            { id: 1, userName: 'Test User', amount: 500, method: 'Bitcoin', status: 'Pending', date: new Date().toISOString() },
-          ])
+          console.error('❌ Failed to fetch admin data from database:', error)
+          showAlert('error', 'Database Error', 'Failed to load admin data. Please check your database connection.')
+          // Don't set mock data - show empty state instead
+          setAllUsers([])
+          setAllInvestments([])
+          setAllWithdrawals([])
+          setAllKycRequests([])
+          setAllLoans([])
         }
       } catch (error) {
         console.error('Error parsing admin data:', error)
@@ -383,32 +405,53 @@ function AdminDashboard() {
 
   const handleApproveInvestment = async (investmentId: string) => {
     try {
-      // Update status in database
+      // Get investment details first to access capital amount
+      const investment = allInvestments.find(inv => inv.id === investmentId)
+      if (!investment) {
+        showAlert('error', t('alerts.investmentNotFoundTitle'), t('alerts.investmentNotFoundMessage'))
+        return
+      }
+
+      // Update status in database and set startDate to approval time
       await supabaseDb.updateInvestment(investmentId, { 
         status: 'Active',
-        authStatus: 'approved'
+        authStatus: 'approved',
+        startDate: new Date().toISOString()  // Set approval date for ROI calculations
       })
 
-      // Update local state with approved status
+      // Add invested capital to user's balance
+      const currentUser = allUsers.find(u => u.id === investment.userId)
+      if (currentUser) {
+        const newBalance = (currentUser.balance || 0) + (investment.capital || 0)
+        await supabaseDb.updateUser(investment.userId, { balance: newBalance })
+
+        // Update local state for users
+        setAllUsers(prev => 
+          prev.map(user => user.id === investment.userId ? { 
+            ...user, 
+            balance: newBalance 
+          } : user)
+        )
+      }
+
+      // Update local state for investments
       setAllInvestments(prev => 
-        prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Active', authStatus: 'approved' } : inv)
+        prev.map(inv => inv.id === investmentId ? { 
+          ...inv, 
+          status: 'Active', 
+          authStatus: 'approved',
+          startDate: new Date().toISOString()  // Update local state too
+        } : inv)
       )
 
-      // Send email notification (best-effort)
-      const investment = allInvestments.find(inv => inv.id === investmentId)
-      if (investment) {
-        try {
-          await sendInvestmentNotification(
-            investment.userEmail,
-            investment.userName,
-            'approved',
-            investment.capital || 0,
-            investment.plan || 'Investment Plan'
-          )
-        } catch (e) {
-          console.warn('Failed sending approval email:', e)
-        }
-      }
+      // Send email notification
+      await sendInvestmentNotification(
+        investment.userEmail,
+        investment.userName,
+        'approved',
+        investment.capital || 0,
+        investment.plan || 'Investment Plan'
+      )
 
       showAlert('success', t('alerts.investmentApprovedTitle'), t('alerts.investmentApprovedMessage'))
     } catch (error) {
@@ -1296,7 +1339,14 @@ function AdminDashboard() {
                         </td>
                       </tr>
                     ) : (
-                      allInvestments.map((inv, idx) => (
+                      allInvestments
+                        .filter(inv => {
+                          // Find the user for this investment
+                          const user = allUsers.find(u => u.idnum === inv.idnum)
+                          // Filter out investments from admin/superadmin users
+                          return user && user.role !== 'admin' && user.role !== 'superadmin'
+                        })
+                        .map((inv, idx) => (
                       <tr
                         key={inv.id || idx}
                         style={{

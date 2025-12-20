@@ -1,4 +1,6 @@
 // Test email configuration
+import 'dotenv/config';
+
 console.log('=== Email Notification Status Check ===\n');
 
 // Check environment variables

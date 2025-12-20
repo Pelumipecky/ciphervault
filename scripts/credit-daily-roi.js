@@ -58,12 +58,15 @@ async function creditDailyROI() {
         const dailyRoiAmount = investment.capital * planConfig.dailyRate;
 
         // Check if investment is still within duration
-        const startDate = new Date(investment.date);
+        // Use startDate (approval date) if available, otherwise fall back to creation date
+        const startDate = investment.startDate ? new Date(investment.startDate) : new Date(investment.date);
         const now = new Date();
         const daysElapsed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
 
         // Check if we already credited ROI today (compare dates)
-        const lastCreditDate = investment.updated_at ? new Date(investment.updated_at) : startDate;
+        // Use startDate as baseline for crediting, not creation date
+        const investmentStartDate = investment.startDate ? new Date(investment.startDate) : new Date(investment.date);
+        const lastCreditDate = investment.updated_at ? new Date(investment.updated_at) : investmentStartDate;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const lastCreditDay = new Date(lastCreditDate);

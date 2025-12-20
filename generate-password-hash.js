@@ -1,7 +1,7 @@
 // Generate bcrypt hash for your custom password
 // Run this with Node.js to generate your password hash
 
-const bcrypt = require('bcrypt');
+import bcrypt from 'bcryptjs';
 
 async function generateHash() {
   const password = 'Admin@2029'; // Replace with your desired password

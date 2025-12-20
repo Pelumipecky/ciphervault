@@ -50,6 +50,7 @@ export interface InvestmentRecord {
   authStatus?: string
   creditedRoi?: number
   creditedBonus?: number
+  startDate?: string  // When investment was approved/activated
   date?: string
   created_at?: string
 }
@@ -66,6 +67,24 @@ export interface WithdrawalRecord {
   routingNumber?: string | null
   status?: string
   method?: string
+  authStatus?: string
+  date?: string
+  created_at?: string
+}
+
+export interface DepositRecord {
+  id?: string
+  idnum?: string
+  amount?: number
+  method?: string
+  walletAddress?: string | null
+  bankName?: string | null
+  accountNumber?: string | null
+  accountName?: string | null
+  routingNumber?: string | null
+  transactionHash?: string | null
+  paymentProofUrl?: string | null
+  status?: string
   authStatus?: string
   date?: string
   created_at?: string
@@ -143,7 +162,7 @@ const mapUserRecord = (record: any): UserRecord => {
 
 const mapInvestmentRecord = (record: any): InvestmentRecord => {
   if (!record || typeof record !== 'object') return record
-  const { paymentoption, authstatus, transaction_hash, credited_roi, credited_bonus, ...rest } = record
+  const { paymentoption, authstatus, transaction_hash, credited_roi, credited_bonus, start_date, ...rest } = record
   return {
     ...rest,
     paymentOption: paymentoption ?? record.paymentOption ?? 'Bitcoin',
@@ -151,6 +170,7 @@ const mapInvestmentRecord = (record: any): InvestmentRecord => {
     transactionHash: transaction_hash ?? record.transactionHash ?? null,
     creditedRoi: credited_roi ?? record.creditedRoi ?? 0,
     creditedBonus: credited_bonus ?? record.creditedBonus ?? 0,
+    startDate: start_date ?? record.startDate ?? null,
   }
 }
 
@@ -167,6 +187,7 @@ const normalizeInvestmentPayload = (investmentData: Partial<InvestmentRecord> = 
   "authStatus": investmentData.authStatus ?? 'unseen',
   creditedRoi: investmentData.creditedRoi ?? 0,
   creditedBonus: investmentData.creditedBonus ?? 0,
+  "startDate": investmentData.startDate ?? null,
 })
 
 // Referral helpers
@@ -462,6 +483,51 @@ export const supabaseDb = {
     return data
   },
 
+  // Deposit operations
+  async getAllDeposits(): Promise<DepositRecord[]> {
+    const { data, error } = await db
+      .from('deposits')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async getDepositsByUser(idnum: string): Promise<DepositRecord[]> {
+    const { data, error } = await db
+      .from('deposits')
+      .select('*')
+      .eq('idnum', idnum)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async createDeposit(depositData: Partial<DepositRecord>): Promise<DepositRecord> {
+    const { data, error } = await db
+      .from('deposits')
+      .insert([depositData])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async updateDeposit(id: string, updates: Partial<DepositRecord>): Promise<DepositRecord> {
+    const { data, error } = await db
+      .from('deposits')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
   // KYC operations
   async getAllKycRequests(): Promise<KycRecord[]> {
     const { data, error } = await db
@@ -621,6 +687,13 @@ export const supabaseRealtime = {
     return db
       .channel('withdrawals-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, callback)
+      .subscribe()
+  },
+
+  subscribeToDeposits(callback: (payload: any) => void) {
+    return db
+      .channel('deposits-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deposits' }, callback)
       .subscribe()
   },
 
