@@ -141,6 +141,26 @@
 .panelPrfileDisp .right {
     flex: 1;
     overflow: hidden;
+    
+/* Admin table responsive: hide less-important columns on small screens */
+@media (max-width: 720px) {
+    .table-container table th:nth-child(3),
+    .table-container table td:nth-child(3), /* Email */
+    .table-container table th:nth-child(4),
+    .table-container table td:nth-child(4)  /* Balance */ {
+        display: none !important;
+    }
+
+    .table-container table th:nth-child(1),
+    .table-container table td:nth-child(1) {
+        width: 30%;
+    }
+
+    .table-container table th, .table-container table td {
+        padding: 0.6rem !important;
+        font-size: 0.85rem !important;
+    }
+}
 }
 
 .panelPrfileDisp .right h3{

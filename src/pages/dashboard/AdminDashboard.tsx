@@ -389,21 +389,25 @@ function AdminDashboard() {
         authStatus: 'approved'
       })
 
-      // Update local state
+      // Update local state with approved status
       setAllInvestments(prev => 
         prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Active', authStatus: 'approved' } : inv)
       )
 
-      // Send email notification
+      // Send email notification (best-effort)
       const investment = allInvestments.find(inv => inv.id === investmentId)
       if (investment) {
-        await sendInvestmentNotification(
-          investment.userEmail,
-          investment.userName,
-          'approved',
-          investment.capital || 0,
-          investment.plan || 'Investment Plan'
-        )
+        try {
+          await sendInvestmentNotification(
+            investment.userEmail,
+            investment.userName,
+            'approved',
+            investment.capital || 0,
+            investment.plan || 'Investment Plan'
+          )
+        } catch (e) {
+          console.warn('Failed sending approval email:', e)
+        }
       }
 
       showAlert('success', t('alerts.investmentApprovedTitle'), t('alerts.investmentApprovedMessage'))

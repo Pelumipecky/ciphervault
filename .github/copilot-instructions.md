@@ -106,6 +106,7 @@ Use this file to provide workspace-specific custom instructions to Copilot.
 
 - [x] Fix Investment Approval Not Saving
   - Updated handleApproveInvestment and handleRejectInvestment functions to save status changes to database
+  - Fixed handleApproveInvestment to use supabaseDb.updateInvestment instead of non-existent API endpoint
   - Added proper error handling with try-catch blocks for database operations
   - Updated handleApproveWithdrawal and handleRejectWithdrawal functions to persist changes
   - Investment and withdrawal approvals now save to Supabase database instead of only updating local state

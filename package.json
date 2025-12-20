@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "seed": "node scripts/seed.js",
     "credit-daily-roi": "node scripts/credit-daily-roi.js"
+    ,"server:start":"npm --prefix server run start",
+    "apply:schema":"echo 'See APPLY_SCHEMA.md for instructions to apply sql/schema.sql to your Supabase project'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.86.2",
