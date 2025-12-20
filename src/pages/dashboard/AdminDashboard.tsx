@@ -208,6 +208,7 @@ function AdminDashboard() {
         }
 
         try {
+          console.log('🔄 Fetching admin data from database...')
           const [users, investments, withdrawals, kycRequests, loans] = await Promise.all([
             fetchWithTimeout(supabaseDb.getAllUsers()),
             fetchWithTimeout(supabaseDb.getAllInvestments()),
@@ -215,6 +216,14 @@ function AdminDashboard() {
             fetchWithTimeout(supabaseDb.getAllKycRequests()),
             fetchWithTimeout(supabaseDb.getAllLoans()),
           ])
+
+          console.log('✅ Database calls successful:', {
+            users: users?.length || 0,
+            investments: investments?.length || 0,
+            withdrawals: withdrawals?.length || 0,
+            kycRequests: kycRequests?.length || 0,
+            loans: loans?.length || 0
+          })
 
           // Join investments with user data
           const investmentsWithUsers = investments.map((investment: any) => {
@@ -271,71 +280,92 @@ function AdminDashboard() {
           })
 
           // Set up Supabase Realtime subscriptions for live updates
-          const investmentsSubscription = supabaseRealtime.subscribeToInvestments(async (payload) => {
+          try {
+            const investmentsSubscription = supabaseRealtime.subscribeToInvestments(async (payload) => {
             console.log('🔄 Investment change detected:', payload)
-            // Refresh investments data
-            const updatedInvestments = await supabaseDb.getAllInvestments()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedInvestmentsWithUsers = updatedInvestments.map(investment => {
-              const user = updatedUsers.find(u => u.idnum === investment.idnum)
-              return {
-                ...investment,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllInvestments(updatedInvestmentsWithUsers)
+            try {
+              // Refresh investments data
+              const updatedInvestments = await supabaseDb.getAllInvestments()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedInvestmentsWithUsers = updatedInvestments.map(investment => {
+                const user = updatedUsers.find(u => u.idnum === investment.idnum)
+                return {
+                  ...investment,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllInvestments(updatedInvestmentsWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh investments:', error)
+            }
           })
 
           const withdrawalsSubscription = supabaseRealtime.subscribeToWithdrawals(async (payload) => {
             console.log('🔄 Withdrawal change detected:', payload)
-            const updatedWithdrawals = await supabaseDb.getAllWithdrawals()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedWithdrawalsWithUsers = updatedWithdrawals.map(withdrawal => {
-              const user = updatedUsers.find(u => u.idnum === withdrawal.idnum)
-              return {
-                ...withdrawal,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllWithdrawals(updatedWithdrawalsWithUsers)
+            try {
+              const updatedWithdrawals = await supabaseDb.getAllWithdrawals()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedWithdrawalsWithUsers = updatedWithdrawals.map(withdrawal => {
+                const user = updatedUsers.find(u => u.idnum === withdrawal.idnum)
+                return {
+                  ...withdrawal,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllWithdrawals(updatedWithdrawalsWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh withdrawals:', error)
+            }
           })
 
           const usersSubscription = supabaseRealtime.subscribeToUsers(async (payload) => {
             console.log('🔄 User change detected:', payload)
-            const updatedUsers = await supabaseDb.getAllUsers()
-            setAllUsers(updatedUsers)
+            try {
+              const updatedUsers = await supabaseDb.getAllUsers()
+              setAllUsers(updatedUsers)
+            } catch (error) {
+              console.error('Failed to refresh users:', error)
+            }
           })
 
           const loansSubscription = supabaseRealtime.subscribeToLoans(async (payload) => {
             console.log('🔄 Loan change detected:', payload)
-            const updatedLoans = await supabaseDb.getAllLoans()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedLoansWithUsers = updatedLoans.map(loan => {
-              const user = updatedUsers.find(u => u.idnum === loan.idnum)
-              return {
-                ...loan,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllLoans(updatedLoansWithUsers)
+            try {
+              const updatedLoans = await supabaseDb.getAllLoans()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedLoansWithUsers = updatedLoans.map(loan => {
+                const user = updatedUsers.find(u => u.idnum === loan.idnum)
+                return {
+                  ...loan,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllLoans(updatedLoansWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh loans:', error)
+            }
           })
 
           const kycSubscription = supabaseRealtime.subscribeToKyc(async (payload) => {
             console.log('🔄 KYC change detected:', payload)
-            const updatedKyc = await supabaseDb.getAllKycRequests()
-            const updatedUsers = await supabaseDb.getAllUsers()
-            const updatedKycWithUsers = updatedKyc.map(kyc => {
-              const user = updatedUsers.find(u => u.idnum === kyc.idnum)
-              return {
-                ...kyc,
-                userName: user?.userName || user?.name || 'Unknown User',
-                userEmail: user?.email || ''
-              }
-            })
-            setAllKycRequests(updatedKycWithUsers)
+            try {
+              const updatedKyc = await supabaseDb.getAllKycRequests()
+              const updatedUsers = await supabaseDb.getAllUsers()
+              const updatedKycWithUsers = updatedKyc.map(kyc => {
+                const user = updatedUsers.find(u => u.idnum === kyc.idnum)
+                return {
+                  ...kyc,
+                  userName: user?.userName || user?.name || 'Unknown User',
+                  userEmail: user?.email || ''
+                }
+              })
+              setAllKycRequests(updatedKycWithUsers)
+            } catch (error) {
+              console.error('Failed to refresh KYC requests:', error)
+            }
           })
 
           // Cleanup subscriptions on unmount
@@ -346,19 +376,19 @@ function AdminDashboard() {
             loansSubscription.unsubscribe()
             kycSubscription.unsubscribe()
           }
+          } catch (error) {
+            console.error('❌ Failed to set up real-time subscriptions:', error)
+            showAlert('error', 'Subscription Error', 'Failed to set up real-time updates. Some data may not update automatically.')
+          }
         } catch (error) {
-          console.log('Could not fetch admin data (Supabase may not be configured):', error)
-          // Set mock data for demo
-          setAllUsers([
-            { idnum: '001', userName: 'Demo User', email: 'demo@example.com', balance: 5000 },
-            { idnum: '002', userName: 'Test User', email: 'test@example.com', balance: 10000 },
-          ])
-          setAllInvestments([
-            { id: 1, userName: 'Demo User', plan: 'Starter Plan', capital: 1000, status: 'Pending', date: new Date().toISOString() },
-          ])
-          setAllWithdrawals([
-            { id: 1, userName: 'Test User', amount: 500, method: 'Bitcoin', status: 'Pending', date: new Date().toISOString() },
-          ])
+          console.error('❌ Failed to fetch admin data from database:', error)
+          showAlert('error', 'Database Error', 'Failed to load admin data. Please check your database connection.')
+          // Don't set mock data - show empty state instead
+          setAllUsers([])
+          setAllInvestments([])
+          setAllWithdrawals([])
+          setAllKycRequests([])
+          setAllLoans([])
         }
       } catch (error) {
         console.error('Error parsing admin data:', error)

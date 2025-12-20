@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import { useNavigate, Link } from 'react-router-dom'
@@ -6,13 +6,14 @@ import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 import { UserRole } from '@/utils/roles'
 import { fetchCryptoPrices, fetchDetailedCryptoPrices, formatPrice, formatMarketCap, CryptoPrice, CryptoPrices } from '@/utils/cryptoPrices'
-import { 
-  sendInvestmentNotification, 
-  sendWithdrawalNotification, 
-  sendKYCNotification, 
+import {
+  sendInvestmentNotification,
+  sendWithdrawalNotification,
+  sendKYCNotification,
   sendLoanNotification,
-  initializeEmailJS 
+  initializeEmailJS
 } from '@/utils/emailService'
+import { useAuth } from '@/context/AuthContext'
 import StockTrading from '@/pages/StockTrading'
 import '@/styles/modern-dashboard.css'
 
@@ -91,17 +92,9 @@ function UserDashboard() {
 
       // Helper to force balance refresh after deposit or admin update
       async function refreshUserBalance() {
-        let userRaw = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser');
-        if (!userRaw) return;
-        let userData = JSON.parse(userRaw);
-        try {
-          const dbUser = await supabaseDb.getUserByIdnum(userData.idnum);
-          if (dbUser) {
-            userData = { ...userData, ...dbUser };
-            localStorage.setItem('activeUser', JSON.stringify(userData));
-          }
-          setCurrentUser(userData);
-        } catch {}
+        // Since we're using AuthContext, we could trigger a refresh here
+        // For now, just reload the page or trigger a re-fetch
+        window.location.reload();
       }
 
   // Live Crypto prices state
@@ -163,55 +156,58 @@ function UserDashboard() {
   useEffect(() => {
     async function initDashboard() {
       try {
-        // Initialize email service
-        initializeEmailJS()
-
-        // Always fetch latest user data from database on mount
-        let userRaw = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser');
-        if (!userRaw) {
+        // Check if user is authenticated
+        if (!isAuthenticated || !currentUser) {
           navigate('/login');
           return;
         }
-        let userData = JSON.parse(userRaw);
-        try {
-          const dbUser = await supabaseDb.getUserByIdnum(userData.idnum);
-          if (dbUser) {
-            userData = { ...userData, ...dbUser };
-            localStorage.setItem('activeUser', JSON.stringify(userData));
-          }
-          setCurrentUser(userData);
-        } catch (dbError) {
-          setCurrentUser(userData);
-        }
+
+        // Initialize email service
+        initializeEmailJS()
+
+        // Use current user from AuthContext
+        const userData = currentUser;
 
         // Fetch real investments from database
         try {
-          const userInvestments = await supabaseDb.getInvestmentsByUser(userData.idnum);
-          setInvestments(userInvestments);
-          // Update localStorage for consistency
-          localStorage.setItem('userInvestments', JSON.stringify(userInvestments));
+          console.log('Fetching investments for user:', userData.idnum);
+          if (userData.idnum) {
+            const userInvestments = await supabaseDb.getInvestmentsByUser(userData.idnum);
+            console.log('Fetched investments:', userInvestments.length);
+            setInvestments(userInvestments);
+            // Update localStorage for consistency
+            localStorage.setItem('userInvestments', JSON.stringify(userInvestments));
+          }
         } catch (dbError) {
+          console.error('Database fetch error:', dbError);
           console.log('Could not fetch investments from database, using localStorage:', dbError);
           // Fallback to localStorage
           const investmentsRaw = localStorage.getItem('userInvestments');
           if (investmentsRaw) {
-            setInvestments(JSON.parse(investmentsRaw));
+            const localInvestments = JSON.parse(investmentsRaw);
+            console.log('Loaded from localStorage:', localInvestments.length);
+            setInvestments(localInvestments);
+          } else {
+            console.log('No localStorage data found');
+            setInvestments([]);
           }
         }
 
         // Fetch real notifications from database
         try {
-          const userNotifications = await supabaseDb.getNotificationsByUser(userData.idnum);
-          const formattedNotifications = userNotifications.map(notif => ({
-            id: parseInt(notif.id || '0') || Date.now(),
-            title: notif.title || 'Notification',
-            message: notif.message || '',
-            type: notif.type || 'info',
-            read: notif.read || false,
-            created_at: notif.created_at || new Date().toISOString()
-          }));
-          setNotifications(formattedNotifications);
-          localStorage.setItem('userNotifications', JSON.stringify(formattedNotifications));
+          if (userData.idnum) {
+            const userNotifications = await supabaseDb.getNotificationsByUser(userData.idnum);
+            const formattedNotifications = userNotifications.map(notif => ({
+              id: parseInt(notif.id || '0') || Date.now(),
+              title: notif.title || 'Notification',
+              message: notif.message || '',
+              type: notif.type || 'info',
+              read: notif.read || false,
+              created_at: notif.created_at || new Date().toISOString()
+            }));
+            setNotifications(formattedNotifications);
+            localStorage.setItem('userNotifications', JSON.stringify(formattedNotifications));
+          }
         } catch (dbError) {
           console.log('Could not fetch notifications from database, using localStorage:', dbError);
           // Fallback to localStorage notifications
@@ -250,7 +246,8 @@ function UserDashboard() {
 
         // Fetch KYC data from database
         try {
-          const userKyc = await supabaseDb.getKycByUser(userData.idnum);
+          if (userData.idnum) {
+            const userKyc = await supabaseDb.getKycByUser(userData.idnum);
           if (userKyc && userKyc.length > 0) {
             // Get the most recent KYC submission
             const latestKyc = userKyc.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())[0];
@@ -263,7 +260,8 @@ function UserDashboard() {
 
         // Fetch Loans from database
         try {
-          const userLoans = await supabaseDb.getLoansByUser(userData.idnum);
+          if (userData.idnum) {
+            const userLoans = await supabaseDb.getLoansByUser(userData.idnum);
           if (userLoans && userLoans.length > 0) {
             setLoans(userLoans);
           }
@@ -454,7 +452,7 @@ function UserDashboard() {
     }
   }
   const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null)
+  const { user: currentUser, isAuthenticated, updateUser } = useAuth()
   const [investments, setInvestments] = useState<Investment[]>([])
   const [loans, setLoans] = useState<any[]>([])
   const [kycData, setKycData] = useState<any>(null)
@@ -610,7 +608,7 @@ function UserDashboard() {
 
         // Update local storage
         const updatedUser = { ...currentUser, ...editForm }
-        setCurrentUser(updatedUser)
+        updateUser(updatedUser)
         localStorage.setItem('activeUser', JSON.stringify(updatedUser))
         sessionStorage.setItem('activeUser', JSON.stringify(updatedUser))
 
@@ -905,7 +903,7 @@ function UserDashboard() {
       try {
         const dbUser = await supabaseDb.getUserByIdnum(currentUser?.idnum || '')
         if (dbUser && currentUser) {
-          setCurrentUser({ ...currentUser, ...dbUser } as UserData)
+          updateUser(dbUser)
         }
       } catch (error) {
         console.error('Error refreshing balance:', error)
@@ -975,8 +973,7 @@ function UserDashboard() {
         
         // Update local state - update user balance
         if (currentUser) {
-          setCurrentUser({
-            ...currentUser,
+          updateUser({
             balance: (currentUser.balance || 0) - amount
           })
         }
@@ -1230,8 +1227,12 @@ function UserDashboard() {
       }
 
       // Try database first, fallback to local storage
+      let investmentSaved = false;
       try {
-        await supabaseDb.createInvestment(newInvestment)
+        console.log('Creating investment in database:', newInvestment);
+        await supabaseDb.createInvestment(newInvestment);
+        console.log('Investment saved to database');
+        investmentSaved = true;
         
         // Send email notification
         if (currentUser) {
@@ -1244,7 +1245,9 @@ function UserDashboard() {
           )
         }
       } catch (dbError) {
+        console.error('Database save failed:', dbError);
         console.log('Database unavailable, storing locally')
+        investmentSaved = false;
         // Store in localStorage as fallback
         const localInvestments = JSON.parse(localStorage.getItem('userInvestments') || '[]')
         localInvestments.push(newInvestment)
@@ -3236,10 +3239,7 @@ function UserDashboard() {
                     <div 
                       className={`avatar-option ${(currentUser?.avatar || 'avatar_male_1') === 'avatar_male_1' ? 'selected' : ''}`}
                       onClick={() => {
-                        if (currentUser) {
-                          setCurrentUser({ ...currentUser, avatar: 'avatar_male_1' })
-                          localStorage.setItem('activeUser', JSON.stringify({ ...currentUser, avatar: 'avatar_male_1' }))
-                        }
+                        updateUser({ avatar: 'avatar_male_1' })
                       }}
                       style={{
                         cursor: 'pointer',
@@ -3263,10 +3263,7 @@ function UserDashboard() {
                     <div 
                       className={`avatar-option ${currentUser?.avatar === 'avatar_male_2' ? 'selected' : ''}`}
                       onClick={() => {
-                        if (currentUser) {
-                          setCurrentUser({ ...currentUser, avatar: 'avatar_male_2' })
-                          localStorage.setItem('activeUser', JSON.stringify({ ...currentUser, avatar: 'avatar_male_2' }))
-                        }
+                        updateUser({ avatar: 'avatar_male_2' })
                       }}
                       style={{
                         cursor: 'pointer',
@@ -3290,10 +3287,7 @@ function UserDashboard() {
                     <div 
                       className={`avatar-option ${currentUser?.avatar === 'avatar_female_1' ? 'selected' : ''}`}
                       onClick={() => {
-                        if (currentUser) {
-                          setCurrentUser({ ...currentUser, avatar: 'avatar_female_1' })
-                          localStorage.setItem('activeUser', JSON.stringify({ ...currentUser, avatar: 'avatar_female_1' }))
-                        }
+                        updateUser({ avatar: 'avatar_female_1' })
                       }}
                       style={{
                         cursor: 'pointer',

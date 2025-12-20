@@ -13,6 +13,13 @@ interface User {
   referralCount?: number
   avatar?: string
   completedTrades?: number
+  phoneNumber?: string
+  address?: string
+  city?: string
+  country?: string
+  referralCode?: string
+  referralBonusTotal?: number
+  id?: string
 }
 
 interface AuthContextType {
@@ -20,6 +27,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; redirectTo?: string }>
   signup: (email: string, password: string, userData?: Partial<UserRecord>) => Promise<boolean>
   logout: () => void
+  updateUser: (userData: Partial<User>) => void
   isAuthenticated: boolean
   loading: boolean
   hasPermission: (permission: string) => boolean
@@ -27,6 +35,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export { AuthContext }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -159,12 +169,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return checkRoleLevel(user.role, role)
   }
 
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData }
+      setUser(updatedUser)
+      localStorage.setItem('activeUser', JSON.stringify(updatedUser))
+      sessionStorage.setItem('activeUser', JSON.stringify(updatedUser))
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
       login,
       signup,
       logout,
+      updateUser,
       isAuthenticated: !!user,
       loading,
       hasPermission,
