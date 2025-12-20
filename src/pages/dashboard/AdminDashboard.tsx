@@ -383,6 +383,13 @@ function AdminDashboard() {
 
   const handleApproveInvestment = async (investmentId: string) => {
     try {
+      // Get investment details first to access capital amount
+      const investment = allInvestments.find(inv => inv.id === investmentId)
+      if (!investment) {
+        showAlert('error', t('alerts.investmentNotFoundTitle'), t('alerts.investmentNotFoundMessage'))
+        return
+      }
+
       // Update status in database and set startDate to approval time
       await supabaseDb.updateInvestment(investmentId, { 
         status: 'Active',
@@ -390,7 +397,22 @@ function AdminDashboard() {
         startDate: new Date().toISOString()  // Set approval date for ROI calculations
       })
 
-      // Update local state
+      // Add invested capital to user's balance
+      const currentUser = allUsers.find(u => u.id === investment.userId)
+      if (currentUser) {
+        const newBalance = (currentUser.balance || 0) + (investment.capital || 0)
+        await supabaseDb.updateUser(investment.userId, { balance: newBalance })
+
+        // Update local state for users
+        setAllUsers(prev => 
+          prev.map(user => user.id === investment.userId ? { 
+            ...user, 
+            balance: newBalance 
+          } : user)
+        )
+      }
+
+      // Update local state for investments
       setAllInvestments(prev => 
         prev.map(inv => inv.id === investmentId ? { 
           ...inv, 
@@ -401,16 +423,13 @@ function AdminDashboard() {
       )
 
       // Send email notification
-      const investment = allInvestments.find(inv => inv.id === investmentId)
-      if (investment) {
-        await sendInvestmentNotification(
-          investment.userEmail,
-          investment.userName,
-          'approved',
-          investment.capital || 0,
-          investment.plan || 'Investment Plan'
-        )
-      }
+      await sendInvestmentNotification(
+        investment.userEmail,
+        investment.userName,
+        'approved',
+        investment.capital || 0,
+        investment.plan || 'Investment Plan'
+      )
 
       showAlert('success', t('alerts.investmentApprovedTitle'), t('alerts.investmentApprovedMessage'))
     } catch (error) {

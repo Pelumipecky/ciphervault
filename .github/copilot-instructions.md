@@ -162,17 +162,18 @@ Use this file to provide workspace-specific custom instructions to Copilot.
   - Implemented proper subscription cleanup on component unmount
   - ✅ VERIFIED: Build passes successfully and real-time KYC updates are working
 
-- [x] Remove Demo Credentials from Admin Login Page
-  - Removed AdminCredentialsDisplay component from AdminLogin.tsx
-  - Cleaned up unused supabaseDb import
-  - Removed demo credential display from the admin login interface
-  - ✅ COMMITTED: Changes pushed to GitHub with descriptive commit message
+- [x] Implement Investment Balance Addition on Approval
+  - Modified handleApproveInvestment function in AdminDashboard.tsx to add invested capital to user's balance upon approval
+  - Added balance update logic that credits investment capital to user account while maintaining ROI earning capability
+  - Updated both database and local state to reflect new balance after investment approval
+  - ✅ VERIFIED: Build passes successfully and investment capital is now added to user balance
 
-- [x] Fix TypeScript Compilation Errors
-  - Removed unused addAdmin.ts file that used Node.js APIs in browser environment
-  - Added null check for admin.idnum in AdminResetter.tsx to prevent type error
-  - Build now passes successfully without TypeScript errors
-  - ✅ COMMITTED: Changes pushed to GitHub with descriptive commit message
+- [x] Implement Withdrawal Restrictions for Active Investments
+  - Modified handleWithdrawalNext function in UserDashboard.tsx to prevent withdrawal of locked investment capital
+  - Added calculation of total locked investment capital from active investments
+  - Updated withdrawal validation to check available balance (total balance - locked investment capital)
+  - Enhanced error messages to inform users about locked funds and available withdrawal amounts
+  - ✅ VERIFIED: Build passes successfully and withdrawal restrictions are now enforced
 
 Execution Guidelines
 PROGRESS TRACKING:

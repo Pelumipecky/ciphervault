@@ -911,8 +911,19 @@ function UserDashboard() {
         console.error('Error refreshing balance:', error)
       }
       
-      if (amount > (currentUser?.balance || 0)) {
-        alert('Insufficient balance')
+      // Calculate locked investment capital (active investments that haven't completed their period)
+      const lockedInvestmentCapital = investments
+        .filter(inv => inv.status === 'Active' && inv.authStatus === 'approved')
+        .reduce((total, inv) => total + (inv.capital || 0), 0)
+      
+      const availableBalance = (currentUser?.balance || 0) - lockedInvestmentCapital
+      
+      if (amount > availableBalance) {
+        if (lockedInvestmentCapital > 0) {
+          alert(`Insufficient available balance. You have $${(currentUser?.balance || 0).toLocaleString()} total balance, but $${lockedInvestmentCapital.toLocaleString()} is locked in active investments. Available for withdrawal: $${availableBalance.toLocaleString()}`)
+        } else {
+          alert('Insufficient balance')
+        }
         return
       }
       setWithdrawalStep('method')
