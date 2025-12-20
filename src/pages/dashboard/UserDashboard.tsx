@@ -280,13 +280,14 @@ function UserDashboard() {
             if (payload.new && payload.new.userId === userData.idnum) {
               // Refresh KYC data when status changes
               try {
-                const userKyc = await supabaseDb.getKycByUser(userData.idnum);
-                if (userKyc && userKyc.length > 0) {
-                  const latestKyc = userKyc.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())[0];
-                  setKycData(latestKyc);
-                  
-                  // Show notification for status change
-                  if (latestKyc.status === 'approved') {
+                if (userData.idnum) {
+                  const userKyc = await supabaseDb.getKycByUser(userData.idnum);
+                  if (userKyc && userKyc.length > 0) {
+                    const latestKyc = userKyc.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())[0];
+                    setKycData(latestKyc);
+                    
+                    // Show notification for status change
+                    if (latestKyc.status === 'approved') {
                     addNotification(
                         t('alerts.titleKycApproved') + ' ✅',
                         t('alerts.kycApproved'),
@@ -302,6 +303,7 @@ function UserDashboard() {
                     showAlert('warning', t('alerts.titleKycUpdate'), t('alerts.kycUpdate'));
                   }
                 }
+              }
               } catch (error) {
                 console.error('Error refreshing KYC data:', error);
               }
@@ -317,27 +319,29 @@ function UserDashboard() {
             if (payload.new && payload.new.idnum === userData.idnum) {
               // Refresh loan data when status changes
               try {
-                const userLoans = await supabaseDb.getLoansByUser(userData.idnum);
-                if (userLoans && userLoans.length > 0) {
-                  setLoans(userLoans);
+                if (userData.idnum) {
+                  const userLoans = await supabaseDb.getLoansByUser(userData.idnum);
+                  if (userLoans && userLoans.length > 0) {
+                    setLoans(userLoans);
 
-                  // Show notification for status change
-                  const updatedLoan = userLoans.find(l => l.id === payload.new.id);
-                  if (updatedLoan) {
-                    if (updatedLoan.status === 'approved') {
-                      addNotification(
-                        'Loan Approved! 🎉',
-                        `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been approved.`,
-                        'success'
-                      );
-                      showAlert('success', 'Loan Approved!', `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been approved.`);
-                    } else if (updatedLoan.status === 'rejected') {
-                      addNotification(
-                        'Loan Application Update',
-                        `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been reviewed.`,
-                        'warning'
-                      );
-                      showAlert('warning', 'Loan Application Update', 'Your loan request has been reviewed. Please check your dashboard for details.');
+                    // Show notification for status change
+                    const updatedLoan = userLoans.find(l => l.id === payload.new.id);
+                    if (updatedLoan) {
+                      if (updatedLoan.status === 'approved') {
+                        addNotification(
+                          'Loan Approved! 🎉',
+                          `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been approved.`,
+                          'success'
+                        );
+                        showAlert('success', 'Loan Approved!', `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been approved.`);
+                      } else if (updatedLoan.status === 'rejected') {
+                        addNotification(
+                          'Loan Application Update',
+                          `Your loan request of $${updatedLoan.amount?.toLocaleString()} has been reviewed.`,
+                          'warning'
+                        );
+                        showAlert('warning', 'Loan Application Update', 'Your loan request has been reviewed. Please check your dashboard for details.');
+                      }
                     }
                   }
                 }
@@ -356,26 +360,28 @@ function UserDashboard() {
             if (payload.new && payload.new.idnum === userData.idnum) {
               // Refresh investment data when status changes
               try {
-                const userInvestments = await supabaseDb.getInvestmentsByUser(userData.idnum);
-                setInvestments(userInvestments);
+                if (userData.idnum) {
+                  const userInvestments = await supabaseDb.getInvestmentsByUser(userData.idnum);
+                  setInvestments(userInvestments);
 
-                // Show notification for status change
-                const updatedInvestment = userInvestments.find(inv => inv.id === payload.new.id);
-                if (updatedInvestment) {
-                  if (updatedInvestment.status === 'Active') {
-                    addNotification(
-                      'Investment Approved! 🎉',
-                      `Your investment of $${updatedInvestment.capital?.toLocaleString()} in ${updatedInvestment.plan} has been approved and is now active.`,
-                      'success'
-                    );
-                    showAlert('success', 'Investment Approved!', `Your investment of $${updatedInvestment.capital?.toLocaleString()} has been approved and is now active.`);
-                  } else if (updatedInvestment.status === 'Rejected') {
-                    addNotification(
-                      'Investment Application Update',
-                      `Your investment request of $${updatedInvestment.capital?.toLocaleString()} has been reviewed.`,
-                      'warning'
-                    );
-                    showAlert('warning', 'Investment Application Update', 'Your investment request has been reviewed. Please check your dashboard for details.');
+                  // Show notification for status change
+                  const updatedInvestment = userInvestments.find(inv => inv.id === payload.new.id);
+                  if (updatedInvestment) {
+                    if (updatedInvestment.status === 'Active') {
+                      addNotification(
+                        'Investment Approved! 🎉',
+                        `Your investment of $${updatedInvestment.capital?.toLocaleString()} in ${updatedInvestment.plan} has been approved and is now active.`,
+                        'success'
+                      );
+                      showAlert('success', 'Investment Approved!', `Your investment of $${updatedInvestment.capital?.toLocaleString()} has been approved and is now active.`);
+                    } else if (updatedInvestment.status === 'Rejected') {
+                      addNotification(
+                        'Investment Application Update',
+                        `Your investment request of $${updatedInvestment.capital?.toLocaleString()} has been reviewed.`,
+                        'warning'
+                      );
+                      showAlert('warning', 'Investment Application Update', 'Your investment request has been reviewed. Please check your dashboard for details.');
+                    }
                   }
                 }
               } catch (error) {
@@ -906,7 +912,12 @@ function UserDashboard() {
       try {
         const dbUser = await supabaseDb.getUserByIdnum(currentUser?.idnum || '')
         if (dbUser && currentUser) {
-          updateUser(dbUser)
+          // Convert null values to undefined for compatibility
+          const userForUpdate = {
+            ...dbUser,
+            referralCode: dbUser.referralCode || undefined
+          }
+          updateUser(userForUpdate)
         }
       } catch (error) {
         console.error('Error refreshing balance:', error)
