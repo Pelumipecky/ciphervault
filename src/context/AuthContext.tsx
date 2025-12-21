@@ -108,9 +108,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar: loggedInUser.avatar,
       }
 
-      setUser(userData)
-      localStorage.setItem('user', JSON.stringify(userData))
-      localStorage.setItem('activeUser', JSON.stringify(userData))
+      // If admin or superadmin, store admin session separately and do not overwrite activeUser
+      if (userRole === 'admin' || userRole === 'superadmin') {
+        const adminData = { ...userData }
+        localStorage.setItem('adminData', JSON.stringify(adminData))
+        sessionStorage.setItem('adminData', JSON.stringify(adminData))
+        // Simple admin session object (can be extended with tokens)
+        const adminSession = { expiresAt: Date.now() + (24 * 60 * 60 * 1000) } // 24h
+        localStorage.setItem('adminSession', JSON.stringify(adminSession))
+        sessionStorage.setItem('adminSession', JSON.stringify(adminSession))
+      } else {
+        // Regular user login
+        setUser(userData)
+        localStorage.setItem('user', JSON.stringify(userData))
+        localStorage.setItem('activeUser', JSON.stringify(userData))
+      }
 
       return { success: true, redirectTo }
     } catch (error) {

@@ -35,25 +35,17 @@ function AdminLogin() {
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(null)
   const [timeRemaining, setTimeRemaining] = useState(0)
   
-  // Use direct auth for admin login to avoid interfering with regular user sessions
-  const { isAuthenticated } = useAuth()
+  const { login, user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
   // Check if already authenticated as admin
   useEffect(() => {
-    // If an admin session already exists, redirect to admin dashboard
-    const adminStr = localStorage.getItem('adminData') || sessionStorage.getItem('adminData')
-    if (adminStr) {
-      try {
-        const admin = JSON.parse(adminStr)
-        if (admin.role === 'admin' || admin.role === 'superadmin') {
-          navigate('/admin')
-        }
-      } catch (e) {
-        console.warn('Invalid adminData in storage', e)
+    if (isAuthenticated && user) {
+      if (user.role === 'admin' || user.role === 'superadmin') {
+        navigate('/admin')
       }
     }
-  }, [navigate])
+  }, [isAuthenticated, user, navigate])
 
   // Load rate limiting state from localStorage
   useEffect(() => {
@@ -99,44 +91,35 @@ function AdminLogin() {
     setStatus({ state: 'loading', message: 'Authenticating…' })
 
     try {
-      console.log('Attempting admin login with:', form.email)
-      // Use direct auth so we don't overwrite activeUser/session for regular users
-      const adminUser = await supabaseAuth.login(form.email, form.password)
-
-      if (!adminUser) {
-        console.log('Admin login failed: invalid credentials')
+      console.log('Attempting login with:', form.email, form.password)
+      const result = await login(form.email, form.password)
+      console.log('Login result:', result)
+      
+      if (!result.success) {
+        console.log('Login failed:', result)
         setStatus({ state: 'error', message: 'Invalid email/username or password.' })
         return
       }
-
-      if (adminUser.role !== 'admin' && adminUser.role !== 'superadmin') {
-        console.log('User is not admin:', adminUser.role)
+      
+      // Admin login stores admin session separately; read adminData instead
+      const adminData = localStorage.getItem('adminData') || sessionStorage.getItem('adminData')
+      console.log('Admin data from storage:', adminData)
+      const admin = adminData ? JSON.parse(adminData) : null
+      console.log('Parsed admin:', admin)
+      
+      if (!admin || (admin.role !== 'admin' && admin.role !== 'superadmin')) {
+        console.log('Admin role check failed:', admin?.role)
         setStatus({ state: 'error', message: 'You do not have admin access.' })
-        return
+        // Do not remove user sessions here - do not overwrite user state
+        return;
       }
-
-      // Store admin session separately from user session
-      const adminData = {
-        id: adminUser.id || adminUser.idnum,
-        idnum: adminUser.idnum,
-        email: adminUser.email,
-        name: adminUser.name,
-        role: adminUser.role
-      }
-
-      const adminSession = {
-        issuedAt: Date.now(),
-        expiresAt: Date.now() + (60 * 60 * 1000) // 1 hour
-      }
-
-      localStorage.setItem('adminData', JSON.stringify(adminData))
-      localStorage.setItem('adminSession', JSON.stringify(adminSession))
-
-      const redirectPath = '/admin'
-      setStatus({ state: 'success', message: `Welcome ${adminUser.role}! Redirecting to dashboard…` })
-      setTimeout(() => navigate(redirectPath), 700)
+      
+      const redirectPath = result.redirectTo || '/admin'
+      console.log('Redirecting to:', redirectPath)
+      setStatus({ state: 'success', message: `Welcome ${admin.role}! Redirecting to dashboard…` })
+      setTimeout(() => navigate(redirectPath), 1000)
     } catch (error: any) {
-      console.error('Admin login error:', error)
+      console.error('Login error:', error)
       setStatus({ state: 'error', message: error?.message || 'Login failed. Please try again.' })
     }
   }

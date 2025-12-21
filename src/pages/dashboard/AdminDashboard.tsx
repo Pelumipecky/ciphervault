@@ -265,7 +265,9 @@ function AdminDashboard() {
             }
           })
 
-          setAllUsers(users)
+            // Exclude current admin from the users list to prevent admins from seeing or editing themselves
+          const filteredUsers = users.filter((u: any) => u.idnum !== userData.idnum)
+          setAllUsers(filteredUsers)
           setAllInvestments(investmentsWithUsers)
           setAllWithdrawals(withdrawalsWithUsers)
           setAllKycRequests(kycWithUsers)
@@ -396,10 +398,10 @@ function AdminDashboard() {
   }, [navigate])
 
   const handleLogout = () => {
-    // Clear admin-only session keys, but do not touch regular user session (activeUser)
+    // Only clear admin session data; do NOT clear the regular user session
     localStorage.removeItem('adminData')
-    localStorage.removeItem('adminSession')
     sessionStorage.removeItem('adminData')
+    localStorage.removeItem('adminSession')
     sessionStorage.removeItem('adminSession')
     navigate('/admin/login')
   }
