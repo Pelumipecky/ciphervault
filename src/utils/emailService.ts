@@ -259,6 +259,48 @@ export async function sendBalanceUpdateNotification(
 }
 
 /**
+ * Send daily ROI notification email
+ */
+export async function sendROINotification(
+  userEmail: string,
+  userName: string,
+  roiAmount: number,
+  investmentPlan: string,
+  currentBalance: number,
+  totalEarnings: number
+): Promise<boolean> {
+  return sendEmailNotification({
+    to_email: userEmail,
+    to_name: userName,
+    subject: '💰 Daily ROI Credited - Cypher Vault',
+    message: `Great news! Your daily ROI of $${roiAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from the ${investmentPlan} has been credited to your account. Total earnings so far: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Current balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    type: 'success',
+  });
+}
+
+/**
+ * Send investment completion notification email
+ */
+export async function sendInvestmentCompletionNotification(
+  userEmail: string,
+  userName: string,
+  investmentPlan: string,
+  totalROI: number,
+  bonusAmount: number,
+  currentBalance: number
+): Promise<boolean> {
+  const totalEarnings = totalROI + bonusAmount;
+  
+  return sendEmailNotification({
+    to_email: userEmail,
+    to_name: userName,
+    subject: '🎉 Investment Plan Completed - Cypher Vault',
+    message: `Congratulations! Your ${investmentPlan} investment has completed successfully. Total ROI earned: $${totalROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Bonus credited: $${bonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Total earnings: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Your new balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    type: 'success',
+  });
+}
+
+/**
  * Send welcome email to new users
  */
 export async function sendWelcomeEmail(
@@ -275,7 +317,7 @@ export async function sendWelcomeEmail(
 }
 
 /**
- * Generate HTML email template
+ * Generate HTML email template with brand styling matching the website
  */
 function generateEmailHTML(notification: EmailNotification): string {
   const iconMap = {
@@ -292,6 +334,14 @@ function generateEmailHTML(notification: EmailNotification): string {
     info: '#3b82f6',
   };
 
+  // Website color scheme
+  const PRIMARY_COLOR = '#0f172a';      // Dark blue - primary background
+  const SECONDARY_COLOR = '#1e293b';    // Slightly lighter blue
+  const ACCENT_COLOR = '#f0b90b';       // Gold/Yellow accent
+  const TEXT_PRIMARY = '#f8fafc';       // Light text
+  const TEXT_SECONDARY = '#cbd5e1';     // Dimmer text
+  const LOGO_URL = 'https://raw.githubusercontent.com/yourusername/yourrepo/main/public/images/ciphervaultlogobig.svg';
+
   return `
     <!DOCTYPE html>
     <html>
@@ -299,53 +349,82 @@ function generateEmailHTML(notification: EmailNotification): string {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${notification.subject}</title>
+      <style>
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+          background-color: ${PRIMARY_COLOR};
+          line-height: 1.6;
+        }
+        * {
+          box-sizing: border-box;
+        }
+      </style>
     </head>
-    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f172a;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0f172a; padding: 40px 20px;">
+    <body style="margin: 0; padding: 0; background-color: ${PRIMARY_COLOR};">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${PRIMARY_COLOR}; padding: 40px 20px;">
         <tr>
           <td align="center">
-            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1e293b; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);">
-              <!-- Header -->
+            <table width="100%" maxwidth="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: ${SECONDARY_COLOR}; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);">
+              
+              <!-- Header with Logo -->
               <tr>
-                <td style="background: linear-gradient(135deg, #f0b90b 0%, #d19e09 100%); padding: 30px; text-align: center;">
-                  <h1 style="margin: 0; color: #0f172a; font-size: 28px; font-weight: bold;">
-                    ${iconMap[notification.type]} Cypher Vault
+                <td style="background: linear-gradient(135deg, ${ACCENT_COLOR} 0%, #d19e09 100%); padding: 40px 30px; text-align: center; border-bottom: 3px solid ${ACCENT_COLOR};">
+                  <img src="${LOGO_URL}" alt="Cypher Vault" style="width: 180px; height: auto; margin: 0; display: block; margin-bottom: 15px;" />
+                  <h1 style="margin: 0; color: ${PRIMARY_COLOR}; font-size: 28px; font-weight: 700; letter-spacing: 0.5px;">
+                    ${iconMap[notification.type]} ${notification.subject.split(' - ')[0]}
                   </h1>
                 </td>
               </tr>
-              
-              <!-- Content -->
+
+              <!-- Main Content -->
               <tr>
-                <td style="padding: 40px 30px;">
-                  <h2 style="margin: 0 0 20px 0; color: #f8fafc; font-size: 20px;">
+                <td style="padding: 40px 30px; background-color: ${SECONDARY_COLOR};">
+                  <h2 style="margin: 0 0 15px 0; color: ${TEXT_PRIMARY}; font-size: 22px; font-weight: 600;">
                     Hello ${notification.to_name},
                   </h2>
                   
-                  <div style="background-color: rgba(${notification.type === 'success' ? '16, 185, 129' : notification.type === 'error' ? '239, 68, 68' : notification.type === 'warning' ? '245, 158, 11' : '59, 130, 246'}, 0.1); border-left: 4px solid ${colorMap[notification.type]}; padding: 20px; border-radius: 6px; margin: 20px 0;">
-                    <p style="margin: 0; color: #e2e8f0; font-size: 16px; line-height: 1.6;">
+                  <!-- Message Box with Accent Border -->
+                  <div style="background: linear-gradient(135deg, rgba(240, 185, 11, 0.05) 0%, rgba(240, 185, 11, 0.02) 100%); border-left: 4px solid ${ACCENT_COLOR}; border-radius: 8px; padding: 25px; margin: 25px 0; border: 1px solid rgba(240, 185, 11, 0.2);">
+                    <p style="margin: 0; color: ${TEXT_PRIMARY}; font-size: 16px; line-height: 1.8;">
                       ${notification.message}
                     </p>
                   </div>
-                  
-                  <p style="margin: 30px 0 0 0; color: #94a3b8; font-size: 14px; line-height: 1.6;">
-                    If you have any questions or need assistance, please don't hesitate to contact our support team.
-                  </p>
-                  
-                  <div style="text-align: center; margin-top: 30px;">
-                      <a href="${import.meta.env.VITE_APP_URL || 'https://ciphervault.com'}" style="display: inline-block; background: linear-gradient(135deg, #f0b90b 0%, #d19e09 100%); color: #0f172a; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px;">
-                      Visit Dashboard
+
+                  <!-- CTA Button -->
+                  <div style="text-align: center; margin: 35px 0;">
+                    <a href="${import.meta.env.VITE_APP_URL || 'https://ciphervault.com'}/dashboard" style="display: inline-block; background: linear-gradient(135deg, ${ACCENT_COLOR} 0%, #d19e09 100%); color: ${PRIMARY_COLOR}; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; letter-spacing: 0.5px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(240, 185, 11, 0.3);">
+                      Go to Dashboard
                     </a>
                   </div>
+
+                  <p style="margin: 30px 0 0 0; color: ${TEXT_SECONDARY}; font-size: 14px; line-height: 1.8;">
+                    If you have any questions or need support, feel free to reach out to our team. We're here to help!
+                  </p>
                 </td>
               </tr>
-              
+
               <!-- Footer -->
               <tr>
-                <td style="background-color: #0f172a; padding: 20px 30px; text-align: center;">
-                    <p style="margin: 0 0 10px 0; color: #64748b; font-size: 12px;">
+                <td style="background-color: ${PRIMARY_COLOR}; padding: 30px; text-align: center; border-top: 1px solid rgba(240, 185, 11, 0.1);">
+                  <!-- Social Links -->
+                  <div style="margin: 0 0 20px 0;">
+                    <a href="https://twitter.com/ciphervault" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                      <span style="color: ${ACCENT_COLOR}; font-size: 18px;">𝕏</span>
+                    </a>
+                    <a href="https://discord.gg/ciphervault" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                      <span style="color: ${ACCENT_COLOR}; font-size: 18px;">💬</span>
+                    </a>
+                    <a href="https://telegram.me/ciphervault" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                      <span style="color: ${ACCENT_COLOR}; font-size: 18px;">✈️</span>
+                    </a>
+                  </div>
+
+                  <p style="margin: 0 0 10px 0; color: ${TEXT_SECONDARY}; font-size: 13px;">
                     © ${new Date().getFullYear()} Cypher Vault. All rights reserved.
                   </p>
-                  <p style="margin: 0; color: #475569; font-size: 11px;">
+                  <p style="margin: 0; color: ${TEXT_SECONDARY}; font-size: 12px;">
                     This is an automated notification. Please do not reply to this email.
                   </p>
                 </td>

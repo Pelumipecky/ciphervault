@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
 import { 
   sendInvestmentNotification, 
@@ -50,6 +51,7 @@ function AdminDashboard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { logout } = useAuth()
   const [loading, setLoading] = useState(true)
   const [currentAdmin, setCurrentAdmin] = useState<any>(null)
   const [allUsers, setAllUsers] = useState<any[]>([])
@@ -398,12 +400,8 @@ function AdminDashboard() {
   }, [navigate])
 
   const handleLogout = () => {
-    // Only clear admin session data; do NOT clear the regular user session
-    localStorage.removeItem('adminData')
-    sessionStorage.removeItem('adminData')
-    localStorage.removeItem('adminSession')
-    sessionStorage.removeItem('adminSession')
-    navigate('/admin/login')
+    logout()
+    navigate('/login')
   }
 
   const handleApproveInvestment = async (investmentId: string) => {

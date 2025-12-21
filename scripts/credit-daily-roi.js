@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import emailjs from '@emailjs/nodejs';
 
 dotenv.config();
 
@@ -13,6 +14,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Initialize EmailJS for Node.js
+const EMAILJS_SERVICE_ID = process.env.VITE_EMAILJS_SERVICE_ID || 'service_ciphervault';
+const EMAILJS_TEMPLATE_ID = process.env.VITE_EMAILJS_TEMPLATE_ID || 'template_notification';
+const EMAILJS_PUBLIC_KEY = process.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_EMAILJS_PUBLIC_KEY';
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY || '';
+
+const EMAIL_NOTIFICATIONS_ENABLED = process.env.VITE_EMAIL_NOTIFICATIONS_ENABLED === 'true';
+
 // Investment plan configurations (should match the ones in planConfig.ts)
 const PLAN_CONFIG = {
   '3-Day Plan': { durationDays: 3, dailyRate: 0.10, bonus: 0.05 },
@@ -22,6 +31,80 @@ const PLAN_CONFIG = {
   '3-Month Plan': { durationDays: 90, dailyRate: 0.04, bonus: 0.12 },
   '6-Month Plan': { durationDays: 180, dailyRate: 0.045, bonus: 0.135 }
 };
+
+/**
+ * Send ROI notification email
+ */
+async function sendROINotificationEmail(userEmail, userName, roiAmount, investmentPlan, currentBalance, totalEarnings) {
+  if (!EMAIL_NOTIFICATIONS_ENABLED) {
+    console.log(`📧 Email notifications disabled. Would have sent ROI email to: ${userEmail}`);
+    return;
+  }
+
+  try {
+    if (EMAILJS_PRIVATE_KEY) {
+      // Initialize EmailJS with private key for Node.js
+      emailjs.init({
+        publicKey: EMAILJS_PUBLIC_KEY,
+        privateKey: EMAILJS_PRIVATE_KEY,
+      });
+
+      const templateParams = {
+        to_email: userEmail,
+        to_name: userName,
+        subject: '💰 Daily ROI Credited - Cypher Vault',
+        message: `Great news! Your daily ROI of $${roiAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from the ${investmentPlan} has been credited to your account. Total earnings so far: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Current balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        notification_type: 'success',
+        app_name: 'Cypher Vault',
+        year: new Date().getFullYear(),
+      };
+
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+      console.log(`✅ ROI notification email sent to ${userEmail}`);
+    } else {
+      console.log(`⚠️ EmailJS private key not configured. Skipping email for ${userEmail}`);
+    }
+  } catch (error) {
+    console.error(`❌ Failed to send ROI notification email to ${userEmail}:`, error);
+  }
+}
+
+/**
+ * Send investment completion email
+ */
+async function sendInvestmentCompletionEmail(userEmail, userName, investmentPlan, totalROI, bonusAmount, currentBalance) {
+  if (!EMAIL_NOTIFICATIONS_ENABLED) {
+    console.log(`📧 Email notifications disabled. Would have sent completion email to: ${userEmail}`);
+    return;
+  }
+
+  try {
+    if (EMAILJS_PRIVATE_KEY) {
+      emailjs.init({
+        publicKey: EMAILJS_PUBLIC_KEY,
+        privateKey: EMAILJS_PRIVATE_KEY,
+      });
+
+      const totalEarnings = totalROI + bonusAmount;
+      const templateParams = {
+        to_email: userEmail,
+        to_name: userName,
+        subject: '🎉 Investment Plan Completed - Cypher Vault',
+        message: `Congratulations! Your ${investmentPlan} investment has completed successfully. Total ROI earned: $${totalROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Bonus credited: $${bonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Total earnings: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Your new balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        notification_type: 'success',
+        app_name: 'Cypher Vault',
+        year: new Date().getFullYear(),
+      };
+
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+      console.log(`✅ Investment completion email sent to ${userEmail}`);
+    } else {
+      console.log(`⚠️ EmailJS private key not configured. Skipping email for ${userEmail}`);
+    }
+  } catch (error) {
+    console.error(`❌ Failed to send completion email to ${userEmail}:`, error);
+  }
+}
 
 async function creditDailyROI() {
   try {
@@ -97,7 +180,7 @@ async function creditDailyROI() {
           // Credit remaining ROI and bonus to user's balance
           const { data: userData } = await supabase
             .from('users')
-            .select('balance, bonus')
+            .select('balance, bonus, email, name, userName')
             .eq('idnum', investment.idnum)
             .single();
 
@@ -113,6 +196,11 @@ async function creditDailyROI() {
                 updated_at: new Date().toISOString()
               })
               .eq('idnum', investment.idnum);
+
+            // Send investment completion email
+            const userEmail = userData.email;
+            const userName = userData.name || userData.userName;
+            await sendInvestmentCompletionEmail(userEmail, userName, investment.plan, remainingRoi, finalBonus, newBalance);
           }
 
           console.log(`Completed investment ${investment.id}: Credited remaining ROI $${remainingRoi.toFixed(2)} and final bonus $${finalBonus.toFixed(2)}`);
@@ -126,12 +214,7 @@ async function creditDailyROI() {
             creditedRoi: (investment.creditedRoi || 0) + dailyRoiAmount,
             updated_at: new Date().toISOString()
           })
-          .eq('id', investment.id);
-
-        // Credit daily ROI to user's balance
-        const { data: userData } = await supabase
-          .from('users')
-          .select('balance')
+          .eq('id', invest, email, name, userName')
           .eq('idnum', investment.idnum)
           .single();
 
@@ -139,6 +222,17 @@ async function creditDailyROI() {
           const newBalance = (userData.balance || 0) + dailyRoiAmount;
           await supabase
             .from('users')
+            .update({
+              balance: newBalance,
+              updated_at: new Date().toISOString()
+            })
+            .eq('idnum', investment.idnum);
+
+          // Send daily ROI notification email
+          const userEmail = userData.email;
+          const userName = userData.name || userData.userName;
+          const totalEarnings = (investment.creditedRoi || 0) + dailyRoiAmount;
+          await sendROINotificationEmail(userEmail, userName, dailyRoiAmount, investment.plan, newBalance, totalEarnings
             .update({
               balance: newBalance,
               updated_at: new Date().toISOString()
