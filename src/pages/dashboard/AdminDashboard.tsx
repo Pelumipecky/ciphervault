@@ -424,8 +424,7 @@ function AdminDashboard() {
       console.log('Updating investment in database...')
       await supabaseDb.updateInvestment(investmentId, { 
         status: 'Active',
-        authStatus: 'approved',
-        startDate: new Date().toISOString()  // Set approval date for ROI calculations
+        authStatus: 'approved'
       })
       console.log('Investment updated successfully')
 
@@ -455,8 +454,7 @@ function AdminDashboard() {
         prev.map(inv => inv.id === investmentId ? { 
           ...inv, 
           status: 'Active', 
-          authStatus: 'approved',
-          startDate: new Date().toISOString()  // Update local state too
+          authStatus: 'approved'
         } : inv)
       )
 
