@@ -158,54 +158,81 @@ html, body, .navbar-custom, .card, footer, .container3 {
 }
 
 .package-card {
-    --package-border: rgba(15, 23, 42, 0.08);
-    --package-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border: 1px solid var(--package-border);
-    border-radius: 1.2rem;
+    --package-border: rgba(255, 255, 255, 0.1);
+    --package-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1.5px solid var(--package-border);
+    border-radius: 1.25rem;
     background: var(--package-gradient);
-    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.10);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     width: 100%;
-    max-width: 340px;
+    max-width: 370px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 420px;
 }
 
 .package-card .package-card__body {
-    padding: 1.2rem 1rem;
+    padding: 1.5rem 1.25rem 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    flex: 1 1 auto;
 }
 
 .package-card h3 {
-    font-weight: 700;
-    color: #0f172a;
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+    font-weight: 800 !important;
+    color: #f0b90b !important;
+    font-size: 1.18rem;
+    margin-bottom: 0.3rem;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
 }
 
 .package-card p,
 .package-card li,
 .package-card small {
-    color: #334155;
-    font-size: 0.95rem;
+    color: #f8fafc !important;
+    font-size: 1rem;
+    font-weight: 500 !important;
+    line-height: 1.5;
+    margin: 0 0 0.3rem 0;
 }
 
 .package-card ul {
-    padding-left: 1rem;
-    margin-bottom: 0.5rem;
+    padding-left: 1.1rem;
+    margin-bottom: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
 }
 
 .package-badge {
-    padding: 0.3rem 0.7rem;
+    padding: 0.28rem 0.75rem;
     border-radius: 999px;
     font-weight: 600;
     letter-spacing: 0.5px;
-    font-size: 0.85rem;
+    font-size: 0.92rem;
     margin-bottom: 0.5rem;
 }
 
 .package-card__actions .btn {
     font-weight: 600;
-    padding: 0.5rem 1rem;
-    font-size: 0.95rem;
+    padding: 0.5rem 1.1rem;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.3rem;
+    background-color: #f0b90b;
+    color: #0f172a;
+    border: 1px solid #f0b90b;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.package-card__actions .btn:hover {
+    background-color: #e6b800;
+    border-color: #e6b800;
 }
 
 @media (max-width: 900px) {
@@ -224,10 +251,14 @@ html, body, .navbar-custom, .card, footer, .container3 {
 }
 
 .package-footer {
-    background: transparent;
-    border-top: 1px solid rgba(15, 23, 42, 0.1);
-    border-bottom-left-radius: 1.5rem;
-    border-bottom-right-radius: 1.5rem;
+    background: linear-gradient(90deg, #1e293b 60%, #0f172a 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom-left-radius: 1.25rem;
+    border-bottom-right-radius: 1.25rem;
+    font-size: 0.97rem;
+    color: #cbd5e1;
+    padding: 0.85rem 1.25rem;
+    min-height: 48px;
 }
 
 .package-card--starter {

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
+import { useAuth } from '@/context/AuthContext'
 
 const packages = PLAN_CONFIG.map(plan => ({
   name: plan.name,
@@ -14,6 +15,7 @@ const packages = PLAN_CONFIG.map(plan => ({
 }))
 
 function Packages() {
+  const { isAuthenticated } = useAuth()
   return (
     <div className="packages-page">
       <header className="packages-page__header">
@@ -48,7 +50,7 @@ function Packages() {
         </div>
       </div>
 
-      <div className="package-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="package-grid">
         {packages.map((pkg) => (
           <article key={pkg.name} className="package-card">
             <div className="package-card__body">
@@ -62,12 +64,14 @@ function Packages() {
                 <li>{pkg.details}</li>
               </ul>
               <div className="package-card__actions">
-                <a className="btn btn--primary" href="/dashboard.html">
+                <a className="btn btn--primary" href="/dashboard">
                   Go to Dashboard
                 </a>
-                <Link className="btn btn--ghost" to="/signup">
-                  Create an Account
-                </Link>
+                {!isAuthenticated && (
+                  <Link className="btn btn--ghost" to="/signup">
+                    Create an Account
+                  </Link>
+                )}
               </div>
             </div>
             <footer className="package-card__footer">{pkg.footer}</footer>
