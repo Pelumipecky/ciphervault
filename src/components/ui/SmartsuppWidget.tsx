@@ -1,7 +1,7 @@
 // src/components/ui/SmartsuppWidget.tsx
 import React, { useEffect } from 'react'
 
-const SMARTSUPP_KEY = '10876c3f5a49136bdcbaa00ea358ae20809c164b'
+const SMARTSUPP_KEY = '839836d7dbe80ca378391bb9be0798c59b8c2cd6'
 
 const SmartsuppWidget: React.FC = () => {
   useEffect(() => {
