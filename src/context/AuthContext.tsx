@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar: loggedInUser.avatar,
       }
 
-      // If admin or superadmin, store admin session separately and do not overwrite activeUser
+      // If admin or superadmin, store admin session and also set user state and activeUser
       if (userRole === 'admin' || userRole === 'superadmin') {
         const adminData = { ...userData }
         localStorage.setItem('adminData', JSON.stringify(adminData))
@@ -117,6 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const adminSession = { expiresAt: Date.now() + (24 * 60 * 60 * 1000) } // 24h
         localStorage.setItem('adminSession', JSON.stringify(adminSession))
         sessionStorage.setItem('adminSession', JSON.stringify(adminSession))
+        // Also set user state and activeUser for context authentication
+        setUser(userData)
+        localStorage.setItem('user', JSON.stringify(userData))
+        localStorage.setItem('activeUser', JSON.stringify(userData))
       } else {
         // Regular user login
         setUser(userData)

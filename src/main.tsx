@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './styles/global.css'
+import '../styles.css'
 // IcoFont Icons
 import 'icofont/dist/icofont.min.css'
 // i18n
