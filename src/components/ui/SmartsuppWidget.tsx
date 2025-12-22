@@ -32,6 +32,20 @@ const SmartsuppWidget: React.FC = () => {
         bottom: 24px !important;
         z-index: 99999 !important;
       }
+
+      /* Mobile adjustments */
+      @media (max-width: 600px) {
+        .smartsupp-launcher, .smartsupp-chat, [id^="smartsupp"], .smartsupp-widget {
+          left: 16px !important;
+          bottom: 16px !important;
+        }
+        .smartsupp-chat {
+          max-width: calc(100vw - 32px) !important;
+          width: calc(100vw - 32px) !important;
+          left: 16px !important;
+          right: 16px !important;
+        }
+      }
     `
     document.head.appendChild(style)
 
