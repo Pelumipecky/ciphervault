@@ -4,6 +4,7 @@ import { fetchDetailedCryptoPrices, formatPrice, CryptoPrice } from '@/utils/cry
 // packages data handled in Packages page
 import Packages from './Packages'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@/context/AuthContext'
 
 // `stats` will be built inside the component to ensure translations are applied via `t()`
 
@@ -14,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 function Home() {
   console.log('🏠 Home component rendering...')
   const { t } = useTranslation()
+  const { isAuthenticated } = useAuth()
   
   // Live crypto prices
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrice[]>([])
@@ -200,9 +202,15 @@ function Home() {
             {t('home.hero.subtitle')}
           </p>
           <div className="hero__actions">
-            <Link className="btn btn--primary btn--lg" to="/signup">
-              {t('home.hero.cta')}
-            </Link>
+            {isAuthenticated ? (
+              <Link className="btn btn--primary btn--lg" to="/dashboard">
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link className="btn btn--primary btn--lg" to="/signup">
+                {t('home.hero.cta')}
+              </Link>
+            )}
             <Link className="btn btn--ghost btn--lg" to="/packages">
               {t('home.hero.ctaExplore')}
             </Link>

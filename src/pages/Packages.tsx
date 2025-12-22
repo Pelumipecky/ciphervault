@@ -26,9 +26,15 @@ function Packages() {
           research desk, comes with audited custody partners, and includes real-time reporting.
         </p>
         <div className="packages-page__actions">
-          <Link className="btn btn--primary btn--lg" to="/signup">
-            Open an Account
-          </Link>
+          {isAuthenticated ? (
+            <Link className="btn btn--primary btn--lg" to="/dashboard">
+              Go to Dashboard
+            </Link>
+          ) : (
+            <Link className="btn btn--primary btn--lg" to="/signup">
+              Open an Account
+            </Link>
+          )}
           <a className="btn btn--ghost btn--lg" href="/contact.html">
             Schedule a Call
           </a>
