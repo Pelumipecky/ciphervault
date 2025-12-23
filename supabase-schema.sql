@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS investments (
   "authStatus" TEXT DEFAULT 'pending',
   "creditedRoi" NUMERIC DEFAULT 0,
   "creditedBonus" NUMERIC DEFAULT 0,
+  "startDate" TIMESTAMP,
   date TIMESTAMP DEFAULT NOW(),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()

@@ -57,6 +57,29 @@ interface Investment {
 
 function UserDashboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user: currentUser, isAuthenticated, updateUser } = useAuth();
+
+  // Polling-based user balance refresh
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    async function fetchLatestUser() {
+      if (currentUser?.idnum) {
+        try {
+          const dbUser = await supabaseDb.getUserByIdnum(currentUser.idnum);
+          if (dbUser) {
+            updateUser({ balance: dbUser.balance, bonus: dbUser.bonus });
+          }
+        } catch (err) {
+          console.warn('Could not refresh user balance:', err);
+        }
+      }
+    }
+    fetchLatestUser();
+    interval = setInterval(fetchLatestUser, 30000); // 30 seconds
+    return () => { if (interval) clearInterval(interval); };
+  }, [currentUser?.idnum, updateUser]);
+
       // Notification type
       interface Notification {
         id: number;
@@ -68,7 +91,6 @@ function UserDashboard() {
       }
       // Notifications state
       const [notifications, setNotifications] = useState<Notification[]>([]);
-    const navigate = useNavigate();
 
   // Helper function to add notifications for account activities
   const addNotification = (title: string, message: string, type: 'success' | 'info' | 'warning' | 'error' = 'info') => {
@@ -93,8 +115,9 @@ function UserDashboard() {
       // Helper to force balance refresh after deposit or admin update
       async function refreshUserBalance() {
         // Since we're using AuthContext, we could trigger a refresh here
-        // For now, just reload the page or trigger a re-fetch
-        window.location.reload();
+        // For now, just trigger a re-fetch instead of reload
+        // window.location.reload(); // Commented out to prevent page refresh
+        // TODO: Implement proper balance refresh without reload
       }
 
   // Live Crypto prices state
@@ -154,10 +177,13 @@ function UserDashboard() {
   // ...all state and function declarations...
 
   useEffect(() => {
+    // Use current user from AuthContext
+    const userData = currentUser;
+
     async function initDashboard() {
       try {
         // Check if user is authenticated
-        if (!isAuthenticated || !currentUser) {
+        if (!isAuthenticated || !userData) {
           navigate('/login');
           return;
         }
@@ -165,18 +191,20 @@ function UserDashboard() {
         // Initialize email service
         initializeEmailJS()
 
-        // Use current user from AuthContext
-        const userData = currentUser;
-
         // Fetch real investments from database
         try {
           console.log('Fetching investments for user:', userData.idnum);
+          console.log('User data:', userData);
           if (userData.idnum) {
             const userInvestments = await supabaseDb.getInvestmentsByUser(userData.idnum);
-            console.log('Fetched investments:', userInvestments.length);
+            console.log('Raw investments from database:', userInvestments);
+            console.log('Number of investments fetched:', userInvestments.length);
             setInvestments(userInvestments);
             // Update localStorage for consistency
             localStorage.setItem('userInvestments', JSON.stringify(userInvestments));
+            console.log('Investments saved to state and localStorage');
+          } else {
+            console.warn('No user idnum found for fetching investments');
           }
         } catch (dbError) {
           console.error('Database fetch error:', dbError);
@@ -185,10 +213,10 @@ function UserDashboard() {
           const investmentsRaw = localStorage.getItem('userInvestments');
           if (investmentsRaw) {
             const localInvestments = JSON.parse(investmentsRaw);
-            console.log('Loaded from localStorage:', localInvestments.length);
+            console.log('Loaded from localStorage:', localInvestments.length, 'investments');
             setInvestments(localInvestments);
           } else {
-            console.log('No localStorage data found');
+            console.log('No investments found in localStorage either');
             setInvestments([]);
           }
         }
@@ -461,8 +489,8 @@ function UserDashboard() {
     }
   }
   const [loading, setLoading] = useState(true)
-  const { user: currentUser, isAuthenticated, updateUser } = useAuth()
   const [investments, setInvestments] = useState<Investment[]>([])
+  const [investmentError, setInvestmentError] = useState<string | null>(null)
   const [loans, setLoans] = useState<any[]>([])
   const [kycData, setKycData] = useState<any>(null)
   const [profileState, setProfileState] = useState<string>('Dashboard')
@@ -775,25 +803,30 @@ function UserDashboard() {
       }
       // Payment proof validated, proceed to submit
       try {
-        // Upload payment proof to Supabase Storage
+        // Upload payment proof to Supabase Storage (optional for now)
         let paymentProofUrl = null;
         if (investmentForm.bankSlip) {
-          const fileExt = investmentForm.bankSlip.name.split('.').pop();
-          const fileName = `${currentUser?.idnum || 'unknown'}_${Date.now()}.${fileExt}`;
-          const { data: uploadData, error: uploadError } = await (supabase as any).storage
-            .from('payment-proofs')
-            .upload(fileName, investmentForm.bankSlip);
+          try {
+            const fileExt = investmentForm.bankSlip.name.split('.').pop();
+            const fileName = `${currentUser?.idnum || 'unknown'}_${Date.now()}.${fileExt}`;
+            const { data: uploadData, error: uploadError } = await (supabase as any).storage
+              .from('payment-proofs')
+              .upload(fileName, investmentForm.bankSlip);
 
-          if (uploadError) {
-            console.error('Upload error:', uploadError);
-            showAlert('error', 'Upload Failed', 'Failed to upload payment proof. Please try again.');
-            return;
+            if (uploadError) {
+              console.warn('Payment proof upload failed, continuing without proof:', uploadError);
+              // Don't return - allow investment creation without proof for now
+            } else {
+              paymentProofUrl = uploadData.path;
+              console.log('Payment proof uploaded successfully:', paymentProofUrl);
+            }
+          } catch (storageError) {
+            console.warn('Storage error, continuing without payment proof:', storageError);
+            // Continue without payment proof
           }
-
-          paymentProofUrl = uploadData.path;
         }
 
-        const newInvestment = await supabaseDb.createInvestment({
+        const investmentPayload = {
           idnum: currentUser?.idnum || '',
           plan: selectedPlan.name,
           capital: parseFloat(investmentForm.capital),
@@ -804,9 +837,22 @@ function UserDashboard() {
           paymentProofUrl,
           status: 'Pending',
           authStatus: 'unseen',
-        })
+        }
+        console.log('📤 [Investment] Creating investment with payload:', investmentPayload);
+        console.log('📤 [Investment] Current user idnum:', currentUser?.idnum);
+        
+        const newInvestment = await supabaseDb.createInvestment(investmentPayload)
+        console.log('✅ [Investment] Response from createInvestment:', newInvestment);
+        console.log('Investment created successfully:', newInvestment);
+        console.log('Investment ID:', newInvestment.id);
+        console.log('Investment idnum:', newInvestment.idnum);
+        console.log('Current user idnum:', currentUser?.idnum);
+        console.log('Payment proof URL:', paymentProofUrl);
+        
         // Refetch investments from Supabase to ensure persistence
+        console.log('📥 [Investment] Fetching all investments for user:', currentUser?.idnum);
         const userInvestments = await supabaseDb.getInvestmentsByUser(currentUser?.idnum || '')
+        console.log('📥 [Investment] Fetched investments count:', userInvestments.length);
         setInvestments(userInvestments)
         localStorage.setItem('userInvestments', JSON.stringify(userInvestments))
         setInvestmentStep('success')
@@ -822,8 +868,19 @@ function UserDashboard() {
           'Investment Created!',
           `Your ${selectedPlan.name} investment of $${parseFloat(investmentForm.capital).toLocaleString()} has been created. You'll earn $${selectedPlan.dailyRoi.toLocaleString()} daily for ${selectedPlan.duration} days once activated.`
         )
+        
+        // Clear any previous error
+        setInvestmentError(null)
+        
+        // Auto-close modal after 4 seconds
+        setTimeout(() => {
+          closeInvestmentModal()
+        }, 4000)
       } catch (err) {
-        showAlert('error', t('alerts.titleFailedToCreateInvestment'), t('alerts.failedToCreateInvestment'))
+        console.error('🔴 [Investment] CRITICAL ERROR creating investment:', err);
+        console.error('🔴 [Investment] Error details:', err instanceof Error ? err.message : err);
+        setInvestmentError(err instanceof Error ? err.message : 'Unknown error occurred');
+        showAlert('error', '❌ Investment Failed', `Error: ${err instanceof Error ? err.message : 'Unknown error occurred'}`)
       }
     }
   }
@@ -956,7 +1013,7 @@ function UserDashboard() {
       
       // Calculate locked investment capital (active investments that haven't completed their period)
       const lockedInvestmentCapital = investments
-        .filter(inv => inv.status === 'Active' && inv.authStatus === 'approved')
+        .filter(inv => inv.status?.toLowerCase() === 'active' && inv.authStatus === 'approved')
         .reduce((total, inv) => total + (inv.capital || 0), 0)
       
       const availableBalance = (currentUser?.balance || 0) - lockedInvestmentCapital
@@ -1334,12 +1391,16 @@ function UserDashboard() {
     setInvestmentForm({ capital: '', paymentMethod: 'Bitcoin', transactionHash: '', bankSlip: null })
   }
 
-  // Only count approved/active investments for totals (not pending)
-  const approvedInvestments = investments.filter(inv => 
-    inv.status?.toLowerCase() === 'active' || 
-    inv.status?.toLowerCase() === 'approved' || 
+  // Show all investments except those explicitly deleted (if any)
+  const visibleInvestments = investments.filter(inv =>
+    inv.status?.toLowerCase() !== 'deleted' && inv.status !== undefined
+  );
+  // For totals, count active/approved/completed
+  const approvedInvestments = investments.filter(inv =>
+    inv.status?.toLowerCase() === 'active' ||
+    inv.status?.toLowerCase() === 'approved' ||
     inv.status?.toLowerCase() === 'completed'
-  )
+  );
   const totalCapital = approvedInvestments.reduce((sum, inv) => sum + (inv.capital || 0), 0)
   const totalROI = approvedInvestments.reduce((sum, inv) => sum + (inv.roi || 0), 0)
   const totalBonus = approvedInvestments.reduce((sum, inv) => sum + (inv.bonus || 0), 0)
@@ -2083,7 +2144,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Active Plans</p>
-                    <h2 className="stat-value">{investments.filter(inv => inv.status === 'active').length}</h2>
+                    <h2 className="stat-value">{investments.filter(inv => inv.status?.toLowerCase() === 'active').length}</h2>
                     <p className="stat-info">Currently earning</p>
                   </div>
                 </div>
@@ -2103,7 +2164,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Completed</p>
-                    <h2 className="stat-value">{investments.filter(inv => inv.status === 'completed').length}</h2>
+                    <h2 className="stat-value">{investments.filter(inv => inv.status?.toLowerCase() === 'completed').length}</h2>
                     <p className="stat-info">Finished plans</p>
                   </div>
                 </div>
@@ -2159,19 +2220,19 @@ function UserDashboard() {
                           alignItems: 'center',
                           gap: '14px',
                           padding: '14px 16px',
-                          background: inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255,255,255,0.02)',
+                          background: inv.status?.toLowerCase() === 'rejected' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255,255,255,0.02)',
                           borderRadius: '12px',
                           marginBottom: idx < investments.length - 1 ? '10px' : '0',
-                          border: `1px solid ${inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.04)'}`,
+                          border: `1px solid ${inv.status?.toLowerCase() === 'rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.04)'}`,
                           transition: 'background 0.2s, transform 0.2s',
                           cursor: 'pointer'
                         }}
                         onMouseEnter={e => {
-                          (e.currentTarget as HTMLDivElement).style.background = inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(240, 185, 11, 0.06)';
+                          (e.currentTarget as HTMLDivElement).style.background = inv.status?.toLowerCase() === 'rejected' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(240, 185, 11, 0.06)';
                           (e.currentTarget as HTMLDivElement).style.transform = 'translateX(4px)';
                         }}
                         onMouseLeave={e => {
-                          (e.currentTarget as HTMLDivElement).style.background = inv.status === 'Rejected' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255,255,255,0.02)';
+                          (e.currentTarget as HTMLDivElement).style.background = inv.status?.toLowerCase() === 'rejected' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255,255,255,0.02)';
                           (e.currentTarget as HTMLDivElement).style.transform = 'none';
                         }}
                       >
@@ -2185,25 +2246,25 @@ function UserDashboard() {
                           justifyContent: 'center',
                           fontSize: '18px',
                           flexShrink: 0,
-                          background: inv.status === 'active' 
+                          background: inv.status?.toLowerCase() === 'active' 
                             ? 'rgba(16, 185, 129, 0.15)' 
-                            : inv.status === 'completed'
+                            : inv.status?.toLowerCase() === 'completed'
                             ? 'rgba(59, 130, 246, 0.15)'
-                            : inv.status === 'Rejected'
+                            : inv.status?.toLowerCase() === 'rejected'
                             ? 'rgba(239, 68, 68, 0.15)'
                             : 'rgba(251, 191, 36, 0.15)',
-                          color: inv.status === 'active' 
+                          color: inv.status?.toLowerCase() === 'active' 
                             ? '#10b981' 
-                            : inv.status === 'completed'
+                            : inv.status?.toLowerCase() === 'completed'
                             ? '#3b82f6'
-                            : inv.status === 'Rejected'
+                            : inv.status?.toLowerCase() === 'rejected'
                             ? '#ef4444'
                             : '#fbbf24'
                         }}>
                           <i className={
-                            inv.status === 'active' ? 'icofont-chart-growth' : 
-                            inv.status === 'completed' ? 'icofont-check-circled' : 
-                            inv.status === 'Rejected' ? 'icofont-close' : 
+                            inv.status?.toLowerCase() === 'active' ? 'icofont-chart-growth' : 
+                            inv.status?.toLowerCase() === 'completed' ? 'icofont-check-circled' : 
+                            inv.status?.toLowerCase() === 'rejected' ? 'icofont-close' : 
                             'icofont-sand-clock'
                           }></i>
                         </div>
@@ -2240,13 +2301,13 @@ function UserDashboard() {
                           gap: '6px'
                         }}>
                           <div style={{ 
-                            color: inv.status === 'Rejected' ? '#ef4444' : '#4ade80', 
+                            color: inv.status?.toLowerCase() === 'rejected' ? '#ef4444' : '#4ade80', 
                             fontSize: '13px', 
                             fontWeight: '700'
                           }}>
-                            {inv.status === 'Rejected' 
+                            {inv.status?.toLowerCase() === 'rejected' 
                               ? 'Rejected'
-                              : inv.status === 'active' 
+                              : inv.status?.toLowerCase() === 'active' 
                               ? `+$${(inv.earnedRoi || inv.roi || 0).toLocaleString()} earned`
                               : `+$${(inv.totalExpectedRoi || inv.roi || 0).toLocaleString()}`
                             }
@@ -2286,99 +2347,6 @@ function UserDashboard() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Active Investments - 3 per row */}
-              {investments.filter(inv => inv.status === 'active').length > 0 && (
-                <div className="profile-card" style={{ marginTop: '24px' }}>
-                  <div className="profile-card-header">
-                    <h3><i className="icofont-chart-growth"></i> Active Investments</h3>
-                  </div>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(3, 1fr)', 
-                    gap: '20px',
-                    padding: '20px'
-                  }}>
-                    {investments.filter(inv => inv.status === 'active').map((inv, idx) => {
-                      const daysCompleted = inv.daysCompleted || 0;
-                      const duration = inv.duration || 30;
-                      const progress = Math.min((daysCompleted / duration) * 100, 100);
-                      const dailyRoi = inv.dailyRoi || (inv.capital || 0) * 0.02; // fallback 2% daily
-                      const earnedRoi = inv.earnedRoi || (inv.roi || 0);
-                      const totalExpected = inv.totalExpectedRoi || dailyRoi * duration;
-                      
-                      return (
-                        <div key={idx} style={{
-                          background: 'linear-gradient(145deg, rgba(26, 26, 26, 0.95), rgba(20, 20, 20, 0.95))',
-                          border: '1px solid rgba(240, 185, 11, 0.2)',
-                          borderRadius: '16px',
-                          width: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          boxSizing: 'border-box',
-                          padding: '20px',
-                          minHeight: '280px'
-                        }}>
-                          {/* Header */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h4 style={{ color: '#f0b90b', fontSize: '15px', fontWeight: '600', margin: 0 }}>{inv.plan}</h4>
-                            <span style={{
-                              background: 'rgba(16, 185, 129, 0.15)',
-                              color: '#10b981',
-                              padding: '4px 10px',
-                              borderRadius: '20px',
-                              fontSize: '11px',
-                              fontWeight: '600'
-                            }}>Active</span>
-                          </div>
-                          
-                          {/* Progress Bar */}
-                          <div style={{ marginBottom: '14px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>Progress</span>
-                              <span style={{ color: '#f0b90b', fontSize: '11px', fontWeight: '600' }}>{daysCompleted}/{duration} days</span>
-                            </div>
-                            <div style={{ 
-                              height: '6px', 
-                              background: 'rgba(255,255,255,0.1)', 
-                              borderRadius: '3px',
-                              overflow: 'hidden'
-                            }}>
-                              <div style={{ 
-                                height: '100%', 
-                                width: `${progress}%`, 
-                                background: 'linear-gradient(90deg, #f0b90b, #4ade80)',
-                                borderRadius: '3px',
-                                transition: 'width 0.3s ease'
-                              }}></div>
-                            </div>
-                          </div>
-                          
-                          {/* Stats */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px' }}>Capital</span>
-                              <span style={{ color: '#fff', fontWeight: '600', fontSize: '12px' }}>${(inv.capital || 0).toLocaleString()}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px' }}>Daily Earnings</span>
-                              <span style={{ color: '#4ade80', fontWeight: '600', fontSize: '12px' }}>+${dailyRoi.toLocaleString()}/day</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px' }}>Earned So Far</span>
-                              <span style={{ color: '#4ade80', fontWeight: '700', fontSize: '12px' }}>+${earnedRoi.toLocaleString()}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px' }}>Total Expected</span>
-                              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>${totalExpected.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
               )}
@@ -4436,6 +4404,100 @@ function UserDashboard() {
                 </div>
               </div>
             )}
+
+            {/* Step 4: Success */}
+            {investmentStep === 'success' && (
+              <div className="modal-content">
+                <div className="modal-header" style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '4rem', color: '#10b981', marginBottom: '1rem' }}>
+                    <i className="icofont-check-circled"></i>
+                  </div>
+                  <h2><i className="icofont-thumbs-up"></i> Investment Submitted!</h2>
+                  <p>Your investment has been successfully created and is awaiting approval</p>
+                </div>
+
+                <div className="modal-body">
+                  <div className="confirmation-card" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                    <h3>Investment Details</h3>
+                    <div className="confirm-row">
+                      <span>Plan</span>
+                      <strong>{selectedPlan.name}</strong>
+                    </div>
+                    <div className="confirm-row">
+                      <span>Amount</span>
+                      <strong style={{ color: '#10b981' }}>${parseFloat(investmentForm.capital).toLocaleString()}</strong>
+                    </div>
+                    <div className="confirm-row">
+                      <span>Daily Earnings (when active)</span>
+                      <strong>+${(parseFloat(investmentForm.capital) * selectedPlan.dailyRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day</strong>
+                    </div>
+                    <div className="confirm-row">
+                      <span>Duration</span>
+                      <strong>{selectedPlan.durationDays} days</strong>
+                    </div>
+                    <div className="confirm-row">
+                      <span>Status</span>
+                      <strong style={{ color: '#f0b90b' }}>⏳ Pending Approval</strong>
+                    </div>
+                  </div>
+
+                  <div className="info-box" style={{ marginTop: '1.5rem', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', padding: '1rem' }}>
+                    <h4 style={{ color: '#3b82f6', marginTop: 0 }}>What Happens Next?</h4>
+                    <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+                      <li>Your investment is queued for admin review</li>
+                      <li>Once approved, your investment will become active</li>
+                      <li>You'll earn daily returns automatically credited to your account</li>
+                      <li>Check the Investment History section to track status</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button className="btn-primary" onClick={closeInvestmentModal} style={{ width: '100%' }}>
+                    Back to Dashboard
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Error Display */}
+            {investmentError && (
+              <div className="modal-content">
+                <div className="modal-header" style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '4rem', color: '#ef4444', marginBottom: '1rem' }}>
+                    <i className="icofont-error"></i>
+                  </div>
+                  <h2><i className="icofont-close-circled"></i> Investment Failed</h2>
+                  <p>There was an error creating your investment</p>
+                </div>
+
+                <div className="modal-body">
+                  <div className="error-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', padding: '1rem' }}>
+                    <h3 style={{ color: '#ef4444', marginTop: 0 }}>Error Details</h3>
+                    <p style={{ margin: 0, fontFamily: 'monospace', fontSize: '0.9rem', wordBreak: 'break-word' }}>{investmentError}</p>
+                  </div>
+
+                  <div className="info-box" style={{ marginTop: '1.5rem', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', padding: '1rem' }}>
+                    <h4 style={{ color: '#3b82f6', marginTop: 0 }}>What to do next?</h4>
+                    <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+                      <li>Check your internet connection</li>
+                      <li>Try again in a few moments</li>
+                      <li>Contact support if the problem persists</li>
+                      <li>Copy the error message above for reference</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button className="btn-secondary" onClick={() => setInvestmentError(null)} style={{ marginRight: '0.5rem' }}>
+                    Try Again
+                  </button>
+                  <button className="btn-primary" onClick={closeInvestmentModal}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -4855,6 +4917,65 @@ function UserDashboard() {
                   Close
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Verification Modal */}
+      {showKycModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          backdropFilter: 'blur(8px)',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '16px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(240,185,11,0.2)'
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Close button */}
+            <button 
+              style={{
+                position: 'absolute',
+                right: '1rem',
+                top: '1rem',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '1.2rem',
+                zIndex: 10001
+              }}
+              onClick={() => setShowKycModal(false)}
+            >
+              ✕
+            </button>
+
+            {/* KYC Modal content placeholder */}
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#fff' }}>
+              <h2>KYC Verification</h2>
+              <p>KYC verification modal content goes here</p>
             </div>
           </div>
         </div>

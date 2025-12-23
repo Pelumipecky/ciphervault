@@ -190,7 +190,7 @@ const normalizeInvestmentPayload = (investmentData: Partial<InvestmentRecord> = 
   "authStatus": investmentData.authStatus ?? 'unseen',
   creditedRoi: investmentData.creditedRoi ?? 0,
   creditedBonus: investmentData.creditedBonus ?? 0,
-  "startDate": investmentData.startDate ?? null,
+  "startDate": (investmentData.startDate && investmentData.startDate !== '') ? investmentData.startDate : null,
 })
 
 // Referral helpers
@@ -398,25 +398,48 @@ export const supabaseDb = {
   },
 
   async getInvestmentsByUser(idnum: string): Promise<InvestmentRecord[]> {
+    console.log('🔵 [getInvestmentsByUser] Fetching investments for user:', idnum);
+    
     const { data, error } = await db
       .from('investments')
       .select('*')
       .eq('idnum', idnum)
       .order('created_at', { ascending: false })
     
-    if (error) throw error
+    if (error) {
+      console.error('🔴 [getInvestmentsByUser] ERROR fetching investments:', error);
+      throw error
+    }
+    
+    console.log('✅ [getInvestmentsByUser] Found', data?.length || 0, 'investments:', data);
     return (data || []).map(mapInvestmentRecord)
   },
 
   async createInvestment(investmentData: Partial<InvestmentRecord>): Promise<InvestmentRecord> {
     const payload = normalizeInvestmentPayload(investmentData)
+    // Sanitize payload: convert empty strings to null to avoid invalid timestamps
+    const sanitizedPayload = Object.fromEntries(
+      Object.entries(payload).map(([k, v]) => [k, (v === '' ? null : v)])
+    ) as Partial<InvestmentRecord>
+
+    console.log('🔵 [createInvestment] Starting investment creation with payload:', payload);
+    console.log('🔵 [createInvestment] Sanitized payload for DB insert:', sanitizedPayload);
+    
     const { data, error } = await db
       .from('investments')
-      .insert([payload])
+      .insert([sanitizedPayload])
       .select()
       .single()
     
-    if (error) throw error
+    if (error) {
+      console.error('🔴 [createInvestment] ERROR inserting investment:', error);
+      console.error('🔴 [createInvestment] Error code:', error.code);
+      console.error('🔴 [createInvestment] Error message:', error.message);
+      console.error('🔴 [createInvestment] Error details:', error.details);
+      throw error
+    }
+    
+    console.log('✅ [createInvestment] Investment created successfully:', data);
     return mapInvestmentRecord(data)
   },
 
