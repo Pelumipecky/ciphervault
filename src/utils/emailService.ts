@@ -37,6 +37,8 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
     if (typeof window !== 'undefined' && (window as any).emailjs) {
       const emailjs = (window as any).emailjs;
       
+      const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'Cyphervault6@gmail.com';
+
       const templateParams = {
         to_email: notification.to_email,
         to_name: notification.to_name,
@@ -45,6 +47,7 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
         notification_type: notification.type,
         app_name: 'Cypher Vault',
         year: new Date().getFullYear(),
+        support_email: SUPPORT_EMAIL,
       };
 
       await emailjs.send(
@@ -401,6 +404,10 @@ function generateEmailHTML(notification: EmailNotification): string {
 
                   <p style="margin: 30px 0 0 0; color: ${TEXT_SECONDARY}; font-size: 14px; line-height: 1.8;">
                     If you have any questions or need support, feel free to reach out to our team. We're here to help!
+                  </p>
+
+                  <p style="margin: 10px 0 0 0; color: ${TEXT_SECONDARY}; font-size: 13px;">
+                    For support, email <a href="mailto:${import.meta.env.VITE_SUPPORT_EMAIL || 'Cyphervault6@gmail.com'}" style="color: ${ACCENT_COLOR}; text-decoration: none;">${import.meta.env.VITE_SUPPORT_EMAIL || 'Cyphervault6@gmail.com'}</a>
                   </p>
                 </td>
               </tr>

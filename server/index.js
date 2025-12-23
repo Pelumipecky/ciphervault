@@ -81,7 +81,41 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
       return res.status(500).json({ error: 'Failed to store contact message' });
     }
 
-    // Optionally, you could trigger an email, webhook, or other notifications here
+    // Optionally, send a notification email to the system support address (if configured)
+    const SUPPORT_EMAIL = process.env.CONTACT_NOTIFICATION_EMAIL || process.env.SUPPORT_EMAIL || null;
+    if (SUPPORT_EMAIL) {
+      try {
+        if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+          // Use Nodemailer if SMTP settings are present
+          const nodemailer = require('nodemailer');
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT || '587', 10),
+            secure: (process.env.SMTP_SECURE === 'true'),
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            },
+          });
+
+          const mailOptions = {
+            from: process.env.SMTP_FROM || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`,
+            to: SUPPORT_EMAIL,
+            subject: `New Contact Message: ${subject || '(no subject)'}`,
+            text: `Name: ${name || 'N/A'}\nEmail: ${email}\nSubject: ${subject || 'N/A'}\nMessage:\n${message}`,
+            html: `<p><strong>Name:</strong> ${name || 'N/A'}</p><p><strong>Email:</strong> ${email}</p><p><strong>Subject:</strong> ${subject || 'N/A'}</p><p><strong>Message:</strong><br/>${message}</p>`
+          };
+
+          await transporter.sendMail(mailOptions);
+          console.log('Contact email sent to support:', SUPPORT_EMAIL);
+        } else {
+          // Fallback: log the notification or call an external email API if configured
+          console.log('Support email set but SMTP not configured; contact notification:', SUPPORT_EMAIL);
+        }
+      } catch (mailErr) {
+        console.error('Failed to send contact notification email:', mailErr);
+      }
+    }
 
     return res.status(201).json({ saved: true, record: data && data[0] });
   } catch (err) {
