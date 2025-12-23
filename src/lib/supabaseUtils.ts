@@ -163,12 +163,13 @@ const mapUserRecord = (record: any): UserRecord => {
 
 const mapInvestmentRecord = (record: any): InvestmentRecord => {
   if (!record || typeof record !== 'object') return record
-  const { paymentoption, authstatus, transaction_hash, credited_roi, credited_bonus, start_date, ...rest } = record
+  const { paymentoption, authstatus, transaction_hash, payment_proof_url, credited_roi, credited_bonus, start_date, ...rest } = record
   return {
     ...rest,
     paymentOption: paymentoption ?? record.paymentOption ?? 'Bitcoin',
     authStatus: authstatus ?? record.authStatus ?? 'unseen',
     transactionHash: transaction_hash ?? record.transactionHash ?? null,
+    paymentProofUrl: payment_proof_url ?? record.paymentProofUrl ?? null,
     creditedRoi: credited_roi ?? record.creditedRoi ?? 0,
     creditedBonus: credited_bonus ?? record.creditedBonus ?? 0,
     startDate: start_date ?? record.startDate ?? null,
@@ -185,6 +186,7 @@ const normalizeInvestmentPayload = (investmentData: Partial<InvestmentRecord> = 
   duration: investmentData.duration ?? 5,
   "paymentOption": investmentData.paymentOption ?? 'Bitcoin',
   "transactionHash": investmentData.transactionHash ?? null,
+  "paymentProofUrl": investmentData.paymentProofUrl ?? null,
   "authStatus": investmentData.authStatus ?? 'unseen',
   creditedRoi: investmentData.creditedRoi ?? 0,
   creditedBonus: investmentData.creditedBonus ?? 0,
