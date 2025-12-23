@@ -18,9 +18,21 @@ const paymentMethods = [
     icon: 'Ξ',
   },
   {
-    name: 'Tether (USDT)',
+    name: 'Tether (USDT) - ERC20',
     address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
     network: 'Ethereum Network (ERC-20)',
+    icon: '₮',
+  },
+  {
+    name: 'Tether (USDT) - BEP20',
+    address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
+    network: 'Binance Smart Chain (BEP-20)',
+    icon: '₮',
+  },
+  {
+    name: 'Tether (USDT) - TRC20',
+    address: 'TJ1zYxZ8QX8rQX8rQX8rQX8rQX8rQX8rQX8r',
+    network: 'Tron Network (TRC-20)',
     icon: '₮',
   },
   {
