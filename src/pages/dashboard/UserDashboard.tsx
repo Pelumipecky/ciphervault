@@ -4269,17 +4269,21 @@ function UserDashboard() {
                   <div className="payment-instructions">
                     <div className="payment-amount-box">
                       <label className="amount-label">Amount to Pay</label>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', justifyContent: 'center' }}>
                         <input
                           type="number"
                           min={0}
                           step="0.01"
-                          className="modal-input"
-                          style={{ width: '160px' }}
+                          className="modal-input amount-input"
+                          style={{ width: '180px' }}
                           value={investmentForm.capital}
                           onChange={e => setInvestmentForm({ ...investmentForm, capital: e.target.value })}
                         />
-                        <div className="amount-method">via {paymentMethods[investmentForm.paymentMethod as keyof typeof paymentMethods].name}</div>
+
+                        <div className="amount-preview">
+                          <div className="amount-value">${(investmentForm.capital && !isNaN(parseFloat(investmentForm.capital)) ? parseFloat(investmentForm.capital).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00')}</div>
+                          <div className="amount-method">via {paymentMethods[investmentForm.paymentMethod as keyof typeof paymentMethods].name}</div>
+                        </div>
                       </div>
                       <small style={{ color: 'var(--muted)', display: 'block', marginTop: '0.5rem' }}>You can edit the amount before making payment.</small>
                     </div>
