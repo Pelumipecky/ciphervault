@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import { useNavigate, Link } from 'react-router-dom'
-import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
+import { supabaseDb, supabaseRealtime, supabase } from '@/lib/supabaseUtils'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 import { UserRole } from '@/utils/roles'
 import { fetchCryptoPrices, fetchDetailedCryptoPrices, formatPrice, formatMarketCap, CryptoPrice, CryptoPrices } from '@/utils/cryptoPrices'
@@ -708,10 +708,22 @@ function UserDashboard() {
       network: 'Ethereum Network (ERC-20)',
       icon: 'Ξ'
     },
-    USDT: {
-      name: 'Tether (USDT)',
-      address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
+    'USDT-ERC20': {
+      name: 'Tether (USDT) - ERC20',
+      address: '0x33a056a59729fda369c03eff8e075c1f2537b41b',
       network: 'Ethereum Network (ERC-20)',
+      icon: '₮'
+    },
+    'USDT-BEP20': {
+      name: 'Tether (USDT) - BEP20',
+      address: '0x33a056a59729fda369c03eff8e075c1f2537b41b',
+      network: 'Binance Smart Chain (BEP-20)',
+      icon: '₮'
+    },
+    'USDT-TRC20': {
+      name: 'Tether (USDT) - TRC20',
+      address: 'TFnH5RHhiF19scPtuZQwwiYmHfgp54Exta',
+      network: 'Tron Network (TRC-20)',
       icon: '₮'
     },
     Bank: {
@@ -729,7 +741,7 @@ function UserDashboard() {
     setSelectedPlan(plan)
     setInvestmentForm({
       capital: plan.minCapital.toString(),
-      paymentMethod: 'Bitcoin',
+      paymentMethod: 'USDT-ERC20',
       transactionHash: '',
       bankSlip: null
     })
@@ -763,6 +775,24 @@ function UserDashboard() {
       }
       // Payment proof validated, proceed to submit
       try {
+        // Upload payment proof to Supabase Storage
+        let paymentProofUrl = null;
+        if (investmentForm.bankSlip) {
+          const fileExt = investmentForm.bankSlip.name.split('.').pop();
+          const fileName = `${currentUser?.idnum || 'unknown'}_${Date.now()}.${fileExt}`;
+          const { data: uploadData, error: uploadError } = await (supabase as any).storage
+            .from('payment-proofs')
+            .upload(fileName, investmentForm.bankSlip);
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            showAlert('error', 'Upload Failed', 'Failed to upload payment proof. Please try again.');
+            return;
+          }
+
+          paymentProofUrl = uploadData.path;
+        }
+
         const newInvestment = await supabaseDb.createInvestment({
           idnum: currentUser?.idnum || '',
           plan: selectedPlan.name,
@@ -771,6 +801,7 @@ function UserDashboard() {
           duration: selectedPlan.duration,
           paymentOption: investmentForm.paymentMethod,
           transactionHash: investmentForm.transactionHash,
+          paymentProofUrl,
           status: 'Pending',
           authStatus: 'unseen',
         })

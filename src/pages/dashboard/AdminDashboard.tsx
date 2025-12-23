@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { supabaseDb, supabaseRealtime } from '@/lib/supabaseUtils'
+import { supabaseDb, supabaseRealtime, supabase } from '@/lib/supabaseUtils'
 import { 
   sendInvestmentNotification, 
   sendWithdrawalNotification, 
@@ -503,6 +503,40 @@ function AdminDashboard() {
     } catch (error) {
       console.error('Error rejecting investment:', error)
       showAlert('error', t('alerts.rejectionFailedTitle'), t('alerts.rejectionFailedMessage'))
+    }
+  }
+
+  const handleViewPaymentProof = (paymentProofUrl: string) => {
+    if (paymentProofUrl) {
+      // Get the public URL for the payment proof
+      const { data } = (supabase as any).storage
+        .from('payment-proofs')
+        .getPublicUrl(paymentProofUrl)
+      
+      if (data?.publicUrl) {
+        window.open(data.publicUrl, '_blank')
+      }
+    }
+  }
+
+  const handleViewTransaction = (transactionHash: string, paymentOption: string) => {
+    if (transactionHash && paymentOption) {
+      let explorerUrl = ''
+      
+      // Determine blockchain explorer based on payment option
+      if (paymentOption.includes('USDT-ERC20') || paymentOption.includes('Ethereum')) {
+        explorerUrl = `https://etherscan.io/tx/${transactionHash}`
+      } else if (paymentOption.includes('USDT-BEP20') || paymentOption.includes('Binance')) {
+        explorerUrl = `https://bscscan.com/tx/${transactionHash}`
+      } else if (paymentOption.includes('USDT-TRC20') || paymentOption.includes('Tron')) {
+        explorerUrl = `https://tronscan.org/#/transaction/${transactionHash}`
+      } else if (paymentOption.includes('Bitcoin')) {
+        explorerUrl = `https://blockchain.com/btc/tx/${transactionHash}`
+      }
+      
+      if (explorerUrl) {
+        window.open(explorerUrl, '_blank')
+      }
     }
   }
 
@@ -1340,6 +1374,8 @@ function AdminDashboard() {
                       <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Plan</th>
                       <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Amount</th>
                       <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Date</th>
+                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Payment Proof</th>
+                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Transaction</th>
                       <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Status</th>
                       <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Actions</th>
                     </tr>
@@ -1347,7 +1383,7 @@ function AdminDashboard() {
                   <tbody>
                     {allInvestments.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                           <i className="icofont-chart-growth" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
                           No investment records found
                         </td>
@@ -1374,6 +1410,48 @@ function AdminDashboard() {
                         </td>
                         <td style={{ padding: '1rem', color: '#cbd5e1' }}>
                           {new Date(inv.created_at || inv.date).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                          {inv.paymentProofUrl ? (
+                            <button
+                              onClick={() => handleViewPaymentProof(inv.paymentProofUrl)}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                background: 'rgba(59,130,246,0.1)',
+                                border: '1px solid rgba(59,130,246,0.3)',
+                                borderRadius: '6px',
+                                color: '#3b82f6',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                fontWeight: 500
+                              }}
+                            >
+                              <i className="icofont-image"></i> View
+                            </button>
+                          ) : (
+                            <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>No proof</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                          {inv.transactionHash ? (
+                            <button
+                              onClick={() => handleViewTransaction(inv.transactionHash, inv.paymentOption)}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                background: 'rgba(139,92,246,0.1)',
+                                border: '1px solid rgba(139,92,246,0.3)',
+                                borderRadius: '6px',
+                                color: '#8b5cf6',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                fontWeight: 500
+                              }}
+                            >
+                              <i className="icofont-link"></i> View
+                            </button>
+                          ) : (
+                            <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>No hash</span>
+                          )}
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'center' }}>
                           <span style={{

@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS investments (
   duration INTEGER NOT NULL,
   "paymentOption" TEXT,
   "transactionHash" TEXT,
+  "paymentProofUrl" TEXT,
   "authStatus" TEXT DEFAULT 'pending',
   "creditedRoi" NUMERIC DEFAULT 0,
   "creditedBonus" NUMERIC DEFAULT 0,

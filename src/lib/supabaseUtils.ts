@@ -47,6 +47,7 @@ export interface InvestmentRecord {
   duration?: number
   paymentOption?: string
   transactionHash?: string | null
+  paymentProofUrl?: string | null
   authStatus?: string
   creditedRoi?: number
   creditedBonus?: number
