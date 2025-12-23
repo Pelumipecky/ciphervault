@@ -49,7 +49,7 @@ interface Investment {
   creditedBonus?: number   // Total bonus credited to user
   status?: string
   date?: string
-  startDate?: string       // When investment was activated
+  startDate?: string | null       // When investment was activated
   duration?: number
   daysCompleted?: number   // Days that have been credited
   authStatus?: string
@@ -1304,6 +1304,10 @@ function UserDashboard() {
   const handleSubmitInvestment = async () => {
     try {
       const capital = parseFloat(investmentForm.capital)
+      if (isNaN(capital) || capital <= 0) {
+        showAlert('error', 'Invalid Amount', 'Please enter a valid amount greater than 0')
+        return
+      }
       const dailyRoi = capital * selectedPlan.dailyRate  // Daily earnings
       const totalExpectedRoi = dailyRoi * selectedPlan.durationDays  // Total expected over duration
       const bonus = capital * selectedPlan.referralBonus
@@ -1325,7 +1329,7 @@ function UserDashboard() {
         paymentOption: investmentForm.paymentMethod,
         authStatus: 'unseen',
         date: new Date().toISOString(),
-        startDate: ''                // Will be set when activated by admin
+        startDate: null               // Will be set when activated by admin
       }
 
       // Try database first, fallback to local storage
@@ -4264,9 +4268,20 @@ function UserDashboard() {
                 <div className="modal-body">
                   <div className="payment-instructions">
                     <div className="payment-amount-box">
-                      <div className="amount-label">Amount to Pay</div>
-                      <div className="amount-value">${parseFloat(investmentForm.capital).toLocaleString()}</div>
-                      <div className="amount-method">via {paymentMethods[investmentForm.paymentMethod as keyof typeof paymentMethods].name}</div>
+                      <label className="amount-label">Amount to Pay</label>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          className="modal-input"
+                          style={{ width: '160px' }}
+                          value={investmentForm.capital}
+                          onChange={e => setInvestmentForm({ ...investmentForm, capital: e.target.value })}
+                        />
+                        <div className="amount-method">via {paymentMethods[investmentForm.paymentMethod as keyof typeof paymentMethods].name}</div>
+                      </div>
+                      <small style={{ color: 'var(--muted)', display: 'block', marginTop: '0.5rem' }}>You can edit the amount before making payment.</small>
                     </div>
 
                     {investmentForm.paymentMethod !== 'Bank' ? (

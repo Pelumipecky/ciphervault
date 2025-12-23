@@ -51,7 +51,7 @@ export interface InvestmentRecord {
   authStatus?: string
   creditedRoi?: number
   creditedBonus?: number
-  startDate?: string  // When investment was approved/activated
+  startDate?: string | null  // When investment was approved/activated
   date?: string
   created_at?: string
 }
