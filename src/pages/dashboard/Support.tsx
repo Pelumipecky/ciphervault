@@ -7,7 +7,7 @@ export default function Support() {
   ]
 
   const supportChannels = [
-    { channel: 'Email', contact: 'support@ciphervault.com', icon: '📧' },
+    { channel: 'Email', contact: 'Cyphervault6@gmail.com', icon: '📧' },
     { channel: 'Phone', contact: '+1 (800) 123-4567', icon: '📞' },
     { channel: 'Live Chat', contact: 'Available 24/7', icon: '💬' },
   ]

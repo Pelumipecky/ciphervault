@@ -90,7 +90,7 @@ function Contact() {
               Send Message
             </button>
             <small className="contact-form__email">
-              Or email us directly at <a href="mailto:support@ciphervault.example">support@ciphervault.example</a>
+              Or email us directly at <a href="mailto:Cyphervault6@gmail.com">Cyphervault6@gmail.com</a>
             </small>
           </div>
 

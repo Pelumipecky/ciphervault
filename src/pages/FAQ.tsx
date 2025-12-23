@@ -74,7 +74,7 @@ const faqs = [
     questions: [
       {
         q: 'How do I contact support?',
-        a: 'Use our 24/7 live chat, email support@ciphervault.example, or schedule a call with your dedicated advisor (available for accounts $50K+).'
+        a: 'Use our 24/7 live chat, email Cyphervault6@gmail.com, or schedule a call with your dedicated advisor (available for accounts $50K+).'
       },
       {
         q: 'What reporting do I receive?',

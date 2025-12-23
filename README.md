@@ -606,7 +606,7 @@ MIT License - See LICENSE file for details
 
 ## 🆘 Support
 
-- **Email**: support@binance-clone.com
+- **Email**: Cyphervault6@gmail.com
 - **Response Time**: Within 24 hours
 - **Availability**: 24/7
 
