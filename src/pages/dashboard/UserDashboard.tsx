@@ -188,9 +188,7 @@ function UserDashboard() {
           return;
         }
 
-        // Initialize email service
-        initializeEmailJS()
-
+        // Initialize email service (no-op; server-side mailjet will handle sending)
         // Fetch real investments from database
         try {
           console.log('Fetching investments for user:', userData.idnum);

@@ -85,8 +85,29 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
     const SUPPORT_EMAIL = process.env.CONTACT_NOTIFICATION_EMAIL || process.env.SUPPORT_EMAIL || null;
     if (SUPPORT_EMAIL) {
       try {
-        if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-          // Use Nodemailer if SMTP settings are present
+        if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+          // Use Mailjet if API keys are present
+          const Mailjet = require('node-mailjet');
+          const mailjet = Mailjet.connect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
+
+          const request = mailjet.post('send', { version: 'v3.1' }).request({
+            Messages: [
+              {
+                From: {
+                  Email: process.env.MAILJET_FROM_EMAIL || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`,
+                  Name: process.env.MAILJET_FROM_NAME || 'Cyphervault'
+                },
+                To: [{ Email: SUPPORT_EMAIL, Name: 'Support' }],
+                Subject: `New Contact Message: ${subject || '(no subject)'}`,
+                HTMLPart: `<p><strong>Name:</strong> ${name || 'N/A'}</p><p><strong>Email:</strong> ${email}</p><p><strong>Subject:</strong> ${subject || 'N/A'}</p><p><strong>Message:</strong><br/>${message}</p>`
+              }
+            ]
+          });
+
+          await request;
+          console.log('Contact email sent to support via Mailjet:', SUPPORT_EMAIL);
+        } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+          // Fallback: use Nodemailer SMTP
           const nodemailer = require('nodemailer');
           const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
@@ -107,10 +128,9 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
           };
 
           await transporter.sendMail(mailOptions);
-          console.log('Contact email sent to support:', SUPPORT_EMAIL);
+          console.log('Contact email sent to support via SMTP:', SUPPORT_EMAIL);
         } else {
-          // Fallback: log the notification or call an external email API if configured
-          console.log('Support email set but SMTP not configured; contact notification:', SUPPORT_EMAIL);
+          console.log('Support email set but no Mailjet or SMTP config found; contact notification:', SUPPORT_EMAIL);
         }
       } catch (mailErr) {
         console.error('Failed to send contact notification email:', mailErr);
@@ -126,6 +146,66 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
 
 // POST /api/signup (server-side signup using service_role)
 app.post('/api/signup', async (req, res) => {
+  // ... existing signup handler ...
+});
+
+// POST /api/send-email - send arbitrary email using Mailjet or SMTP
+app.post('/api/send-email', async (req, res) => {
+  try {
+    const { to, subject, html } = req.body || {};
+    if (!to || !subject || !html) return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
+
+    if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+      const Mailjet = require('node-mailjet');
+      const mailjet = Mailjet.connect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
+
+      const request = mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_FROM_EMAIL || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`,
+              Name: process.env.MAILJET_FROM_NAME || 'Cyphervault'
+            },
+            To: [{ Email: to }],
+            Subject: subject,
+            HTMLPart: html
+          }
+        ]
+      });
+
+      await request;
+      return res.json({ sent: true });
+    }
+
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587', 10),
+        secure: (process.env.SMTP_SECURE === 'true'),
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.SMTP_FROM || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`,
+        to,
+        subject,
+        html,
+      };
+
+      await transporter.sendMail(mailOptions);
+      return res.json({ sent: true });
+    }
+
+    return res.status(400).json({ error: 'No mail provider configured (MAILJET or SMTP)' });
+  } catch (err) {
+    console.error('Send email error:', err);
+    return res.status(500).json({ error: 'Failed to send email' });
+  }
+});
   try {
     const { email, password, full_name, username } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'email and password are required' });

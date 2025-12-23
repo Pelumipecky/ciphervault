@@ -1,6 +1,5 @@
-// Email Notification Service
-// Uses EmailJS for free email notifications
-// Setup: Create account at https://www.emailjs.com/ and get your credentials
+// Email Notification Service (server-side Mailjet)
+// Sends notifications via server API endpoint which uses Mailjet or SMTP
 
 interface EmailNotification {
   to_email: string;
@@ -10,14 +9,7 @@ interface EmailNotification {
   type: 'success' | 'error' | 'warning' | 'info';
 }
 
-// EmailJS Configuration - Uses environment variables
-const EMAILJS_CONFIG = {
-  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_ciphervault',
-  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_notification',
-  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_EMAILJS_PUBLIC_KEY',
-};
-
-// Alternative: Using a simple backend API endpoint
+// Backend endpoint used to send email (server handles Mailjet/SMTP)
 const API_EMAIL_ENDPOINT = import.meta.env.VITE_EMAIL_API_ENDPOINT || '/api/send-email';
 
 /**
@@ -33,35 +25,18 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
       return true; // Return success but don't actually send
     }
 
-    // Method 1: Using EmailJS (recommended for frontend-only apps)
-    if (typeof window !== 'undefined' && (window as any).emailjs) {
-      const emailjs = (window as any).emailjs;
-      
-      const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'Cyphervault6@gmail.com';
-
-      const templateParams = {
-        to_email: notification.to_email,
-        to_name: notification.to_name,
+    // Use server-side API endpoint (server sends via Mailjet or SMTP)
+    const response = await fetch(API_EMAIL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: notification.to_email,
         subject: notification.subject,
-        message: notification.message,
-        notification_type: notification.type,
-        app_name: 'Cypher Vault',
-        year: new Date().getFullYear(),
-        support_email: SUPPORT_EMAIL,
-      };
-
-      await emailjs.send(
-        EMAILJS_CONFIG.serviceId,
-        EMAILJS_CONFIG.templateId,
-        templateParams,
-        EMAILJS_CONFIG.publicKey
-      );
-
-      console.log('✅ Email sent via EmailJS to:', notification.to_email);
-      return true;
-    }
-
-    // Method 2: Using custom backend API endpoint
+        html: generateEmailHTML(notification),
+      }),
+    });
     const response = await fetch(API_EMAIL_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -449,21 +424,7 @@ function generateEmailHTML(notification: EmailNotification): string {
  * Load EmailJS library dynamically
  */
 export function initializeEmailJS(): void {
-  if (typeof window === 'undefined') return;
-  
-  // Check if EmailJS is already loaded
-  if ((window as any).emailjs) return;
-
-  // Only load if email notifications are enabled
-  const emailEnabled = import.meta.env.VITE_EMAIL_NOTIFICATIONS_ENABLED === 'true';
-  if (!emailEnabled) return;
-
-  // Load EmailJS SDK
-  const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
-  script.async = true;
-  script.onload = () => {
-    console.log('📧 EmailJS SDK loaded successfully');
-  };
-  document.head.appendChild(script);
+  // EmailJS has been removed in favor of server-side Mailjet (node-mailjet).
+  // This function is left intentionally as a no-op for backward compatibility.
+  return;
 }

@@ -197,7 +197,6 @@ function AdminDashboard() {
         setCurrentAdmin(userData)
 
         // Initialize email service
-        initializeEmailJS()
 
         // Fetch all data for admin with timeout
         const fetchWithTimeout = (promise: Promise<any>, timeoutMs: number = 10000) => {

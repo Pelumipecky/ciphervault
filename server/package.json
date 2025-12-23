@@ -15,6 +15,7 @@
     "express": "^4.22.1",
     "express-rate-limit": "^6.11.2",
     "node-fetch": "^2.7.0",
+    "node-mailjet": "^3.4.1",
     "nodemailer": "^6.9.4"
   },
   "devDependencies": {
