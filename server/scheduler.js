@@ -1,26 +1,26 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import emailjs from '@emailjs/nodejs';
+/**
+ * Scheduler for daily ROI crediting
+ * Runs every day at 12:00 AM (midnight) UTC
+ */
+const schedule = require('node-schedule');
+const { createClient } = require('@supabase/supabase-js');
+const emailjs = require('@emailjs/nodejs');
+require('dotenv').config();
 
-dotenv.config();
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase configuration in .env file');
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Initialize EmailJS for Node.js
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EMAILJS_SERVICE_ID = process.env.VITE_EMAILJS_SERVICE_ID || 'service_ciphervault';
 const EMAILJS_TEMPLATE_ID = process.env.VITE_EMAILJS_TEMPLATE_ID || 'template_notification';
 const EMAILJS_PUBLIC_KEY = process.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_EMAILJS_PUBLIC_KEY';
 const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY || '';
-
 const EMAIL_NOTIFICATIONS_ENABLED = process.env.VITE_EMAIL_NOTIFICATIONS_ENABLED === 'true';
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false } });
+} else {
+  console.warn('Supabase credentials not configured. Scheduler will not work properly.');
+}
 
 // Investment plan configurations (should match the ones in planConfig.ts)
 const PLAN_CONFIG = {
@@ -43,7 +43,6 @@ async function sendROINotificationEmail(userEmail, userName, roiAmount, investme
 
   try {
     if (EMAILJS_PRIVATE_KEY) {
-      // Initialize EmailJS with private key for Node.js
       emailjs.init({
         publicKey: EMAILJS_PUBLIC_KEY,
         privateKey: EMAILJS_PRIVATE_KEY,
@@ -106,34 +105,46 @@ async function sendInvestmentCompletionEmail(userEmail, userName, investmentPlan
   }
 }
 
+/**
+ * Credit daily ROI to all active investments
+ */
 async function creditDailyROI() {
+  if (!supabase) {
+    console.error('❌ Supabase not configured. Cannot run ROI crediting.');
+    return;
+  }
+
   try {
-    console.log('Starting daily ROI crediting process...');
+    console.log(`\n⏰ [${new Date().toISOString()}] Starting daily ROI crediting process...`);
 
     // Get all active investments
     const { data: activeInvestments, error: invError } = await supabase
       .from('investments')
       .select('*')
-      .eq('status', 'Active')
-      .or('authStatus.is.null,authStatus.eq.approved');
+      .eq('status', 'Active');
 
     if (invError) {
-      console.error('Error fetching active investments:', invError);
+      console.error('❌ Error fetching active investments:', invError);
       return;
     }
 
     if (!activeInvestments || activeInvestments.length === 0) {
-      console.log('No active investments found to credit ROI');
+      console.log('ℹ️  No active investments found to credit ROI');
       return;
     }
 
-    console.log(`Found ${activeInvestments.length} active investments to process`);
+    console.log(`📊 Found ${activeInvestments.length} active investments to process`);
+
+    let processedCount = 0;
+    let completedCount = 0;
+    let errorCount = 0;
 
     for (const investment of activeInvestments) {
       try {
         const planConfig = PLAN_CONFIG[investment.plan];
         if (!planConfig) {
-          console.warn(`Unknown plan: ${investment.plan} for investment ${investment.id}`);
+          console.warn(`⚠️  Unknown plan: ${investment.plan} for investment ${investment.id}`);
+          errorCount++;
           continue;
         }
 
@@ -141,22 +152,19 @@ async function creditDailyROI() {
         const dailyRoiAmount = investment.capital * planConfig.dailyRate;
 
         // Check if investment is still within duration
-        // Use startDate (approval date) if available, otherwise fall back to creation date
         const startDate = investment.startDate ? new Date(investment.startDate) : new Date(investment.date);
         const now = new Date();
         const daysElapsed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
 
-        // Check if we already credited ROI today (compare dates)
-        // Use startDate as baseline for crediting, not creation date
-        const investmentStartDate = investment.startDate ? new Date(investment.startDate) : new Date(investment.date);
-        const lastCreditDate = investment.updated_at ? new Date(investment.updated_at) : investmentStartDate;
+        // Check if we already credited ROI today
+        const lastCreditDate = investment.updated_at ? new Date(investment.updated_at) : startDate;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const lastCreditDay = new Date(lastCreditDate);
         lastCreditDay.setHours(0, 0, 0, 0);
 
         if (lastCreditDay >= today) {
-          console.log(`ROI already credited today for investment ${investment.id}`);
+          console.log(`⏭️  ROI already credited today for investment ${investment.id}`);
           continue;
         }
 
@@ -203,56 +211,94 @@ async function creditDailyROI() {
             await sendInvestmentCompletionEmail(userEmail, userName, investment.plan, remainingRoi, finalBonus, newBalance);
           }
 
-          console.log(`Completed investment ${investment.id}: Credited remaining ROI $${remainingRoi.toFixed(2)} and final bonus $${finalBonus.toFixed(2)}`);
-          continue;
-        }
-
-        // Credit daily ROI for active investment
-        await supabase
-          .from('investments')
-          .update({
-            creditedRoi: (investment.creditedRoi || 0) + dailyRoiAmount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', investment.id);
-
-        // Get user data for balance update
-        const { data: userData } = await supabase
-          .from('users')
-          .select('balance, email, name, userName')
-          .eq('idnum', investment.idnum)
-          .single();
-
-        if (userData) {
-          const newBalance = (userData.balance || 0) + dailyRoiAmount;
+          console.log(`✅ Completed investment ${investment.id}: Credited remaining ROI $${remainingRoi.toFixed(2)} and final bonus $${finalBonus.toFixed(2)}`);
+          completedCount++;
+        } else {
+          // Credit daily ROI for active investment
           await supabase
-            .from('users')
+            .from('investments')
             .update({
-              balance: newBalance,
+              creditedRoi: (investment.creditedRoi || 0) + dailyRoiAmount,
               updated_at: new Date().toISOString()
             })
-            .eq('idnum', investment.idnum);
+            .eq('id', investment.id);
 
-          // Send daily ROI notification email
-          const userEmail = userData.email;
-          const userName = userData.name || userData.userName;
-          const totalEarnings = (investment.creditedRoi || 0) + dailyRoiAmount;
-          await sendROINotificationEmail(userEmail, userName, dailyRoiAmount, investment.plan, newBalance, totalEarnings);
+          // Get user data for balance update
+          const { data: userData } = await supabase
+            .from('users')
+            .select('balance, email, name, userName')
+            .eq('idnum', investment.idnum)
+            .single();
+
+          if (userData) {
+            const newBalance = (userData.balance || 0) + dailyRoiAmount;
+            await supabase
+              .from('users')
+              .update({
+                balance: newBalance,
+                updated_at: new Date().toISOString()
+              })
+              .eq('idnum', investment.idnum);
+
+            // Send daily ROI notification email
+            const userEmail = userData.email;
+            const userName = userData.name || userData.userName;
+            const totalEarnings = (investment.creditedRoi || 0) + dailyRoiAmount;
+            await sendROINotificationEmail(userEmail, userName, dailyRoiAmount, investment.plan, newBalance, totalEarnings);
+          }
+
+          console.log(`💰 Credited $${dailyRoiAmount.toFixed(2)} ROI for investment ${investment.id} (${investment.plan})`);
+          processedCount++;
         }
 
-        console.log(`Credited $${dailyRoiAmount.toFixed(2)} daily ROI for investment ${investment.id} (${investment.plan})`);
-
       } catch (invProcessError) {
-        console.error(`Error processing investment ${investment.id}:`, invProcessError);
+        console.error(`❌ Error processing investment ${investment.id}:`, invProcessError.message);
+        errorCount++;
       }
     }
 
-    console.log('Daily ROI crediting process completed successfully');
+    console.log(`\n📈 ROI Crediting Summary:`);
+    console.log(`   ✅ Processed: ${processedCount}`);
+    console.log(`   🎉 Completed: ${completedCount}`);
+    console.log(`   ⚠️  Errors: ${errorCount}`);
+    console.log(`   ✓ Daily ROI crediting completed at ${new Date().toISOString()}\n`);
 
   } catch (err) {
-    console.error('Script error:', err);
+    console.error('❌ Fatal error in daily ROI crediting:', err);
   }
 }
 
-// Run the daily ROI crediting
-creditDailyROI();
+/**
+ * Initialize the scheduler
+ */
+function initScheduler() {
+  try {
+    // Schedule to run every day at 12:00 AM (midnight) UTC
+    // Cron format: second minute hour day-of-month month day-of-week
+    // '0 0 0 * * *' means every day at 00:00:00
+    const job = schedule.scheduleJob('0 0 0 * * *', creditDailyROI);
+    
+    console.log('✅ Daily ROI Scheduler initialized');
+    console.log('⏰ Scheduled to run every day at 12:00 AM (midnight) UTC');
+    console.log(`🕐 Next execution: ${job.nextInvocation()}`);
+    
+    return job;
+  } catch (error) {
+    console.error('❌ Failed to initialize scheduler:', error);
+    return null;
+  }
+}
+
+/**
+ * Manually trigger ROI crediting (for testing)
+ */
+async function manualCredit() {
+  console.log('🚀 Manually triggering daily ROI crediting...');
+  await creditDailyROI();
+}
+
+module.exports = {
+  initScheduler,
+  creditDailyROI,
+  manualCredit
+};

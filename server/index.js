@@ -4,6 +4,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
+const { initScheduler } = require('./scheduler');
 
 const PORT = process.env.PORT || 3000;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -439,9 +440,34 @@ app.post('/api/credit-daily-roi', async (req, res) => {
   }
 });
 
+// GET /api/scheduler/status — check scheduler status
+app.get('/api/scheduler/status', (req, res) => {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return res.status(503).json({ 
+      status: 'disabled',
+      reason: 'Supabase not configured'
+    });
+  }
+  
+  return res.json({
+    status: 'enabled',
+    message: 'Daily ROI scheduler is running',
+    schedule: 'Every day at 12:00 AM (midnight) UTC',
+    note: 'Server must remain running for scheduler to work'
+  });
+});
+
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
+    
+    // Initialize the daily ROI scheduler
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('\n');
+      initScheduler();
+    } else {
+      console.warn('⚠️  Supabase not configured. Daily ROI scheduler will not start.');
+    }
   });
 }
 

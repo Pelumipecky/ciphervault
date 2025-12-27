@@ -8,8 +8,10 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "seed": "node scripts/seed.js",
-    "credit-daily-roi": "node scripts/credit-daily-roi.js"
-    ,"server:start":"npm --prefix server run start",
+    "credit-daily-roi": "node scripts/credit-daily-roi.js",
+    "backfill-roi": "node scripts/backfill-missed-roi.js",
+    "server:start":"npm --prefix server run start",
+    "server:dev":"npm --prefix server run dev",
     "apply:schema":"echo 'See APPLY_SCHEMA.md for instructions to apply sql/schema.sql to your Supabase project'"
   },
   "dependencies": {

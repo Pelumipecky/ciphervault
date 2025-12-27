@@ -37,17 +37,6 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
         html: generateEmailHTML(notification),
       }),
     });
-    const response = await fetch(API_EMAIL_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to: notification.to_email,
-        subject: notification.subject,
-        html: generateEmailHTML(notification),
-      }),
-    });
 
     if (!response.ok) {
       throw new Error(`Email API error: ${response.statusText}`);
