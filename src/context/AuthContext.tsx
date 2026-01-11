@@ -20,6 +20,7 @@ interface User {
   referralCode?: string
   referralBonusTotal?: number
   id?: string
+  authStatus?: string
 }
 
 interface AuthContextType {
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 referralCount: freshUserData.referralCount,
                 avatar: freshUserData.avatar,
                 completedTrades: freshUserData.completedTrades,
+                authStatus: freshUserData.authStatus || undefined,
               }
               setUser(mappedUser)
               localStorage.setItem('activeUser', JSON.stringify(mappedUser))
@@ -106,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         bonus: loggedInUser.bonus,
         referralCount: loggedInUser.referralCount,
         avatar: loggedInUser.avatar,
+        authStatus: loggedInUser.authStatus || undefined,
       }
 
       // If admin or superadmin, store admin session and also set user state and activeUser
@@ -152,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         bonus: newUser.bonus,
         referralCount: newUser.referralCount,
         avatar: newUser.avatar,
+        authStatus: newUser.authStatus || undefined,
       }
 
       setUser(mappedUser)

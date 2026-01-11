@@ -2,110 +2,49 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const videoCategories = [
-  { id: 'all', name: 'All Videos', count: 24 },
-  { id: 'beginner', name: 'Beginner Guides', count: 8 },
-  { id: 'technical', name: 'Technical Analysis', count: 6 },
-  { id: 'strategies', name: 'Trading Strategies', count: 5 },
-  { id: 'crypto', name: 'Cryptocurrency', count: 3 },
-  { id: 'platform', name: 'Platform Tutorials', count: 2 }
+  { id: 'all', name: 'All Videos', count: 3 },
+  { id: 'beginner', name: 'Getting Started', count: 1 },
+  { id: 'investment', name: 'Investment Guides', count: 1 },
+  { id: 'withdrawal', name: 'Withdrawals', count: 1 }
 ]
 
+// Replace 'YOUR_VIDEO_ID' with actual YouTube video IDs from your channel
 const videos = [
   {
     id: 1,
-    title: 'Getting Started with Cypher Vault - Complete Beginner Guide',
-    description: 'Learn the basics of trading on Cypher Vault platform. Perfect for newcomers to cryptocurrency trading.',
-    duration: '12:34',
-    views: '125K',
-    likes: '8.2K',
-    thumbnail: '/images/video-thumbnails/getting-started.jpg',
+    title: 'How to Create an Account & Get Started',
+    description: 'Complete step-by-step guide on creating your Cypher Vault account, verifying your identity (KYC), and navigating the dashboard for the first time.',
+    duration: '8:45',
+    views: '15.2K',
+    likes: '1.2K',
+    thumbnail: 'https://img.youtube.com/vi/YOUR_VIDEO_ID_1/maxresdefault.jpg',
     category: 'beginner',
-    publishedAt: '2024-01-15',
-    youtubeId: 'dQw4w9WgXcQ'
+    publishedAt: '2025-12-01',
+    youtubeId: 'YOUR_VIDEO_ID_1' // Replace with actual YouTube video ID
   },
   {
     id: 2,
-    title: 'Understanding Candlestick Patterns - Essential Knowledge',
-    description: 'Master the most important candlestick patterns every trader should know.',
-    duration: '18:45',
-    views: '89K',
-    likes: '6.1K',
-    thumbnail: '/images/video-thumbnails/candlesticks.jpg',
-    category: 'technical',
-    publishedAt: '2024-01-12',
-    youtubeId: 'dQw4w9WgXcQ'
+    title: 'How to Make Your First Investment',
+    description: 'Learn how to deposit funds, choose the right investment plan, and start earning returns on Cypher Vault. Covers all available plans and expected ROI.',
+    duration: '12:30',
+    views: '22.8K',
+    likes: '2.1K',
+    thumbnail: 'https://img.youtube.com/vi/YOUR_VIDEO_ID_2/maxresdefault.jpg',
+    category: 'investment',
+    publishedAt: '2025-12-05',
+    youtubeId: 'YOUR_VIDEO_ID_2' // Replace with actual YouTube video ID
   },
   {
     id: 3,
-    title: 'Risk Management: Protecting Your Trading Capital',
-    description: 'Learn essential risk management techniques to preserve and grow your trading capital.',
-    duration: '15:22',
-    views: '156K',
-    likes: '12.3K',
-    thumbnail: '/images/video-thumbnails/risk-management.jpg',
-    category: 'strategies',
-    publishedAt: '2024-01-10',
-    youtubeId: 'dQw4w9WgXcQ'
-  },
-  {
-    id: 4,
-    title: 'How to Use Technical Indicators Effectively',
-    description: 'Comprehensive guide to using RSI, MACD, Moving Averages, and other key indicators.',
-    duration: '22:18',
-    views: '203K',
-    likes: '15.7K',
-    thumbnail: '/images/video-thumbnails/indicators.jpg',
-    category: 'technical',
-    publishedAt: '2024-01-08',
-    youtubeId: 'dQw4w9WgXcQ'
-  },
-  {
-    id: 5,
-    title: 'Cryptocurrency Trading Strategies for 2024',
-    description: 'Advanced strategies specifically designed for cryptocurrency markets.',
-    duration: '28:45',
-    views: '178K',
-    likes: '13.9K',
-    thumbnail: '/images/video-thumbnails/crypto-strategies.jpg',
-    category: 'crypto',
-    publishedAt: '2024-01-05',
-    youtubeId: 'dQw4w9WgXcQ'
-  },
-  {
-    id: 6,
-    title: 'Setting Up Your First Trade on Cypher Vault',
-    description: 'Step-by-step tutorial on how to place your first trade on our platform.',
-    duration: '8:12',
-    views: '267K',
-    likes: '18.4K',
-    thumbnail: '/images/video-thumbnails/first-trade.jpg',
-    category: 'platform',
-    publishedAt: '2024-01-03',
-    youtubeId: 'dQw4w9WgXcQ'
-  },
-  {
-    id: 7,
-    title: 'Trading Psychology: Mastering Your Emotions',
-    description: 'Learn how to control fear, greed, and other emotions that affect trading decisions.',
-    duration: '16:33',
-    views: '134K',
-    likes: '9.8K',
-    thumbnail: '/images/video-thumbnails/psychology.jpg',
-    category: 'beginner',
-    publishedAt: '2024-01-01',
-    youtubeId: 'dQw4w9WgXcQ'
-  },
-  {
-    id: 8,
-    title: 'Advanced Chart Analysis Techniques',
-    description: 'Deep dive into advanced chart analysis methods and pattern recognition.',
-    duration: '25:41',
-    views: '98K',
-    likes: '7.2K',
-    thumbnail: '/images/video-thumbnails/chart-analysis.jpg',
-    category: 'technical',
-    publishedAt: '2023-12-28',
-    youtubeId: 'dQw4w9WgXcQ'
+    title: 'How to Withdraw Your Earnings',
+    description: 'Step-by-step tutorial on withdrawing your profits from Cypher Vault. Covers withdrawal methods, processing times, and tips for smooth transactions.',
+    duration: '10:15',
+    views: '18.5K',
+    likes: '1.8K',
+    thumbnail: 'https://img.youtube.com/vi/YOUR_VIDEO_ID_3/maxresdefault.jpg',
+    category: 'withdrawal',
+    publishedAt: '2025-12-10',
+    youtubeId: 'YOUR_VIDEO_ID_3' // Replace with actual YouTube video ID
   }
 ]
 
@@ -198,53 +137,53 @@ function YouTubeVideos() {
         </div>
 
         {/* Videos Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredVideos.map(video => (
-            <div key={video.id} className="bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-700 hover:border-red-500/50 transition-all duration-300 group">
+            <a 
+              key={video.id} 
+              href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-700 hover:border-red-500/50 transition-all duration-300 group block"
+            >
               {/* Thumbnail */}
               <div className="relative aspect-video bg-gray-700 overflow-hidden">
                 <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                       </svg>
                     </div>
-                    <div className="text-white text-sm font-medium">Video Preview</div>
+                    <div className="text-white text-sm font-medium">Click to Watch</div>
                   </div>
                 </div>
                 <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
                   {video.duration}
                 </div>
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <button className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors duration-300">
-                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </button>
-                </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
               </div>
 
               {/* Video Info */}
-              <div className="p-4">
-                <h3 className="text-white font-semibold text-sm mb-2 line-clamp-2 leading-tight">
+              <div className="p-5">
+                <h3 className="text-white font-semibold text-lg mb-3 leading-tight group-hover:text-red-400 transition-colors">
                   {video.title}
                 </h3>
-                <p className="text-gray-400 text-xs mb-3 line-clamp-2 leading-relaxed">
+                <p className="text-gray-400 text-sm mb-4 leading-relaxed">
                   {video.description}
                 </p>
 
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-4">
                     <span className="flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                       {formatViews(video.views)}
                     </span>
                     <span className="flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                       </svg>
                       {video.likes}
@@ -253,16 +192,24 @@ function YouTubeVideos() {
                   <span>{formatDate(video.publishedAt)}</span>
                 </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
 
-        {/* Load More */}
+        {/* Subscribe to Channel CTA */}
         {filteredVideos.length > 0 && (
           <div className="text-center mt-12">
-            <button className="px-8 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-300">
-              Load More Videos
-            </button>
+            <a 
+              href="https://www.youtube.com/@YourChannelName" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              Subscribe to Our YouTube Channel
+            </a>
           </div>
         )}
 

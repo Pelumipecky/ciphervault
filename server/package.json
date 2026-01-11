@@ -8,8 +8,9 @@
     "test": "jest --detectOpenHandles --runInBand"
   },
   "dependencies": {
+    "@emailjs/nodejs": "*",
     "@supabase/supabase-js": "^2.31.0",
-    "@emailjs/nodejs": "^3.2.0",
+    "ciphervault-app": "file:..",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

@@ -59,11 +59,13 @@ function AdminDashboard() {
   const [allWithdrawals, setAllWithdrawals] = useState<any[]>([])
   const [allKycRequests, setAllKycRequests] = useState<any[]>([])
   const [allLoans, setAllLoans] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'investments' | 'withdrawals' | 'kyc' | 'loans' | 'bonus' | 'settings'>('overview')
+  const [allDeposits, setAllDeposits] = useState<any[]>([]) // Added deposits state
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'investments' | 'deposits' | 'withdrawals' | 'kyc' | 'loans' | 'bonus' | 'settings'>('overview')
   const [showSidePanel, setShowSidePanel] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
   const [showUserModal, setShowUserModal] = useState(false)
   const [newBalance, setNewBalance] = useState('')
+  const [balanceUpdateReason, setBalanceUpdateReason] = useState('')
   const [showAddBonusModal, setShowAddBonusModal] = useState(false)
   const [bonusAmount, setBonusAmount] = useState('')
   const [bonusReason, setBonusReason] = useState('')
@@ -76,6 +78,7 @@ function AdminDashboard() {
     const path = location.pathname
     if (path.includes('users-management')) setActiveTab('users')
     else if (path.includes('transactions')) setActiveTab('withdrawals')
+    else if (path.includes('deposits')) setActiveTab('deposits') // Added routing for deposits
     else if (path.includes('investment-plans')) setActiveTab('investments')
     else if (path.includes('loans-management')) setActiveTab('loans')
     else if (path.includes('system-settings')) setActiveTab('settings')
@@ -210,12 +213,13 @@ function AdminDashboard() {
 
         try {
           console.log('🔄 Fetching admin data from database...')
-          const [users, investments, withdrawals, kycRequests, loans] = await Promise.all([
+          const [users, investments, withdrawals, kycRequests, loans, deposits] = await Promise.all([
             fetchWithTimeout(supabaseDb.getAllUsers()),
             fetchWithTimeout(supabaseDb.getAllInvestments()),
             fetchWithTimeout(supabaseDb.getAllWithdrawals()),
             fetchWithTimeout(supabaseDb.getAllKycRequests()),
             fetchWithTimeout(supabaseDb.getAllLoans()),
+            fetchWithTimeout(supabaseDb.getAllDeposits()),
           ])
 
           console.log('✅ Database calls successful:', {
@@ -223,7 +227,8 @@ function AdminDashboard() {
             investments: investments?.length || 0,
             withdrawals: withdrawals?.length || 0,
             kycRequests: kycRequests?.length || 0,
-            loans: loans?.length || 0
+            loans: loans?.length || 0,
+            deposits: deposits?.length || 0
           })
 
           // Join investments with user data
@@ -266,6 +271,16 @@ function AdminDashboard() {
             }
           })
 
+          // Join deposits with user data
+          const depositsWithUsers = (deposits || []).map((deposit: any) => {
+             const user = users.find((u: any) => u.idnum === deposit.idnum)
+             return {
+               ...deposit,
+               userName: user?.userName || user?.name || 'Unknown User',
+               userEmail: user?.email || ''
+             }
+          })
+
             // Exclude current admin from the users list to prevent admins from seeing or editing themselves
           const filteredUsers = users.filter((u: any) => u.idnum !== userData.idnum)
           setAllUsers(filteredUsers)
@@ -273,6 +288,7 @@ function AdminDashboard() {
           setAllWithdrawals(withdrawalsWithUsers)
           setAllKycRequests(kycWithUsers)
           setAllLoans(loansWithUsers)
+          setAllDeposits(depositsWithUsers)
 
           // Set up Supabase Realtime subscriptions for live updates
           try {
@@ -561,6 +577,15 @@ function AdminDashboard() {
           withdrawal.amount || 0,
           withdrawal.method || 'Bank Transfer'
         )
+        
+        // Create in-app notification
+        await supabaseDb.createNotification({
+            idnum: withdrawal.idnum,
+            title: 'Withdrawal Approved',
+            message: `Your withdrawal of $${(withdrawal.amount || 0).toLocaleString()} via ${withdrawal.method} has been approved.`,
+            type: 'success',
+            read: false
+        })
       }
 
       showAlert('success', t('alerts.withdrawalApprovedTitle'), t('alerts.withdrawalApprovedMessage'))
@@ -592,12 +617,118 @@ function AdminDashboard() {
           withdrawal.amount || 0,
           withdrawal.method || 'Bank Transfer'
         )
+
+        // Create in-app notification
+        await supabaseDb.createNotification({
+            idnum: withdrawal.idnum,
+            title: 'Withdrawal Rejected',
+            message: `Your withdrawal of $${(withdrawal.amount || 0).toLocaleString()} has been rejected.`,
+            type: 'error',
+            read: false
+        })
+
+        // Refund the amount to user balance if rejected
+        if (withdrawal.idnum && withdrawal.amount) {
+           const user = allUsers.find(u => u.idnum === withdrawal.idnum);
+           if (user) {
+             await supabaseDb.updateUser(user.idnum, {
+               balance: (user.balance || 0) + (withdrawal.amount || 0)
+             });
+           }
+        }
       }
 
       showAlert('error', t('alerts.withdrawalRejectedTitle'), t('alerts.withdrawalRejectedMessage'))
     } catch (error) {
       console.error('Error rejecting withdrawal:', error)
       showAlert('error', t('alerts.rejectionFailedTitle'), t('alerts.rejectionFailedMessage'))
+    }
+  }
+
+  const handleApproveDeposit = async (depositId: string, userId: string, amount: number) => {
+    try {
+      // 1. Update deposit status
+      await supabaseDb.updateDeposit(depositId, { status: 'Approved' })
+
+      // 2. Fetch current user to get balance
+      const users = await supabaseDb.getAllUsers();
+      const user = users.find(u => u.id === userId || u.idnum === userId);
+      
+      if (!user) throw new Error('User not found')
+
+      // 3. Update user balance
+      const newBalance = (user.balance || 0) + amount
+      if (user.idnum) {
+         await supabaseDb.updateUser(user.idnum, { balance: newBalance })
+      }
+
+      // 4. Update local state
+      setAllDeposits(prev => 
+        prev.map(d => d.id === depositId ? { ...d, status: 'Approved' } : d)
+      )
+      
+      // Update users list
+      setAllUsers(prev => prev.map(u => 
+        (u.id === userId || u.idnum === userId) ? { ...u, balance: newBalance } : u
+      ))
+
+      // 5. Notify User
+      if (user.idnum) {
+        await supabaseDb.createNotification({
+          idnum: user.idnum,
+          title: 'Deposit Approved',
+          message: `Your deposit of $${amount.toLocaleString()} has been approved and credited to your balance.`,
+          type: 'success',
+          read: false
+        })
+      }
+
+      showAlert('success', 'Deposit Approved', `Deposit of $${amount.toLocaleString()} has been approved and added to user balance.`)
+    } catch (error) {
+      console.error('Error approving deposit:', error)
+      showAlert('error', 'Error', 'Failed to approve deposit')
+    }
+  }
+
+  const handleRejectDeposit = async (depositId: string) => {
+    try {
+      await supabaseDb.updateDeposit(depositId, { status: 'Rejected' })
+
+      setAllDeposits(prev => 
+        prev.map(d => d.id === depositId ? { ...d, status: 'Rejected' } : d)
+      )
+
+      // Notify User
+      const deposit = allDeposits.find(d => d.id === depositId);
+      if (deposit) {
+          const user = allUsers.find(u => u.id === deposit.user_id);
+          if (user?.idnum) {
+              await supabaseDb.createNotification({
+                  idnum: user.idnum,
+                  title: 'Deposit Rejected',
+                  message: 'Your deposit request has been rejected.',
+                  type: 'error',
+                  read: false
+              })
+          }
+      }
+
+      showAlert('error', 'Deposit Rejected', 'The deposit request has been rejected.')
+    } catch (error) {
+      console.error('Error rejecting deposit:', error)
+      showAlert('error', 'Error', 'Failed to reject deposit')
+    }
+  }
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await supabaseDb.deleteUser(userId)
+      setAllUsers(prev => prev.filter(u => u.idnum !== userId))
+      setShowUserModal(false)
+      showAlert('success', 'User Deleted', 'User has been removed from the database.')
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      showAlert('error', 'Error', 'Failed to delete user.')
     }
   }
 
@@ -611,6 +742,20 @@ function AdminDashboard() {
           kyc.userName,
           'approved'
         )
+
+        // Notification
+        if (kyc.idnum) {
+            await supabaseDb.createNotification({
+              idnum: kyc.idnum,
+              title: 'KYC Approved',
+              message: 'Your identity verification has been approved.',
+              type: 'success',
+              read: false
+            })
+
+            // Update user status
+            await supabaseDb.updateUser(kyc.idnum, { authStatus: 'approved' })
+        }
       }
       await supabaseDb.updateKycStatus(kycId, 'approved')
       setAllKycRequests(prev => 
@@ -633,6 +778,20 @@ function AdminDashboard() {
           kyc.userName,
           'rejected'
         )
+
+        // Notification
+        if (kyc.idnum) {
+            await supabaseDb.createNotification({
+              idnum: kyc.idnum,
+              title: 'KYC Rejected',
+              message: `Your identity verification failed.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`,
+              type: 'error',
+              read: false
+            })
+
+            // Update user status
+            await supabaseDb.updateUser(kyc.idnum, { authStatus: 'rejected' })
+        }
       }
       await supabaseDb.updateKycStatus(kycId, 'rejected', rejectionReason)
       setAllKycRequests(prev => 
@@ -648,36 +807,59 @@ function AdminDashboard() {
   const handleViewUser = (user: any) => {
     setSelectedUser(user)
     setNewBalance(user.balance?.toString() || '0')
+    setBalanceUpdateReason('')
     setShowUserModal(true)
   }
 
   const handleUpdateUserBalance = async () => {
     if (!selectedUser || !newBalance) return
     
+    if (!balanceUpdateReason.trim()) {
+        showAlert('warning', 'Reason Required', 'Please provide a reason for the balance update.')
+        return
+    }
+
     const balance = parseFloat(newBalance)
     if (isNaN(balance) || balance < 0) {
       showAlert('error', t('alerts.titleInvalidAmount'), t('alerts.invalidAmountError'))
       return
     }
 
-    // Send email notification
-    await sendBalanceUpdateNotification(
-      selectedUser.email,
-      selectedUser.userName || selectedUser.name,
-      balance,
-      selectedUser.balance || 0
-    )
-
-    // Re-fetch all users from database to ensure latest data
     try {
-      const users = await supabaseDb.getAllUsers();
-      setAllUsers(users);
-      setSelectedUser(users.find(u => u.idnum === selectedUser.idnum));
-    } catch (err) {
-      setAllUsers(prev => prev.map(u => u.idnum === selectedUser.idnum ? { ...u, balance } : u));
-      setSelectedUser({ ...selectedUser, balance });
+        // 1. Update Database
+        if (selectedUser.idnum) {
+            await supabaseDb.updateUser(selectedUser.idnum, { balance })
+        }
+
+        // 2. Notification with Reason
+        if (selectedUser.idnum) {
+            await supabaseDb.createNotification({
+                idnum: selectedUser.idnum,
+                title: 'Balance Updated',
+                message: `Your balance has been updated to $${balance.toLocaleString()} by admin. Reason: ${balanceUpdateReason}`,
+                type: 'info',
+                read: false
+            })
+        }
+
+        // 3. Send Email
+        await sendBalanceUpdateNotification(
+          selectedUser.email,
+          selectedUser.userName || selectedUser.name,
+          balance,
+          selectedUser.balance || 0
+        )
+
+        // 4. Update Local State
+        const updatedUser = { ...selectedUser, balance }
+        setAllUsers(prev => prev.map(u => u.idnum === selectedUser.idnum ? updatedUser : u))
+        setSelectedUser(updatedUser)
+
+        showAlert('success', t('alerts.balanceUpdatedTitle'), t('alerts.balanceUpdatedMessage', { balance: balance.toLocaleString() }))
+    } catch (error) {
+        console.error('Failed to update balance:', error)
+        showAlert('error', 'Update Failed', 'Could not update user balance.')
     }
-    showAlert('success', t('alerts.balanceUpdatedTitle'), t('alerts.balanceUpdatedMessage', { balance: balance.toLocaleString() }))
   }
 
   // Calculate statistics
@@ -769,11 +951,8 @@ function AdminDashboard() {
     }
   }
 
-  // Bonus management handlers
-  const handleAddBonusToUser = async (user: any) => {
+  const handleAddBonusToUser = (user: any) => {
     setSelectedBonusUser(user)
-    setBonusAmount('')
-    setBonusReason('')
     setShowAddBonusModal(true)
   }
 
@@ -987,7 +1166,18 @@ function AdminDashboard() {
             <i className="icofont-dashboard-web"></i>
             <span>Overview</span>
           </button>
-          {/* Deposit removed from Admin sidebar per request */}
+          
+          <button
+            className={`nav-item ${activeTab === 'deposits' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('deposits'); setShowSidePanel(false); navigate('/admin/deposits'); }}
+          >
+            <i className="icofont-download-alt"></i>
+            <span>Deposits</span>
+            {allDeposits.filter(d => d.status === 'pending').length > 0 && (
+              <span className="badge">{allDeposits.filter(d => d.status === 'pending').length}</span>
+            )}
+          </button>
+
           <button
             className={`nav-item ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => { setActiveTab('users'); setShowSidePanel(false); navigate('/admin/users-management'); }}
@@ -1514,6 +1704,152 @@ function AdminDashboard() {
             </div>
           )}
 
+          {activeTab === 'deposits' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 style={{ color: '#f8fafc', fontSize: '1.25rem', fontWeight: 600 }}>
+                  <i className="icofont-download"></i> Deposit Management
+                </h3>
+                <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                  Total Deposits: ${allDeposits.reduce((sum, d) => sum + (d.amount || 0), 0).toLocaleString()}
+                </div>
+              </div>
+
+              <div style={{
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                <div className="table-container">
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.875rem'
+                  }}>
+                  <thead>
+                    <tr style={{
+                      background: 'rgba(240,185,11,0.1)',
+                      borderBottom: '2px solid rgba(240,185,11,0.3)'
+                    }}>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>User</th>
+                      <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Amount</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Method</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Date</th>
+                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Proof</th>
+                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Status</th>
+                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allDeposits.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                          <i className="icofont-download" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
+                          No deposit records found
+                        </td>
+                      </tr>
+                    ) : (
+                      allDeposits.map((deposit, idx) => {
+                        const user = allUsers.find(u => u.id === deposit.user_id)
+                        return (
+                      <tr
+                        key={deposit.id || idx}
+                        style={{
+                          borderBottom: '1px solid rgba(255,255,255,0.05)'
+                        }}
+                      >
+                        <td style={{ padding: '1rem', color: '#f8fafc', fontWeight: 500 }}>{user ? (user.name || user.userName) : 'Unknown User'}</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', color: '#10b981', fontWeight: 600 }}>
+                          ${(deposit.amount || 0).toLocaleString()}
+                        </td>
+                        <td style={{ padding: '1rem', color: '#cbd5e1' }}>{deposit.method}</td>
+                        <td style={{ padding: '1rem', color: '#cbd5e1' }}>
+                          {new Date(deposit.created_at).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                          {deposit.proof_url ? (
+                            <button
+                              onClick={() => handleViewPaymentProof(deposit.proof_url)}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                background: 'rgba(59,130,246,0.1)',
+                                border: '1px solid rgba(59,130,246,0.3)',
+                                borderRadius: '6px',
+                                color: '#3b82f6',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                fontWeight: 500
+                              }}
+                            >
+                              <i className="icofont-image"></i> View
+                            </button>
+                          ) : (
+                            <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>No proof</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '0.375rem 0.875rem',
+                            borderRadius: '20px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            background: deposit.status?.toLowerCase() === 'pending' ? 'rgba(251,191,36,0.15)' :
+                                       deposit.status?.toLowerCase() === 'approved' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                            color: deposit.status?.toLowerCase() === 'pending' ? '#fbbf24' :
+                                   deposit.status?.toLowerCase() === 'approved' ? '#4ade80' : '#ef4444',
+                            border: `1px solid ${deposit.status?.toLowerCase() === 'pending' ? 'rgba(251,191,36,0.3)' :
+                                                 deposit.status?.toLowerCase() === 'approved' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`
+                          }}>
+                            {deposit.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                          {deposit.status?.toLowerCase() === 'pending' && (
+                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                              <button
+                                onClick={() => handleApproveDeposit(deposit.id, deposit.idnum, deposit.amount)}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  background: 'rgba(34,197,94,0.1)',
+                                  border: '1px solid rgba(34,197,94,0.3)',
+                                  borderRadius: '6px',
+                                  color: '#10b981',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer',
+                                  fontWeight: 500
+                                }}
+                              >
+                                <i className="icofont-check"></i> Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectDeposit(deposit.id)}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  background: 'rgba(239,68,68,0.1)',
+                                  border: '1px solid rgba(239,68,68,0.3)',
+                                  borderRadius: '6px',
+                                  color: '#ef4444',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer',
+                                  fontWeight: 500
+                                }}
+                              >
+                                <i className="icofont-close"></i> Reject
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                      )})
+                    )}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'withdrawals' && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -1580,18 +1916,18 @@ function AdminDashboard() {
                             borderRadius: '20px',
                             fontSize: '0.75rem',
                             fontWeight: 600,
-                            background: withdrawal.status === 'Pending' ? 'rgba(251,191,36,0.15)' :
-                                       withdrawal.status === 'Approved' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                            color: withdrawal.status === 'Pending' ? '#fbbf24' :
-                                   withdrawal.status === 'Approved' ? '#4ade80' : '#ef4444',
-                            border: `1px solid ${withdrawal.status === 'Pending' ? 'rgba(251,191,36,0.3)' :
-                                                 withdrawal.status === 'Approved' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`
+                            background: withdrawal.status?.toLowerCase() === 'pending' ? 'rgba(251,191,36,0.15)' :
+                                       withdrawal.status?.toLowerCase() === 'approved' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                            color: withdrawal.status?.toLowerCase() === 'pending' ? '#fbbf24' :
+                                   withdrawal.status?.toLowerCase() === 'approved' ? '#4ade80' : '#ef4444',
+                            border: `1px solid ${withdrawal.status?.toLowerCase() === 'pending' ? 'rgba(251,191,36,0.3)' :
+                                                 withdrawal.status?.toLowerCase() === 'approved' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`
                           }}>
                             {withdrawal.status}
                           </span>
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'center' }}>
-                          {withdrawal.status === 'Pending' && (
+                          {withdrawal.status?.toLowerCase() === 'pending' && (
                             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                               <button
                                 onClick={() => handleApproveWithdrawal(withdrawal.id)}
@@ -2574,14 +2910,14 @@ function AdminDashboard() {
                 }}>
                   <i className="icofont-dollar"></i> Update Balance
                 </label>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <input
                     type="number"
                     value={newBalance}
                     onChange={(e) => setNewBalance(e.target.value)}
                     placeholder="Enter new balance"
                     style={{
-                      flex: 1,
+                      width: '100%',
                       padding: '0.75rem',
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.1)',
@@ -2597,9 +2933,26 @@ function AdminDashboard() {
                       e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
                     }}
                   />
+                  <input
+                    type="text"
+                    value={balanceUpdateReason}
+                    onChange={(e) => setBalanceUpdateReason(e.target.value)}
+                    placeholder="Reason for update (Required)"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      color: '#f8fafc',
+                      fontSize: '0.875rem',
+                      outline: 'none'
+                    }}
+                  />
                   <button
                     onClick={handleUpdateUserBalance}
                     style={{
+                      width: '100%',
                       padding: '0.75rem 1.5rem',
                       background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
                       border: 'none',
@@ -2638,9 +2991,9 @@ function AdminDashboard() {
                     t('confirm.deleteUserTitle'),
                     t('confirm.deleteUserMessage'),
                     () => {
-                      setAllUsers(prev => prev.filter(u => u.idnum !== selectedUser.idnum));
-                      setShowUserModal(false);
-                      showAlert('success', t('alerts.userDeletedTitle'), t('alerts.userDeletedMessage'));
+                      if (selectedUser.idnum) {
+                        handleDeleteUser(selectedUser.idnum);
+                      }
                     },
                     () => {
                       // Cancelled

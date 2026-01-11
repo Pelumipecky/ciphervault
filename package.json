@@ -10,14 +10,16 @@
     "seed": "node scripts/seed.js",
     "credit-daily-roi": "node scripts/credit-daily-roi.js",
     "backfill-roi": "node scripts/backfill-missed-roi.js",
-    "server:start":"npm --prefix server run start",
-    "server:dev":"npm --prefix server run dev",
-    "apply:schema":"echo 'See APPLY_SCHEMA.md for instructions to apply sql/schema.sql to your Supabase project'"
+    "server:start": "npm --prefix server run start",
+    "server:dev": "npm --prefix server run dev",
+    "apply:schema": "echo 'See APPLY_SCHEMA.md for instructions to apply sql/schema.sql to your Supabase project'"
   },
   "dependencies": {
+    "@emailjs/nodejs": "^5.0.2",
     "@supabase/supabase-js": "^2.86.2",
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.5",
+    "framer-motion": "^12.25.0",
     "i18next": "^25.7.2",
     "i18next-browser-languagedetector": "^8.2.0",
     "icofont": "^1.0.0",
@@ -32,6 +34,9 @@
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.6.3",
     "vite": "^5.4.8"
   },

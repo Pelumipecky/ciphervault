@@ -207,6 +207,9 @@ app.post('/api/send-email', async (req, res) => {
     return res.status(500).json({ error: 'Failed to send email' });
   }
 });
+
+// POST /api/admin/create-user
+app.post('/api/admin/create-user', async (req, res) => {
   try {
     const { email, password, full_name, username } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'email and password are required' });

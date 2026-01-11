@@ -13,12 +13,19 @@ const navLinks = [
   { label: 'Contact', href: '/contact' }
 ]
 
+const downloadLinks = [
+  { label: 'PDF Guide', href: '/downloads/guides', icon: 'icofont-file-pdf' },
+  { label: 'Video Guide', href: '/downloads/videos', icon: 'icofont-play-alt-2' }
+]
+
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const downloadMenuRef = useRef<HTMLDivElement>(null)
   const { t } = useTranslation()
 
   const closeMenu = () => setIsOpen(false)
@@ -50,6 +57,9 @@ function Navbar() {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false)
       }
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
+        setDownloadMenuOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -59,7 +69,14 @@ function Navbar() {
     <header className="navbar">
       <div className="navbar__inner">
         <Link to="/" className="navbar__brand" onClick={closeMenu}>
-          <img src="/images/ciphervaultlogobig.svg" alt="Cypher Vault Investments" height={36} />
+          {/* Explicit height class needed to override Tailwind base reset */}
+          <img 
+            src="/images/ciphervaultlogobig.svg" 
+            alt="Cypher Vault Investments" 
+            height={36} 
+            className="h-9 w-auto"
+            style={{ maxHeight: '36px', width: 'auto' }} 
+          />
         </Link>
         <nav className={`navbar__links ${isOpen ? 'navbar__links--open' : ''}`}>
           
@@ -75,6 +92,105 @@ function Navbar() {
               </NavLink>
             )
           ))}
+          
+          {/* Downloads Dropdown */}
+          <div 
+            ref={downloadMenuRef}
+            className="navbar__download-dropdown"
+            style={{ position: 'relative', display: 'inline-block' }}
+          >
+            <button
+              onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+              className="navbar__download-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: downloadMenuOpen ? '#f0b90b' : 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#f0b90b'
+              }}
+              onMouseLeave={(e) => {
+                if (!downloadMenuOpen) {
+                  e.currentTarget.style.color = 'inherit'
+                }
+              }}
+            >
+              <span>{t('nav.downloads', 'Downloads')}</span>
+              <i 
+                className={downloadMenuOpen ? 'icofont-rounded-up' : 'icofont-rounded-down'}
+                style={{ 
+                  fontSize: '12px',
+                  transition: 'transform 0.3s ease'
+                }}
+              ></i>
+            </button>
+
+            {/* Dropdown Menu */}
+            {downloadMenuOpen && (
+              <div 
+                className="navbar__download-menu"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  minWidth: '180px',
+                  background: 'linear-gradient(145deg, #1e2329, #181a20)',
+                  border: '1px solid rgba(240, 185, 11, 0.2)',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
+                  overflow: 'hidden',
+                  zIndex: 1000,
+                  animation: 'fadeInDown 0.2s ease'
+                }}
+              >
+                <div style={{ padding: '8px' }}>
+                  {downloadLinks.map(({ label, href, icon }) => (
+                    <Link
+                      key={label}
+                      to={href}
+                      onClick={() => {
+                        setDownloadMenuOpen(false)
+                        handleNavClick()
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 14px',
+                        background: 'transparent',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: '#fff',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(240, 185, 11, 0.1)'
+                        e.currentTarget.style.color = '#f0b90b'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent'
+                        e.currentTarget.style.color = '#fff'
+                      }}
+                    >
+                      <i className={icon} style={{ fontSize: '18px', width: '20px' }}></i>
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           </div>
           <div className="navbar__cta-group">
             {isAuthenticated && user ? (

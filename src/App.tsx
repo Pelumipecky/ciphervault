@@ -15,6 +15,7 @@ import UserDashboard from '@/pages/dashboard/UserDashboard'
 import Markets from '@/pages/Markets'
 import Downloads from '@/pages/Downloads'
 import PDFGuides from '@/pages/PDFGuides'
+import GuideReader from '@/pages/GuideReader'
 import YouTubeVideos from '@/pages/YouTubeVideos'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import RoleProtectedRoute, { AdminRoute, SuperAdminRoute, UserRoute } from '@/components/RoleProtectedRoute'
@@ -22,11 +23,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { getDashboardRoute } from '@/utils/roles'
 // Chat widgets: keep SuppaChatLoader for client-only lazy loading and also include the floating buttons
-import SuppaChatLoader from '@/components/ui/SuppaChatLoader'
-import ThirdPartyChatbotWidget from '@/components/ui/ThirdPartyChatbotWidget'
-import SmartsuppWidget from '@/components/ui/SmartsuppWidget'
-import SmartsuppChatButton from '@/components/ui/SmartsuppChatButton'
-import WhatsAppFloatingButton from '@/components/ui/WhatsAppFloatingButton'
+import TawkToChatWidget from '@/components/ui/TawkToChatWidget'
 import TelegramFloatingButton from '@/components/ui/TelegramFloatingButton'
 
 function RoleBasedRedirect() {
@@ -48,8 +45,8 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        {/* Client-only lazy loader for Smartsupp widget - hide on admin routes */}
-        {!isAdminRoute && <SuppaChatLoader />}
+        {/* Client-only lazy loader for Tawk.to widget - hide on admin routes */}
+        {!isAdminRoute && <TawkToChatWidget />}
         <Routes>
         {/* Public routes with Navbar and Footer */}
         <Route path="/" element={
@@ -111,6 +108,15 @@ function App() {
             <Navbar />
             <main className="app-layout__content">
               <PDFGuides />
+            </main>
+            <Footer />
+          </div>
+        } />
+        <Route path="/guide/:id" element={
+          <div className="app-layout">
+            <Navbar />
+            <main className="app-layout__content">
+              <GuideReader />
             </main>
             <Footer />
           </div>
@@ -181,6 +187,11 @@ function App() {
             <AdminDashboard />
           </AdminRoute>
         } />
+        <Route path="/admin/deposits" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
 
         {/* Super Admin Only Routes */}
         <Route path="/admin/system-settings" element={
@@ -198,9 +209,6 @@ function App() {
       {/* Hide floating chat widgets on admin routes */}
       {!isAdminRoute && (
         <>
-          <SmartsuppWidget />
-          <SmartsuppChatButton />
-          <WhatsAppFloatingButton />
           <TelegramFloatingButton />
         </>
       )}

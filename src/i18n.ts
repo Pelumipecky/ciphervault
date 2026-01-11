@@ -36,7 +36,22 @@ const resources = {
   },
   'pt-BR': {
     translation: ptBR
-  }
+  },
+  ru: { translation: en },
+  it: { translation: en },
+  ko: { translation: en },
+  tr: { translation: en },
+  vi: { translation: en },
+  th: { translation: en },
+  nl: { translation: en },
+  pl: { translation: en },
+  id: { translation: en },
+  ar: { translation: en },
+  hi: { translation: en },
+  sv: { translation: en },
+  uk: { translation: en },
+  tl: { translation: en },
+  ms: { translation: en }
 }
 
 i18n
@@ -47,7 +62,10 @@ i18n
     fallbackLng: 'en',
     // Explicit list of supported languages prevents language detector from
     // using malformed or unexpected locale values from localStorage.
-    supportedLngs: ['en', 'es', 'fr', 'de', 'zh', 'ja', 'pt', 'pt-BR'],
+    supportedLngs: [
+      'en', 'es', 'fr', 'de', 'zh', 'ja', 'pt', 'pt-BR',
+      'ru', 'it', 'ko', 'tr', 'vi', 'th', 'nl', 'pl', 'id', 'ar', 'hi', 'sv', 'uk', 'tl', 'ms'
+    ],
     debug: false,
 
     interpolation: {

@@ -204,7 +204,7 @@ function Home() {
           <div className="hero__actions">
             {isAuthenticated ? (
               <Link className="btn btn--primary btn--lg" to="/dashboard">
-                Go to Dashboard
+                {t('home.hero.ctaDashboard')}
               </Link>
             ) : (
               <Link className="btn btn--primary btn--lg" to="/signup">

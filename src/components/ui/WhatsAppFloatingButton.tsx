@@ -11,7 +11,7 @@ const WhatsAppFloatingButton: React.FC = () => (
     style={{
       position: 'fixed',
       bottom: 96,
-      left: 24,
+      right: 24,
       zIndex: 9999,
       background: '#25D366',
       color: '#fff',

@@ -162,6 +162,20 @@ const Deposit: React.FC = () => {
       };
 
       await supabaseDb.createDeposit(depositData);
+      
+      // Create notification
+      try {
+        await supabaseDb.createNotification({
+          idnum: currentUser.idnum,
+          title: 'Deposit Submitted',
+          message: `Your deposit of $${depositData.amount} via ${depositData.method} has been submitted for review.`,
+          type: 'info',
+          read: false
+        });
+      } catch (notifError) {
+        console.error('Error creating notification:', notifError);
+        // Continue even if notification fails
+      }
 
       // Reset form and close modal
       setDepositForm({ amount: '', transactionHash: '', paymentProof: null });

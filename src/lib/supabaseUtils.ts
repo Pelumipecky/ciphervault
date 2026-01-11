@@ -163,16 +163,29 @@ const mapUserRecord = (record: any): UserRecord => {
 
 const mapInvestmentRecord = (record: any): InvestmentRecord => {
   if (!record || typeof record !== 'object') return record
-  const { paymentoption, authstatus, transaction_hash, payment_proof_url, credited_roi, credited_bonus, start_date, ...rest } = record
+  // Handle both snake_case (from older database) and camelCase (current schema)
+  const { 
+    paymentoption, 
+    authstatus, 
+    transaction_hash, 
+    payment_proof_url, 
+    credited_roi, 
+    credited_bonus, 
+    start_date,
+    creditedRoi,
+    creditedBonus,
+    startDate,
+    ...rest 
+  } = record
   return {
     ...rest,
     paymentOption: paymentoption ?? record.paymentOption ?? 'Bitcoin',
     authStatus: authstatus ?? record.authStatus ?? 'unseen',
     transactionHash: transaction_hash ?? record.transactionHash ?? null,
     paymentProofUrl: payment_proof_url ?? record.paymentProofUrl ?? null,
-    creditedRoi: credited_roi ?? record.creditedRoi ?? 0,
-    creditedBonus: credited_bonus ?? record.creditedBonus ?? 0,
-    startDate: start_date ?? record.startDate ?? null,
+    creditedRoi: creditedRoi ?? credited_roi ?? record.creditedRoi ?? 0,
+    creditedBonus: creditedBonus ?? credited_bonus ?? record.creditedBonus ?? 0,
+    startDate: startDate ?? start_date ?? record.startDate ?? null,
   }
 }
 
@@ -507,6 +520,40 @@ export const supabaseDb = {
     
     if (error) throw error
     return data
+  },
+
+  async uploadPaymentProof(userId: string, file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${userId}/${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await (supabase as any).storage
+      .from('payment-proofs')
+      .upload(fileName, file)
+
+    if (uploadError) throw uploadError
+
+    const { data } = (supabase as any).storage
+      .from('payment-proofs')
+      .getPublicUrl(fileName)
+
+    return data.publicUrl
+  },
+
+  async uploadKycDocument(userId: string, file: File, docType: string): Promise<string> {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${userId}/${docType}_${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await (supabase as any).storage
+      .from('kyc-documents')
+      .upload(fileName, file)
+
+    if (uploadError) throw uploadError
+
+    const { data } = (supabase as any).storage
+      .from('kyc-documents')
+      .getPublicUrl(fileName)
+
+    return data.publicUrl
   },
 
   // Deposit operations

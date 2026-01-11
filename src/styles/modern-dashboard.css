@@ -283,14 +283,20 @@
 .dashboard-main {
   flex: 1;
   margin-left: 280px;
+  width: calc(100% - 280px);
   background: #020617;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .dashboard-content {
   padding: 2rem;
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* Stats Grid */
@@ -1719,8 +1725,6 @@
   }
   .amount-input { width: 120px; }
 }
-  font-weight: 600;
-}
 
 .crypto-payment-details,
 .bank-payment-details {
@@ -2665,5 +2669,137 @@
   .wallet-table td:before { content: attr(data-label); color: #94a3b8; margin-right: 8px; font-weight: 600; width: 40%; }
   .wallet-table td .asset { gap: 6px; }
   .wallet-table td .price { font-size: 13px; }
+}
+
+
+/* --- Start Mobile Audit Fixes & Marquee --- */
+
+/* Dashboard Marquee */
+.dashboard-marquee {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+}
+
+.marquee-content {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 45s linear infinite;
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 4rem;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.marquee-item i {
+  color: #f0b90b;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Pause on hover */
+.dashboard-marquee:hover .marquee-content {
+  animation-play-state: paused;
+}
+
+/* Hard Mobile Fixes */
+@media (max-width: 768px) {
+  .dashboard-main {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  .dashboard-content {
+    padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Force cards to be contained */
+  .stat-card, .profile-card, .activity-section, .page-section {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  /* Fix stats grid overflow */
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(100%, 1fr)) !important;
+    gap: 1rem;
+  }
+
+  /* Ensure tables scroll */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    padding-bottom: 1rem;
+  }
+  
+  .data-table, .wallet-table {
+    min-width: 600px;
+  }
+  
+  /* Fix specific card overflow */
+  .profile-card {
+    padding: 1rem !important;
+  }
+  
+  /* Fix flex alignment on mobile headers */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .page-header button {
+    width: 100%;
+  }
+  
+  /* Ensure images in cards don't overflow */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Fix chart containers */
+  .chart-container {
+    width: 100%;
+    overflow: hidden;
+  }
+}
+/* --- End Mobile Audit Fixes --- */
+
+
+/* Sidebar z-index fix for mobile */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    z-index: 1000;
+  }
+}
+
+
+/* Safety fix for desktop marquee */
+.dashboard-marquee {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 

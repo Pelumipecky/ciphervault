@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import { useNavigate, Link } from 'react-router-dom'
-import { supabaseDb, supabaseRealtime, supabase } from '@/lib/supabaseUtils'
+import { supabaseDb, supabaseRealtime, supabase, DepositRecord } from '@/lib/supabaseUtils'
 import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 import { UserRole } from '@/utils/roles'
 import { fetchCryptoPrices, fetchDetailedCryptoPrices, formatPrice, formatMarketCap, CryptoPrice, CryptoPrices } from '@/utils/cryptoPrices'
@@ -55,6 +55,19 @@ interface Investment {
   authStatus?: string
 }
 
+const DashboardMarquee = () => (
+  <div className="dashboard-marquee">
+    <div className="marquee-content">
+      <span className="marquee-item"><i className="icofont-rocket-alt-2"></i> Bitcoin hits $95,000! Trade with 0% fees on selected pairs.</span>
+      <span className="marquee-item"><i className="icofont-star"></i> New "Diamond Hands" Plan available: Earn 150% ROI in 30 Days.</span>
+      <span className="marquee-item"><i className="icofont-gift"></i> Limited Time: Refer a friend and get $50 bonus instantly!</span>
+      <span className="marquee-item"><i className="icofont-shield-alt"></i> Security Update: Enable 2FA for enhanced account protection.</span>
+      <span className="marquee-item"><i className="icofont-chart-growth"></i> Top Gainer: ETH up 12% in the last 24 hours.</span>
+      <span className="marquee-item"><i className="icofont-info-circle"></i> System Maintenance scheduled for Sunday 02:00 UTC.</span>
+    </div>
+  </div>
+);
+
 function UserDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -82,7 +95,7 @@ function UserDashboard() {
 
       // Notification type
       interface Notification {
-        id: number;
+        id: string | number;
         message: string;
         type: string;
         read: boolean;
@@ -93,18 +106,38 @@ function UserDashboard() {
       const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Helper function to add notifications for account activities
-  const addNotification = (title: string, message: string, type: 'success' | 'info' | 'warning' | 'error' = 'info') => {
+  const addNotification = async (title: string, message: string, type: 'success' | 'info' | 'warning' | 'error' = 'info') => {
+    // Create local temporary ID
+    const tempId = Date.now();
+    
+    // Optimistic UI update
     const newNotification: Notification = {
-      id: Date.now(),
+      id: tempId,
       title,
       message,
       type,
       read: false,
       created_at: new Date().toISOString()
     };
+    
     setNotifications(prev => [newNotification, ...prev]);
     
-    // Also persist to localStorage
+    // Persist to Supabase if user is logged in
+    if (currentUser?.idnum) {
+      try {
+        await supabaseDb.createNotification({
+          idnum: currentUser.idnum,
+          title,
+          message,
+          type,
+          read: false
+        });
+      } catch (err) {
+        console.error('Failed to save notification to database:', err);
+      }
+    }
+    
+    // Also persist to localStorage as backup
     const stored = JSON.parse(localStorage.getItem('userNotifications') || '[]');
     stored.unshift(newNotification);
     localStorage.setItem('userNotifications', JSON.stringify(stored.slice(0, 50))); // Keep last 50
@@ -201,6 +234,15 @@ function UserDashboard() {
             // Update localStorage for consistency
             localStorage.setItem('userInvestments', JSON.stringify(userInvestments));
             console.log('Investments saved to state and localStorage');
+            
+            // Fetch withdrawals
+            const userWithdrawals = await supabaseDb.getWithdrawalsByUser(userData.idnum);
+            setWithdrawals(userWithdrawals);
+
+            // Fetch deposits
+            const userDeposits = await supabaseDb.getDepositsByUser(userData.idnum);
+            setDeposits(userDeposits);
+
           } else {
             console.warn('No user idnum found for fetching investments');
           }
@@ -224,7 +266,7 @@ function UserDashboard() {
           if (userData.idnum) {
             const userNotifications = await supabaseDb.getNotificationsByUser(userData.idnum);
             const formattedNotifications = userNotifications.map(notif => ({
-              id: parseInt(notif.id || '0') || Date.now(),
+              id: notif.id || Date.now().toString(),
               title: notif.title || 'Notification',
               message: notif.message || '',
               type: notif.type || 'info',
@@ -296,6 +338,19 @@ function UserDashboard() {
         } catch (dbError) {
           console.log('Could not fetch loans from database:', dbError);
           setLoans([]);
+        }
+
+        // Fetch Withdrawals from database
+        try {
+          if (userData.idnum) {
+            const userWithdrawals = await supabaseDb.getWithdrawalsByUser(userData.idnum);
+            if (userWithdrawals && userWithdrawals.length > 0) {
+              setWithdrawals(userWithdrawals);
+            }
+          }
+        } catch (dbError) {
+          console.log('Could not fetch withdrawals from database:', dbError);
+          setWithdrawals([]);
         }
 
         // Set up real-time subscriptions
@@ -488,6 +543,7 @@ function UserDashboard() {
   }
   const [loading, setLoading] = useState(true)
   const [investments, setInvestments] = useState<Investment[]>([])
+  const [withdrawals, setWithdrawals] = useState<any[]>([])
   const [investmentError, setInvestmentError] = useState<string | null>(null)
   const [loans, setLoans] = useState<any[]>([])
   const [kycData, setKycData] = useState<any>(null)
@@ -506,10 +562,17 @@ function UserDashboard() {
   })
   const [copied, setCopied] = useState(false)
   
-  // Deposit states
+  // Deposit Wizard states
+  const [depositStep, setDepositStep] = useState(1);
   const [depositAmount, setDepositAmount] = useState('');
+  const [selectedDepositCategory, setSelectedDepositCategory] = useState<'crypto' | 'bank'>('crypto');
   const [selectedDepositMethod, setSelectedDepositMethod] = useState('Bitcoin');
-  
+  const [depositProof, setDepositProof] = useState<File | null>(null);
+  const [depositTxHash, setDepositTxHash] = useState('');
+  const [deposits, setDeposits] = useState<DepositRecord[]>([]); // Added deposits state
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositError, setDepositError] = useState('');
+
   // Helper function for copying deposit details
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -899,7 +962,7 @@ function UserDashboard() {
     setShowKycModal(true)
   }
 
-  const handleKycNext = () => {
+  const handleKycNext = async () => {
     if (kycStep === 'intro') {
       setKycStep('personal')
     } else if (kycStep === 'personal') {
@@ -917,21 +980,57 @@ function UserDashboard() {
     } else if (kycStep === 'review') {
       // Submit KYC to database
       try {
-        const kycDataToSubmit = {
-          idnum: currentUser?.idnum,
-          fullName: currentUser?.name || currentUser?.userName,
-          dateOfBirth: '1990-01-01', // This would come from form in real implementation
-          nationality: 'United States', // This would come from form in real implementation
-          documentType: kycForm.idType,
-          documentNumber: kycForm.idNumber,
-          status: 'pending',
-          submittedAt: new Date().toISOString()
-          // In a real implementation, you'd upload files to storage and include URLs
+        if (!currentUser?.idnum) {
+          showAlert('error', 'Error', 'User ID not found');
+          return;
         }
 
-        // Note: This would need a createKyc function in supabaseUtils
-        // For now, we'll just simulate the submission
-        console.log('KYC data to submit:', kycDataToSubmit)
+        // Upload documents
+        let idDocUrl = '';
+        let addressDocUrl = '';
+        let selfieUrl = '';
+
+        if (kycForm.idDocument) {
+          try {
+             idDocUrl = await supabaseDb.uploadKycDocument(currentUser.idnum, kycForm.idDocument, 'id');
+          } catch (uploadErr) {
+            console.error('Failed to upload ID document:', uploadErr);
+          }
+        }
+        if (kycForm.addressDocument) {
+          try {
+             addressDocUrl = await supabaseDb.uploadKycDocument(currentUser.idnum, kycForm.addressDocument, 'address');
+          } catch (uploadErr) {
+            console.error('Failed to upload address document:', uploadErr);
+          }
+        }
+        if (kycForm.selfieDocument) {
+          try {
+             selfieUrl = await supabaseDb.uploadKycDocument(currentUser.idnum, kycForm.selfieDocument, 'selfie');
+          } catch (uploadErr) {
+            console.error('Failed to upload selfie document:', uploadErr);
+          }
+        }
+
+        const kycDataToSubmit = {
+          idnum: currentUser.idnum,
+          fullName: currentUser.name || currentUser.userName || 'Unknown',
+          dateOfBirth: '1990-01-01', // Placeholder as form lacks this field
+          nationality: 'United States', // Placeholder as form lacks this field
+          documentType: kycForm.idType,
+          documentNumber: kycForm.idNumber,
+          documentFrontUrl: idDocUrl,
+          documentBackUrl: addressDocUrl, 
+          selfieUrl: selfieUrl,
+          status: 'pending',
+          submittedAt: new Date().toISOString()
+        }
+
+        await supabaseDb.createKyc(kycDataToSubmit);
+        
+        // Update user status
+        await updateUser({ ...currentUser, authStatus: 'pending' }); // Optimistic update
+        await supabaseDb.updateUser(currentUser.idnum, { authStatus: 'pending' });
 
         addNotification(
           'KYC Documents Submitted',
@@ -942,7 +1041,6 @@ function UserDashboard() {
         
         // Refresh KYC data after submission
         setTimeout(() => {
-          // In a real implementation, this would fetch the newly created KYC record
           setKycData({
             ...kycDataToSubmit,
             status: 'pending'
@@ -987,6 +1085,13 @@ function UserDashboard() {
   }
 
   const handleWithdrawalNext = async () => {
+    // Check KYC status first
+    const kycStatus = currentUser?.authStatus?.toLowerCase();
+    if (kycStatus !== 'approved' && kycStatus !== 'verified') {
+      showAlert('warning', 'KYC Verification Required', 'You must complete identity verification to withdraw funds.');
+      return;
+    }
+
     if (withdrawalStep === 'amount') {
       const amount = parseFloat(withdrawalForm.amount)
       if (!amount || amount < 50) {
@@ -1001,7 +1106,9 @@ function UserDashboard() {
           // Convert null values to undefined for compatibility
           const userForUpdate = {
             ...dbUser,
-            referralCode: dbUser.referralCode || undefined
+            referralCode: dbUser.referralCode || undefined,
+            authStatus: dbUser.authStatus || undefined,
+            role: (dbUser.role as any) || 'user'
           }
           updateUser(userForUpdate)
         }
@@ -1010,18 +1117,13 @@ function UserDashboard() {
       }
       
       // Calculate locked investment capital (active investments that haven't completed their period)
-      const lockedInvestmentCapital = investments
-        .filter(inv => inv.status?.toLowerCase() === 'active' && inv.authStatus === 'approved')
-        .reduce((total, inv) => total + (inv.capital || 0), 0)
+      // Removed restriction: User can withdraw even with active investments
+      const lockedInvestmentCapital = 0
       
       const availableBalance = (currentUser?.balance || 0) - lockedInvestmentCapital
-      
+
       if (amount > availableBalance) {
-        if (lockedInvestmentCapital > 0) {
-          alert(`Insufficient available balance. You have $${(currentUser?.balance || 0).toLocaleString()} total balance, but $${lockedInvestmentCapital.toLocaleString()} is locked in active investments. Available for withdrawal: $${availableBalance.toLocaleString()}`)
-        } else {
           alert('Insufficient balance')
-        }
         return
       }
       setWithdrawalStep('method')
@@ -1406,31 +1508,80 @@ function UserDashboard() {
   const totalCapital = approvedInvestments.reduce((sum, inv) => sum + (inv.capital || 0), 0)
   const totalROI = approvedInvestments.reduce((sum, inv) => sum + (inv.roi || 0), 0)
   const totalBonus = approvedInvestments.reduce((sum, inv) => sum + (inv.bonus || 0), 0)
-  const totalReturns = approvedInvestments.reduce((sum, inv) => sum + (inv.creditedRoi || 0) + (inv.creditedBonus || 0), 0)
+  // Calculate total returns (Realized ROI + Realized Bonus + Returned Capital for completed plans)
+  const totalReturns = approvedInvestments.reduce((sum, inv) => {
+    const profit = (inv.creditedRoi || 0) + (inv.creditedBonus || 0)
+    const capitalReturned = inv.status?.toLowerCase() === 'completed' ? (inv.capital || 0) : 0
+    return sum + profit + capitalReturned
+  }, 0)
   const totalBalance = (currentUser?.balance || 0) + (currentUser?.bonus || 0)
 
-  // Deposit submit handler
-  const handleDepositSubmit = async () => {
-    if (!depositAmount || parseFloat(depositAmount) < 10) {
-      showAlert('error', t('alerts.titleInvalidAmount'), 'Minimum deposit amount is $10')
-      return
-    }
+  // Deposit Final Submit Handler
+  const handleFinalDepositSubmit = async () => {
+    if (!currentUser?.idnum) return;
+    setDepositLoading(true);
+    setDepositError('');
 
     try {
-      // For now, just show success message and reset form
-      // TODO: Implement actual deposit creation in database
-      
+      // Validate mandatory fields
+      if (!depositProof) {
+        throw new Error('Payment proof image/document is required');
+      }
+      if (!depositTxHash) {
+        throw new Error('Transaction ID / Hash is required');
+      }
+
+      let proofUrl = '';
+      if (depositProof) {
+         try {
+           proofUrl = await supabaseDb.uploadPaymentProof(currentUser.idnum, depositProof);
+         } catch(e) {
+           console.error("Upload error", e);
+           throw new Error("Failed to upload payment proof. Please try again or check file size.");
+         }
+      }
+
+      const amount = parseFloat(depositAmount);
+            
+      await supabaseDb.createDeposit({
+        idnum: currentUser.idnum,
+        amount: amount,
+        method: selectedDepositMethod,
+        transactionHash: depositTxHash,
+        paymentProofUrl: proofUrl,
+        status: 'pending',
+        authStatus: 'pending',
+        date: new Date().toISOString()
+      });
+
+      addNotification(
+        'Deposit Submitted',
+        `Your deposit of $${amount.toLocaleString()} via ${selectedDepositMethod} is currently under review by the admin.`,
+        'success'
+      );
+
       // Reset form
-      setDepositAmount('')
-      setSelectedDepositMethod('Bitcoin')
+      setDepositStep(1);
+      setDepositAmount('');
+      setDepositProof(null);
+      setDepositTxHash('');
       
-      showAlert('success', 'Deposit Request Submitted', 'Your deposit request has been submitted successfully. Please complete the payment and upload proof in your Wallet section.')
+      // Refresh deposits list
+      const latestDeposits = await supabaseDb.getDepositsByUser(currentUser.idnum);
+      setDeposits(latestDeposits);
+
+      setProfileState('Deposit'); // Stay on Deposit page to see the history
+      
+      showAlert('success', 'Deposit Submitted', 'Your deposit has been submitted successfully and is pending approval.');
       
       // Refresh user balance (in case it changes)
       refreshUserBalance()
-    } catch (error) {
-      console.error('Error creating deposit:', error)
-      showAlert('error', 'Deposit Failed', 'Failed to submit deposit request. Please try again.')
+    } catch (err: any) {
+      console.error('Deposit Error:', err);
+      setDepositError(err.message || 'Failed to submit deposit');
+      showAlert('error', 'Submission Failed', err.message || 'An error occurred during verification.');
+    } finally {
+      setDepositLoading(false);
     }
   }
 
@@ -1608,6 +1759,58 @@ function UserDashboard() {
 
       {/* Main Content */}
       <main className="dashboard-main">
+        <DashboardMarquee />
+        
+        {/* KYC Warning Banner */}
+        {currentUser?.authStatus?.toLowerCase() !== 'approved' && currentUser?.authStatus?.toLowerCase() !== 'verified' && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.2) 100%)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            padding: '1rem 1.5rem',
+            marginBottom: '2rem',
+            borderRadius: '16px',
+            color: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.1)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                background: 'rgba(239,68,68,0.2)',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <i className="icofont-warning-alt" style={{ fontSize: '1.25rem' }}></i>
+              </div>
+              <div>
+                <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem', fontWeight: 600 }}>Action Required: Complete Identity Verification</h4>
+                <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9, color: '#f8fafc' }}>Your account is limited. Withdrawals are disabled until KYC is verified.</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setProfileState('Profile')}
+              style={{
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                padding: '0.625rem 1.25rem',
+                borderRadius: '8px',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)'
+              }}
+            >
+              Verify Now <i className="icofont-arrow-right"></i>
+            </button>
+          </div>
+        )}
 
         <div className="dashboard-content">
           {profileState === 'Dashboard' && (
@@ -1733,118 +1936,295 @@ function UserDashboard() {
               <div className="page-header">
                 <h2><i className="icofont-plus-circle"></i> Deposit Funds</h2>
               </div>
-              <div className="deposit-form" style={{ background: 'linear-gradient(135deg, #181a20 0%, #23272f 100%)', borderRadius: 16, padding: '2rem', boxShadow: '0 2px 12px rgba(0,0,0,0.12)', maxWidth: 600, margin: '0 auto' }}>
-                <label style={{ fontWeight: 600, marginBottom: 8, display: 'block', color: 'var(--text)' }}>Amount (USD)</label>
-                <input
-                  type="number"
-                  min="10"
-                  step="0.01"
-                  value={depositAmount}
-                  onChange={e => setDepositAmount(e.target.value)}
-                  placeholder="Enter deposit amount"
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: 8, border: '1px solid var(--accent)', marginBottom: '1.5rem', fontSize: '1rem', background: 'var(--surface)', color: 'var(--text)' }}
-                />
-                <label style={{ fontWeight: 600, marginBottom: 8, display: 'block', color: 'var(--text)' }}>Select Payment Method</label>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                  {Object.entries(paymentMethods).map(([key, method]) => (
-                    <button
-                      key={key}
-                      className={`method-btn${selectedDepositMethod === key ? ' selected' : ''}`}
-                      style={{
-                        padding: '0.75rem 1.25rem',
-                        borderRadius: 8,
-                        border: selectedDepositMethod === key ? '2px solid var(--accent)' : '1px solid var(--border)',
-                        background: selectedDepositMethod === key ? 'rgba(240,185,11,0.08)' : 'var(--surface)',
-                        color: 'var(--text)',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                      }}
-                      onClick={() => setSelectedDepositMethod(key)}
-                    >
-                      <span style={{ fontSize: '1.25rem' }}>{method.icon}</span> {method.name}
-                    </button>
+              
+              <div className="deposit-wizard-container" style={{ maxWidth: 800, margin: '0 auto' }}>
+                <div className="wizard-stepper" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', position: 'relative' }}>
+                  {[1, 2, 3, 4].map(step => (
+                    <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, cursor: step < depositStep ? 'pointer' : 'default' }} onClick={() => step < depositStep && setDepositStep(step)}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: step <= depositStep ? 'var(--accent)' : 'var(--surface)',
+                        border: step <= depositStep ? 'none' : '2px solid var(--border)',
+                        color: step <= depositStep ? 'var(--bg)' : 'var(--text-muted)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+                      }}>
+                        {step < depositStep ? <i className="icofont-check"></i> : step}
+                      </div>
+                      <span style={{ fontSize: '0.8rem', marginTop: 8, color: step <= depositStep ? 'var(--accent)' : 'var(--text-muted)' }}>
+                        {step === 1 ? 'Method' : step === 2 ? 'Details' : step === 3 ? 'Proof' : 'Confirm'}
+                      </span>
+                    </div>
                   ))}
+                  <div style={{ position: 'absolute', top: 16, left: 0, right: 0, height: 2, background: 'var(--border)', zIndex: 0 }}>
+                    <div style={{ width: `${((depositStep - 1) / 3) * 100}%`, height: '100%', background: 'var(--accent)', transition: 'width 0.3s ease' }}></div>
+                  </div>
                 </div>
-                <div className="deposit-details" style={{ marginBottom: '2rem', background: 'rgba(240,185,11,0.05)', borderRadius: 12, padding: '1rem' }}>
-                  {'address' in paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] ? (
-                    <>
-                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
-                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Address:</span>
-                        <div className="address-box">
-                          <code style={{ color: 'var(--accent)' }}>
-                            {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).address}
-                          </code>
-                          <button 
-                            className="copy-btn" 
-                            onClick={() => handleCopy((paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).address || '')}
-                          >
-                            {copied ? <i className="icofont-check"></i> : <i className="icofont-copy"></i>}
-                          </button>
+
+                <div className="wizard-content" style={{ background: 'var(--surface)', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                  
+                  {depositStep === 1 && (
+                    <div className="step-content">
+                      <h3 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Select Deposit Category</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div 
+                          className={`category-card ${selectedDepositCategory === 'crypto' ? 'active' : ''}`}
+                          onClick={() => { setSelectedDepositCategory('crypto'); setSelectedDepositMethod('Bitcoin'); setDepositStep(2); }}
+                          style={{ 
+                            padding: '2rem', border: '2px solid var(--border)', borderRadius: 12, cursor: 'pointer', textAlign: 'center',
+                            background: selectedDepositCategory === 'crypto' ? 'rgba(240,185,11,0.1)' : 'transparent',
+                            borderColor: selectedDepositCategory === 'crypto' ? 'var(--accent)' : 'var(--border)'
+                          }}
+                        >
+                          <i className="icofont-bitcoin" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: '1rem', display: 'block' }}></i>
+                          <h4>Crypto Deposit</h4>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Bitcoin, Ethereum, USDT</p>
+                        </div>
+                        <div 
+                          className={`category-card ${selectedDepositCategory === 'bank' ? 'active' : ''}`}
+                          onClick={() => { setSelectedDepositCategory('bank'); setSelectedDepositMethod('Bank'); setDepositStep(2); }}
+                          style={{ 
+                            padding: '2rem', border: '2px solid var(--border)', borderRadius: 12, cursor: 'pointer', textAlign: 'center',
+                            background: selectedDepositCategory === 'bank' ? 'rgba(240,185,11,0.1)' : 'transparent',
+                            borderColor: selectedDepositCategory === 'bank' ? 'var(--accent)' : 'var(--border)'
+                          }}
+                        >
+                          <i className="icofont-bank-transfer" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: '1rem', display: 'block' }}></i>
+                          <h4>Bank Transfer</h4>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>SWIFT, SEPA, Wire</p>
                         </div>
                       </div>
-                      <div className="detail-row">
-                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Network:</span>
-                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
-                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).network}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
-                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Account Name:</span>
-                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
-                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).accountName}
-                        </span>
-                      </div>
-                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
-                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Account Number:</span>
-                        <div className="address-box">
-                          <code style={{ color: 'var(--accent)' }}>
-                            {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).accountNumber}
-                          </code>
-                          <button 
-                            className="copy-btn" 
-                            onClick={() => handleCopy((paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).accountNumber || '')}
-                          >
-                            {copied ? <i className="icofont-check"></i> : <i className="icofont-copy"></i>}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
-                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Bank Name:</span>
-                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
-                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).bankName}
-                        </span>
-                      </div>
-                      <div className="detail-row" style={{ marginBottom: '1rem' }}>
-                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>Routing Number:</span>
-                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
-                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).routingNumber}
-                        </span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label" style={{ color: 'var(--text)', fontWeight: 600 }}>SWIFT Code:</span>
-                        <span className="detail-value" style={{ color: 'var(--text-muted)' }}>
-                          {(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).swiftCode}
-                        </span>
-                      </div>
-                    </>
+                    </div>
                   )}
+
+                  {depositStep === 2 && (
+                    <div className="step-content">
+                      <h3 style={{ marginBottom: '1.5rem' }}>Enter Details</h3>
+                      
+                      <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Deposit Amount (USD)</label>
+                        <div className="input-group" style={{ display: 'flex', alignItems: 'center' }}>
+                          <span style={{ padding: '0.75rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRight: 'none', borderRadius: '8px 0 0 8px', color: 'var(--text-muted)' }}>$</span>
+                          <input 
+                            type="number" 
+                            value={depositAmount} 
+                            onChange={e => setDepositAmount(e.target.value)}
+                            placeholder="Min: 100"
+                            style={{ flex: 1, padding: '0.75rem', border: '1px solid var(--border)', borderRadius: '0 8px 8px 0', background: 'var(--bg)', color: 'var(--text)' }}
+                          />
+                        </div>
+                        {parseFloat(depositAmount) < 10 && <p style={{ color: 'red', fontSize: '0.8rem', marginTop: 4 }}>Minimum deposit is $10</p>}
+                      </div>
+
+                      {selectedDepositCategory === 'crypto' && (
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Select Network / Asset</label>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {Object.entries(paymentMethods).filter(([k]) => k !== 'Bank').map(([key, method]) => (
+                                <button
+                                  key={key}
+                                  onClick={() => setSelectedDepositMethod(key)}
+                                  style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: 6,
+                                    border: selectedDepositMethod === key ? '1px solid var(--accent)' : '1px solid var(--border)',
+                                    background: selectedDepositMethod === key ? 'rgba(240,185,11,0.1)' : 'transparent',
+                                    color: 'var(--text)',
+                                    cursor: 'pointer',
+                                    opacity: selectedDepositMethod === key ? 1 : 0.7
+                                  }}
+                                >
+                                  {(method as any).name}
+                                </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="details-box" style={{ background: 'var(--bg)', padding: '1.5rem', borderRadius: 8, border: '1px solid var(--border)' }}>
+                        <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Payment Instructions</h4>
+                         {'address' in paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] ? (
+                            <div className="crypto-details">
+                              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).address}`} alt="QR" style={{ border: '4px solid white' }} />
+                              </div>
+                              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 4 }}>Address:</p>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <code style={{ flex: 1, background: '#111', padding: 8, borderRadius: 4, wordBreak: 'break-all', color: 'var(--accent)' }}>{(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).address}</code>
+                                <button onClick={() => handleCopy((paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).address || '')} style={{ background: 'var(--accent)', color: 'black', border: 'none', borderRadius: 4, width: 36, cursor: 'pointer' }}>
+                                  <i className="icofont-copy"></i>
+                                </button>
+                              </div>
+                            </div>
+                         ) : (
+                            <div className="bank-details">
+                                <p style={{ marginBottom: 4 }}><strong>Bank Name:</strong> {(paymentMethods['Bank'] as any).bankName}</p>
+                                <p style={{ marginBottom: 4 }}><strong>Account:</strong> {(paymentMethods['Bank'] as any).accountName}</p>
+                                <p style={{ marginBottom: 4 }}><strong>Number:</strong> {(paymentMethods['Bank'] as any).accountNumber} <i className="icofont-copy" style={{ cursor: 'pointer', color: 'var(--accent)' }} onClick={() => handleCopy((paymentMethods['Bank'] as any).accountNumber)}></i></p>
+                                <p style={{ marginBottom: 4 }}><strong>Routing:</strong> {(paymentMethods['Bank'] as any).routingNumber}</p>
+                                <p><strong>SWIFT:</strong> {(paymentMethods['Bank'] as any).swiftCode}</p>
+                            </div>
+                         )}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                         <button onClick={() => setDepositStep(1)} style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 8, cursor: 'pointer' }}>Back</button>
+                         <button 
+                            disabled={!depositAmount || parseFloat(depositAmount) <= 0}
+                            onClick={() => parseFloat(depositAmount) > 0 && setDepositStep(3)} 
+                            style={{ padding: '0.75rem 2rem', background: 'var(--accent)', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: 8, cursor: 'pointer', opacity: !depositAmount ? 0.5 : 1 }}
+                          >
+                           Next Step
+                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {depositStep === 3 && (
+                    <div className="step-content">
+                       <h3 style={{ marginBottom: '1.5rem' }}>Proof of Payment</h3>
+                       <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Please upload a screenshot of your payment and enter the transaction content ID / Hash for verification.</p>
+
+                       <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Transaction Hash / ID</label>
+                          <input 
+                            type="text" 
+                            value={depositTxHash} 
+                            onChange={e => setDepositTxHash(e.target.value)}
+                            placeholder="e.g. 0x8f7a..."
+                            style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)' }}
+                          />
+                       </div>
+
+                       <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Upload Payment Screenshot</label>
+                          <div 
+                            style={{ 
+                              border: '2px dashed var(--border)', borderRadius: 8, padding: '2rem', textAlign: 'center', cursor: 'pointer',
+                              background: depositProof ? 'rgba(240,185,11,0.05)' : 'transparent'
+                            }}
+                            onClick={() => document.getElementById('proof-upload')?.click()}
+                          >
+                            <input 
+                              id="proof-upload" 
+                              type="file" 
+                              accept="image/*,.pdf" 
+                              onChange={e => e.target.files && setDepositProof(e.target.files[0])}
+                              style={{ display: 'none' }}
+                            />
+                            <i className="icofont-upload-alt" style={{ fontSize: '2rem', color: 'var(--text-muted)' }}></i>
+                            <p style={{ marginTop: '1rem', color: depositProof ? 'var(--accent)' : 'var(--text)' }}>
+                              {depositProof ? depositProof.name : 'Click to Upload proof'}
+                            </p>
+                          </div>
+                       </div>
+
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                         <button onClick={() => setDepositStep(2)} style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 8, cursor: 'pointer' }}>Back</button>
+                         <button 
+                            disabled={!depositTxHash && !depositProof}
+                            onClick={() => (depositTxHash || depositProof) && setDepositStep(4)} 
+                            style={{ padding: '0.75rem 2rem', background: 'var(--accent)', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: 8, cursor: 'pointer', opacity: (!depositTxHash && !depositProof) ? 0.5 : 1 }}
+                          >
+                           Review
+                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {depositStep === 4 && (
+                    <div className="step-content">
+                      <h3 style={{ marginBottom: '1.5rem' }}>Confirm Deposit</h3>
+                      
+                      <div className="review-box" style={{ background: 'var(--bg)', borderRadius: 8, overflow: 'hidden' }}>
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Amount</span>
+                          <strong style={{ fontSize: '1.2rem', color: 'var(--accent)' }}>${parseFloat(depositAmount).toLocaleString()}</strong>
+                        </div>
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Method</span>
+                          <strong>{(paymentMethods[selectedDepositMethod as keyof typeof paymentMethods] as any).name}</strong>
+                        </div>
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Tx Hash</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{depositTxHash || 'Not provided'}</span>
+                        </div>
+                         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Proof File</span>
+                          <span>{depositProof ? depositProof.name : 'Not provided'}</span>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255, 100, 100, 0.1)', border: '1px solid rgba(255, 100, 100, 0.3)', borderRadius: 8, fontSize: '0.9rem' }}>
+                        <i className="icofont-warning-alt" style={{ marginRight: 8 }}></i>
+                        Please ensure you have sent the exact amount. Deposits are manually verified and will be credited once confirmed.
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                         <button onClick={() => setDepositStep(3)} style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 8, cursor: 'pointer' }}>Back</button>
+                         <button 
+                            onClick={handleFinalDepositSubmit}
+                            style={{ padding: '0.75rem 2rem', background: 'var(--accent)', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: 8, cursor: 'pointer' }}
+                          >
+                           Submit Application
+                         </button>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
-                <button className="primary-btn" style={{ width: '100%', padding: '1rem', borderRadius: 8, background: 'linear-gradient(135deg, var(--accent), #d4a50a)', color: 'var(--bg)', fontWeight: 700, fontSize: '1.1rem', border: 'none', cursor: 'pointer' }} onClick={handleDepositSubmit}>
-                  Submit Deposit Request
-                </button>
-                <p style={{ marginTop: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                  After submitting, upload your payment proof in the Wallet section for faster approval.
-                </p>
-                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                  <button onClick={() => setProfileState('Wallet')} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Go to Wallet</button>
+
+                {/* Deposit History Section */}
+                <div style={{ marginTop: '3rem', maxWidth: 800, margin: '3rem auto 0' }}>
+                  <div className="section-header">
+                     <h3><i className="icofont-history"></i> Deposit History</h3>
+                  </div>
+                  <div className="investments-list" style={{ marginTop: '1rem', background: 'var(--surface)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table className="history-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-muted)' }}>Date</th>
+                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-muted)' }}>Method</th>
+                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-muted)' }}>Amount</th>
+                            <th style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-muted)' }}>Status</th>
+                          </tr>
+                        </thead>
+                         <tbody>
+                            {deposits.length > 0 ? (
+                              deposits.slice(0, 10).map((dep, idx) => (
+                                <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                                  <td style={{ padding: '1rem' }}>{new Date(dep.created_at || new Date()).toLocaleDateString()}</td>
+                                  <td style={{ padding: '1rem' }}>{dep.method}</td>
+                                  <td style={{ padding: '1rem', fontWeight: 600 }}>${dep.amount?.toLocaleString()}</td>
+                                  <td style={{ padding: '1rem', textAlign: 'right' }}>
+                                    <span className={`status-badge ${dep.status || 'pending'}`} style={{ 
+                                      textTransform: 'capitalize',
+                                      padding: '0.25rem 0.75rem',
+                                      borderRadius: '12px',
+                                      fontSize: '0.8rem',
+                                      background: (dep.status === 'approved' || dep.status === 'completed') ? 'rgba(16, 185, 129, 0.2)' : 
+                                                  (dep.status === 'rejected') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                                      color: (dep.status === 'approved' || dep.status === 'completed') ? '#10b981' : 
+                                             (dep.status === 'rejected') ? '#ef4444' : '#f59e0b'
+                                    }}>
+                                      {dep.status || 'Pending'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                  No deposit history found.
+                                </td>
+                              </tr>
+                            )}
+                         </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
+
               </div>
             </div>
           )}
@@ -1855,7 +2235,7 @@ function UserDashboard() {
                 <h2><i className="icofont-wallet"></i> Wallet Overview</h2>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   {cryptoLoading && <span style={{ color: '#f0b90b', fontSize: '12px' }}><i className="icofont-refresh"></i> Updating...</span>}
-                  <button className="primary-btn"><i className="icofont-plus-circle"></i> Deposit</button>
+                  <button type="button" className="primary-btn" onClick={() => setProfileState('Deposit')}><i className="icofont-plus-circle"></i> Deposit</button>
                 </div>
               </div>
 
@@ -1970,7 +2350,7 @@ function UserDashboard() {
                   <h3>Quick Actions</h3>
                 </div>
                 <div className="actions-grid">
-                  <button className="action-card">
+                  <button type="button" className="action-card" onClick={() => setProfileState('Deposit')}>
                     <i className="icofont-plus-circle"></i>
                     <span>Deposit</span>
                   </button>
@@ -2567,7 +2947,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Total Withdrawn</p>
-                    <h2 className="stat-value">$0</h2>
+                    <h2 className="stat-value">${withdrawals.filter(w => w.status?.toLowerCase() === 'approved' || w.status?.toLowerCase() === 'completed').reduce((sum, w) => sum + (parseFloat(w.amount) || 0), 0).toLocaleString()}</h2>
                     <p className="stat-info">All time</p>
                   </div>
                 </div>
@@ -2578,7 +2958,7 @@ function UserDashboard() {
                   </div>
                   <div className="stat-details">
                     <p className="stat-label">Pending</p>
-                    <h2 className="stat-value">$0</h2>
+                    <h2 className="stat-value">${withdrawals.filter(w => w.status?.toLowerCase() === 'pending').reduce((sum, w) => sum + (parseFloat(w.amount) || 0), 0).toLocaleString()}</h2>
                     <p className="stat-info">In progress</p>
                   </div>
                 </div>
@@ -2744,13 +3124,45 @@ function UserDashboard() {
               <div className="activity-section" style={{ marginTop: '1.5rem' }}>
                 <div className="section-header">
                   <h3><i className="icofont-history"></i> Withdrawal History</h3>
-                  <button className="view-all">View All →</button>
                 </div>
-                <div className="empty-state">
-                  <i className="icofont-pay"></i>
-                  <p>No withdrawal history</p>
-                  <small style={{ color: '#64748b' }}>Your completed withdrawals will appear here</small>
-                </div>
+                {withdrawals.length > 0 ? (
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Amount</th>
+                          <th>Method</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {withdrawals.map((w, i) => (
+                          <tr key={w.id || i}>
+                            <td style={{ color: '#94a3b8' }}>{new Date(w.created_at).toLocaleDateString()}</td>
+                            <td style={{ fontWeight: 600, color: '#f0b90b' }}>${parseFloat(w.amount).toLocaleString()}</td>
+                            <td>{w.method}</td>
+                            <td>
+                              <span className={`status-badge ${
+                                w.status?.toLowerCase() === 'approved' || w.status?.toLowerCase() === 'completed' ? 'success' :
+                                w.status?.toLowerCase() === 'rejected' ? 'danger' :
+                                'pending'
+                              }`}>
+                                {w.status?.toLowerCase() === 'approved' ? 'Completed' : w.status ? w.status.charAt(0).toUpperCase() + w.status.slice(1) : 'Pending'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <i className="icofont-pay"></i>
+                    <p>No withdrawal history</p>
+                    <small style={{ color: '#64748b' }}>Your completed withdrawals will appear here</small>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -4940,64 +5352,6 @@ function UserDashboard() {
       )}
 
       {/* KYC Verification Modal */}
-      {showKycModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          backdropFilter: 'blur(8px)',
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-            borderRadius: '16px',
-            maxWidth: '600px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-            border: '1px solid rgba(240,185,11,0.2)'
-          }} onClick={(e) => e.stopPropagation()}>
-            {/* Close button */}
-            <button 
-              style={{
-                position: 'absolute',
-                right: '1rem',
-                top: '1rem',
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '1.2rem',
-                zIndex: 10001
-              }}
-              onClick={() => setShowKycModal(false)}
-            >
-              ✕
-            </button>
-
-            {/* KYC Modal content placeholder */}
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#fff' }}>
-              <h2>KYC Verification</h2>
-              <p>KYC verification modal content goes here</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Withdrawal Modal */}
       {showWithdrawalModal && (
         <div style={{
