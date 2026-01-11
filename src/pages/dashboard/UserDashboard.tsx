@@ -1125,6 +1125,24 @@ function UserDashboard() {
           alert('Insufficient balance')
         return
       }
+
+      // Check Daily Withdrawal Limit
+      const DAILY_LIMIT = 50000;
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      const todaysWithdrawals = withdrawals.filter((w: any) => {
+        const wDate = w.date || w.created_at; // Support both date fields
+        // Count pending and approved withdrawals for the daily limit
+        return wDate && wDate.startsWith(today) && w.status !== 'Rejected'; 
+      });
+
+      const todaysTotal = todaysWithdrawals.reduce((sum: number, w: any) => sum + (Number(w.amount) || 0), 0);
+
+      if (todaysTotal + amount > DAILY_LIMIT) {
+        showAlert('error', 'Daily Limit Exceeded', `You have exceeded the daily withdrawal limit of $${DAILY_LIMIT.toLocaleString()}. You have already withdrawn $${todaysTotal.toLocaleString()} today. Please try again tomorrow.`);
+        return;
+      }
+
       setWithdrawalStep('method')
     } else if (withdrawalStep === 'method') {
       setWithdrawalStep('details')
