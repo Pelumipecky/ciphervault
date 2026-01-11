@@ -344,19 +344,6 @@ export const supabaseAuth = {
 // Database operations
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
 
-async function notifyBackend(endpoint: string, payload: any) {
-  try {
-    console.log(`Sending notification to ${endpoint}`, payload);
-    await fetch(`${SERVER_URL}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } catch (error) {
-    console.error(`Failed to notify backend: ${endpoint}`, error);
-  }
-}
-
 export const supabaseDb = {
   // User operations
   async getAllUsers(): Promise<UserRecord[]> {
