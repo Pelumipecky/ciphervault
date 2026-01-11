@@ -484,6 +484,16 @@ export const supabaseDb = {
     }
     
     console.log('✅ [createInvestment] Investment created successfully:', data);
+
+    // Send email notification via backend
+    notifyBackend('/api/notify/investment-created', {
+      idnum: data.idnum,
+      plan: data.plan,
+      capital: data.capital,
+      roi: data.roi,
+      duration: data.duration
+    });
+
     return mapInvestmentRecord(data)
   },
 

@@ -201,6 +201,41 @@ app.post('/api/signup', async (req, res) => {
   // ... existing signup handler ...
 });
 
+// POST /api/notify/investment-created
+app.post('/api/notify/investment-created', async (req, res) => {
+  try {
+    const { idnum, plan, capital, roi, duration } = req.body || {};
+    if (!idnum || !plan || !capital) return res.status(400).json({ error: 'Missing required fields' });
+
+    // Fetch user email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('email, userName')
+      .eq('idnum', idnum)
+      .single();
+
+    if (error || !user || !user.email) {
+      console.warn(`User ${idnum} not found or no email for investment notification`);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    await emailService.sendInvestmentCreated(
+      user.email,
+      user.userName || 'Investor',
+      plan,
+      capital,
+      roi,
+      duration
+    );
+
+    console.log(`✅ Investment email sent to ${user.email} for plan ${plan}`);
+    return res.json({ sent: true });
+  } catch (err) {
+    console.error('Investment notification error:', err);
+    return res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
 // POST /api/send-email - send arbitrary email using Mailjet or SMTP
 app.post('/api/send-email', async (req, res) => {
   try {

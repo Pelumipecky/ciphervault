@@ -142,5 +142,19 @@ export default {
     <p>Your withdrawal request for <strong>$${amount}</strong> has been <strong>${status.toUpperCase()}</strong>.</p>
     ${status === 'rejected' && reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
     ${status === 'approved' ? '<p>The funds should appear in your wallet shortly.</p>' : ''}
+  `),
+
+  investmentCreated: (name, plan, capital, roi, duration) => wrapTemplate('Investment Created', `
+    <h2>Investment Confirmed!</h2>
+    <p>Hello ${name},</p>
+    <p>Success! You have purchased the <strong>${plan}</strong> investment plan.</p>
+    <table class="info-table">
+      <tr><td>Plan:</td><td>${plan}</td></tr>
+      <tr><td>Capital Invested:</td><td class="highlight">$${capital}</td></tr>
+      <tr><td>Daily ROI:</td><td>${roi}%</td></tr>
+      <tr><td>Duration:</td><td>${duration} Days</td></tr>
+    </table>
+    <p>Your investment is now active and will start generating returns every 24 hours.</p>
+    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Track Investment</a></center>
   `)
 };
