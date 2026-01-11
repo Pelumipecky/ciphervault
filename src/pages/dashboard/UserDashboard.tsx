@@ -1183,9 +1183,25 @@ function UserDashboard() {
 
         // Deduct balance from database immediately to lock funds
         if (currentUser?.idnum) {
-            const currentBalance = currentUser.balance || 0;
-            const newBalance = currentBalance - amount;
-            await supabaseDb.updateUser(currentUser.idnum, { balance: newBalance });
+            // Fetch fresh user data to ensure we have the latest balance
+            const freshUser = await supabaseDb.getUserByIdnum(currentUser.idnum);
+            if (freshUser) {
+                const currentBalance = freshUser.balance || 0;
+                const newBalance = currentBalance - amount;
+                
+                // Only proceed if balance is sufficient (double check)
+                if (currentBalance >= amount) {
+                    await supabaseDb.updateUser(currentUser.idnum, { balance: newBalance });
+                    console.log('Balance deducted successfully');
+                    
+                    // Update local state immediately with the new balance
+                    if (updateUser) {
+                        updateUser({ balance: newBalance }); 
+                    }
+                } else {
+                    console.warn('Insufficient balance check failed during deduction');
+                }
+            }
         }
         
         // Send email notification
