@@ -10,8 +10,7 @@ import {
   sendInvestmentNotification,
   sendWithdrawalNotification,
   sendKYCNotification,
-  sendLoanNotification,
-  initializeEmailJS
+  sendLoanNotification
 } from '@/utils/emailService'
 import { useAuth } from '@/context/AuthContext'
 import StockTrading from '@/pages/StockTrading'

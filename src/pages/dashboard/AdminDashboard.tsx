@@ -8,8 +8,7 @@ import {
   sendWithdrawalNotification, 
   sendKYCNotification, 
   sendLoanNotification,
-  sendBalanceUpdateNotification,
-  initializeEmailJS 
+  sendBalanceUpdateNotification
 } from '@/utils/emailService'
 import '../../styles/dashboard.css'
 import '../../styles/modern-dashboard.css'

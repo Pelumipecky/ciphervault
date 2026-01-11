@@ -52,7 +52,7 @@ module.exports = {
       <li>Explore our tailored investment plans.</li>
       <li>Make your first deposit.</li>
     </ul>
-    <center><a href="https://ciphervault.com/login" class="button">Login to Dashboard</a></center>
+    <center><a href="https://cyphervault.vercel.app/login" class="button">Login to Dashboard</a></center>
   `),
 
   depositRequestUser: (name, amount, method, currency, txHash) => wrapTemplate('Deposit Confirmation', `
@@ -79,7 +79,7 @@ module.exports = {
     </table>
     <p>Please log in to the admin panel to review and approve/reject this request.</p>
     ${proofUrl ? `<p><a href="${proofUrl}" target="_blank">View Payment Proof</a></p>` : ''}
-    <center><a href="https://ciphervault.com/admin" class="button">Go to Admin Panel</a></center>
+    <center><a href="https://cyphervault.vercel.app/admin" class="button">Go to Admin Panel</a></center>
   `),
 
   depositApproved: (name, amount) => wrapTemplate('Deposit Approved', `
@@ -87,7 +87,7 @@ module.exports = {
     <p>Hello ${name},</p>
     <p>Great news! Your deposit of <span class="highlight">$${amount}</span> has been successfully approved and credited to your account balance.</p>
     <p>You can now use these funds to purchase an investment plan.</p>
-    <center><a href="https://ciphervault.com/dashboard" class="button">View Balance</a></center>
+    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View Balance</a></center>
   `),
   
   depositRejected: (name, amount, reason) => wrapTemplate('Deposit Rejected', `
@@ -133,7 +133,7 @@ module.exports = {
       <tr><td>Method:</td><td>${method}</td></tr>
       <tr><td>Wallet:</td><td><small>${wallet}</small></td></tr>
     </table>
-    <center><a href="https://ciphervault.com/admin" class="button">Review Request</a></center>
+    <center><a href="https://cyphervault.vercel.app/admin" class="button">Review Request</a></center>
   `),
 
   withdrawalStatus: (name, amount, status, reason) => wrapTemplate(`Withdrawal ${status}`, `

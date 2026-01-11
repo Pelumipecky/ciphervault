@@ -408,12 +408,3 @@ function generateEmailHTML(notification: EmailNotification): string {
     </html>
   `;
 }
-
-/**
- * Load EmailJS library dynamically
- */
-export function initializeEmailJS(): void {
-  // EmailJS has been removed in favor of server-side Mailjet (node-mailjet).
-  // This function is left intentionally as a no-op for backward compatibility.
-  return;
-}
