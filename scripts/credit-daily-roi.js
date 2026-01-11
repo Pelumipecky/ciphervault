@@ -1,8 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import emailjs from '@emailjs/nodejs';
+import { createRequire } from 'module';
 
 dotenv.config();
+const require = createRequire(import.meta.url);
+// Attempt to load emailService
+let emailService;
+try {
+  emailService = require('../server/emailService.js');
+} catch (e) {
+  console.warn('Could not load emailService, emails will be skipped', e.message);
+}
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -13,12 +21,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Initialize EmailJS for Node.js
-const EMAILJS_SERVICE_ID = process.env.VITE_EMAILJS_SERVICE_ID || 'service_ciphervault';
-const EMAILJS_TEMPLATE_ID = process.env.VITE_EMAILJS_TEMPLATE_ID || 'template_notification';
-const EMAILJS_PUBLIC_KEY = process.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_EMAILJS_PUBLIC_KEY';
-const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY || '';
 
 const EMAIL_NOTIFICATIONS_ENABLED = process.env.VITE_EMAIL_NOTIFICATIONS_ENABLED === 'true';
 
@@ -40,14 +42,19 @@ async function sendROINotificationEmail(userEmail, userName, roiAmount, investme
     console.log(`📧 Email notifications disabled. Would have sent ROI email to: ${userEmail}`);
     return;
   }
+  
+  if (emailService) {
+    try {
+      await emailService.sendRoiCredit(userEmail, userName, investmentPlan, roiAmount, currentBalance);
+      console.log(`📧 ROI Email sent to ${userEmail}`);
+    } catch (error) {
+       console.error(`❌ ROI Email failed for ${userEmail}:`, error.message);
+    }
+  } else {
+    console.log('Skipping email (service not loaded)');
+  }
+}
 
-  try {
-    if (EMAILJS_PRIVATE_KEY) {
-      // Initialize EmailJS with private key for Node.js
-      emailjs.init({
-        publicKey: EMAILJS_PUBLIC_KEY,
-        privateKey: EMAILJS_PRIVATE_KEY,
-      });
 
       const templateParams = {
         to_email: userEmail,

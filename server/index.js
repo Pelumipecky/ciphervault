@@ -5,18 +5,20 @@ const rateLimit = require('express-rate-limit');
 const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
 const { initScheduler } = require('./scheduler');
+const emailService = require('./emailService');
 
 const PORT = process.env.PORT || 3000;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || '';
 
+// ... existing supabase setup ...
+
 let supabase = null;
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.warn('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set. Server will run in limited "no-supabase" mode for local development or tests.');
-  // lightweight fake supabase object used for dev/tests (won't persist data)
   supabase = {
-    from: () => ({
+        from: () => ({
       insert: async (payload) => ({ data: Array.isArray(payload) ? payload : [payload], error: null })
     }),
     auth: {
@@ -33,6 +35,52 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+
+// --- Notification Endpoints (Called by Application Logic) ---
+
+// 1. Welcome Email
+app.post('/api/notify/welcome', async (req, res) => {
+  const { email, name } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  
+  const sent = await emailService.sendWelcome(email, name || email.split('@')[0]);
+  if (sent) return res.json({ success: true });
+  return res.status(500).json({ error: 'Failed to send email' });
+});
+
+// 2. Deposit Request (User & Admin)
+app.post('/api/notify/deposit-request', async (req, res) => {
+  const { userEmail, userName, amount, method, currency, txHash, proofUrl } = req.body;
+  if (!userEmail || !amount) return res.status(400).json({ error: 'Missing details' });
+
+  await emailService.sendDepositRequest(userEmail, userName, amount, method, currency, txHash, proofUrl);
+  res.json({ success: true });
+});
+
+// 3. Deposit Status Update
+app.post('/api/notify/deposit-status', async (req, res) => {
+  const { userEmail, userName, amount, status, reason } = req.body;
+  if (!userEmail || !status) return res.status(400).json({ error: 'Missing details' });
+
+  const sent = await emailService.sendDepositStatus(userEmail, userName, amount, status, reason);
+  res.json({ success: sent });
+});
+
+// 4. Withdrawal Request
+app.post('/api/notify/withdrawal-request', async (req, res) => {
+  const { userEmail, userName, amount, method, wallet } = req.body;
+  
+  await emailService.sendWithdrawalRequest(userEmail, userName, amount, method, wallet);
+  res.json({ success: true });
+});
+
+// 5. Withdrawal Status
+app.post('/api/notify/withdrawal-status', async (req, res) => {
+  const { userEmail, userName, amount, status, reason } = req.body;
+  
+  const sent = await emailService.sendWithdrawalStatus(userEmail, userName, amount, status, reason);
+  res.json({ success: sent });
+});
 
 // rate limiter for contact endpoint
 const contactLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 12, standardHeaders: true, legacyHeaders: false });
