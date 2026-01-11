@@ -41,7 +41,7 @@ const wrapTemplate = (title, bodyContent) => `
 </html>
 `;
 
-module.exports = {
+export default {
   welcome: (name) => wrapTemplate('Welcome to Cypher Vault', `
     <h2>Welcome, ${name}!</h2>
     <p>Thank you for joining Cypher Vault. We are thrilled to have you on board.</p>

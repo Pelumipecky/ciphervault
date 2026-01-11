@@ -1,5 +1,5 @@
-const Mailjet = require('node-mailjet');
-const templates = require('./emailTemplates');
+import Mailjet from 'node-mailjet';
+import templates from './emailTemplates.js';
 
 // Configuration
 const MAILJET_API_KEY = process.env.MAILJET_API_KEY;
@@ -113,4 +113,4 @@ const emailService = {
   }
 };
 
-module.exports = emailService;
+export default emailService;

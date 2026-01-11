@@ -7,7 +7,8 @@ const require = createRequire(import.meta.url);
 // Attempt to load emailService
 let emailService;
 try {
-  emailService = require('../server/emailService.js');
+  const module = await import('../api/emailService.js');
+  emailService = module.default;
 } catch (e) {
   console.warn('Could not load emailService, emails will be skipped', e.message);
 }

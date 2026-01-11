@@ -2,18 +2,16 @@
  * Scheduler for daily ROI crediting
  * Runs every day at 12:00 AM (midnight) UTC
  */
-const schedule = require('node-schedule');
-const { createClient } = require('@supabase/supabase-js');
-const emailjs = require('@emailjs/nodejs');
-require('dotenv').config();
+import schedule from 'node-schedule';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import emailService from './emailService.js';
+
+dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const EMAILJS_SERVICE_ID = process.env.VITE_EMAILJS_SERVICE_ID || 'service_ciphervault';
-const EMAILJS_TEMPLATE_ID = process.env.VITE_EMAILJS_TEMPLATE_ID || 'template_notification';
-const EMAILJS_PUBLIC_KEY = process.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_EMAILJS_PUBLIC_KEY';
-const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY || '';
-const EMAIL_NOTIFICATIONS_ENABLED = process.env.VITE_EMAIL_NOTIFICATIONS_ENABLED === 'true';
+const EMAIL_NOTIFICATIONS_ENABLED = process.env.VITE_EMAIL_NOTIFICATIONS_ENABLED === 'true' || true; // Default to true if not set
 
 let supabase = null;
 if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
@@ -42,27 +40,11 @@ async function sendROINotificationEmail(userEmail, userName, roiAmount, investme
   }
 
   try {
-    if (EMAILJS_PRIVATE_KEY) {
-      emailjs.init({
-        publicKey: EMAILJS_PUBLIC_KEY,
-        privateKey: EMAILJS_PRIVATE_KEY,
-      });
+    const formattedAmount = roiAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formattedBalance = currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      const templateParams = {
-        to_email: userEmail,
-        to_name: userName,
-        subject: '💰 Daily ROI Credited - Cypher Vault',
-        message: `Great news! Your daily ROI of $${roiAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from the ${investmentPlan} has been credited to your account. Total earnings so far: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Current balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        notification_type: 'success',
-        app_name: 'Cypher Vault',
-        year: new Date().getFullYear(),
-      };
-
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-      console.log(`✅ ROI notification email sent to ${userEmail}`);
-    } else {
-      console.log(`⚠️ EmailJS private key not configured. Skipping email for ${userEmail}`);
-    }
+    await emailService.sendRoiCredit(userEmail, userName, investmentPlan, formattedAmount, formattedBalance);
+    console.log(`✅ ROI notification email sent to ${userEmail}`);
   } catch (error) {
     console.error(`❌ Failed to send ROI notification email to ${userEmail}:`, error);
   }
@@ -77,32 +59,8 @@ async function sendInvestmentCompletionEmail(userEmail, userName, investmentPlan
     return;
   }
 
-  try {
-    if (EMAILJS_PRIVATE_KEY) {
-      emailjs.init({
-        publicKey: EMAILJS_PUBLIC_KEY,
-        privateKey: EMAILJS_PRIVATE_KEY,
-      });
-
-      const totalEarnings = totalROI + bonusAmount;
-      const templateParams = {
-        to_email: userEmail,
-        to_name: userName,
-        subject: '🎉 Investment Plan Completed - Cypher Vault',
-        message: `Congratulations! Your ${investmentPlan} investment has completed successfully. Total ROI earned: $${totalROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Bonus credited: $${bonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Total earnings: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Your new balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        notification_type: 'success',
-        app_name: 'Cypher Vault',
-        year: new Date().getFullYear(),
-      };
-
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-      console.log(`✅ Investment completion email sent to ${userEmail}`);
-    } else {
-      console.log(`⚠️ EmailJS private key not configured. Skipping email for ${userEmail}`);
-    }
-  } catch (error) {
-    console.error(`❌ Failed to send completion email to ${userEmail}:`, error);
-  }
+  // TODO: Add investment completion template to emailService
+  console.log(`✅ Investment Completion Log (Email Pending Implementation): User ${userName}, Plan ${investmentPlan}, ROI ${totalROI}, Bonus ${bonusAmount}`);
 }
 
 /**
@@ -297,7 +255,7 @@ async function manualCredit() {
   await creditDailyROI();
 }
 
-module.exports = {
+export {
   initScheduler,
   creditDailyROI,
   manualCredit

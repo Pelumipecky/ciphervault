@@ -1,11 +1,14 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const fetch = require('node-fetch');
-const { createClient } = require('@supabase/supabase-js');
-const { initScheduler } = require('./scheduler');
-const emailService = require('./emailService');
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import express from 'express';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import fetch from 'node-fetch';
+import { createClient } from '@supabase/supabase-js';
+import { initScheduler } from './scheduler.js';
+import emailService from './emailService.js';
+
+dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -508,7 +511,7 @@ app.get('/api/scheduler/status', (req, res) => {
   });
 });
 
-if (require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
     
@@ -521,5 +524,7 @@ if (require.main === module) {
     }
   });
 }
+
+export default app;
 
 module.exports = app;
