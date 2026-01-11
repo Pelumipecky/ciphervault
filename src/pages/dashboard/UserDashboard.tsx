@@ -146,10 +146,16 @@ function UserDashboard() {
 
       // Helper to force balance refresh after deposit or admin update
       async function refreshUserBalance() {
-        // Since we're using AuthContext, we could trigger a refresh here
-        // For now, just trigger a re-fetch instead of reload
-        // window.location.reload(); // Commented out to prevent page refresh
-        // TODO: Implement proper balance refresh without reload
+        if (currentUser?.idnum) {
+          try {
+            const dbUser = await supabaseDb.getUserByIdnum(currentUser.idnum);
+            if (dbUser) {
+              updateUser({ balance: dbUser.balance, bonus: dbUser.bonus });
+            }
+          } catch (err) {
+            console.error('Failed to refresh balance:', err);
+          }
+        }
       }
 
   // Live Crypto prices state
@@ -1198,6 +1204,9 @@ function UserDashboard() {
                     if (updateUser) {
                         updateUser({ balance: newBalance }); 
                     }
+                    
+                    // Force a full refresh to be sure
+                    refreshUserBalance();
                 } else {
                     console.warn('Insufficient balance check failed during deduction');
                 }
