@@ -5,6 +5,8 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
+import Mailjet from 'node-mailjet';
+import nodemailer from 'nodemailer';
 import { initScheduler } from './scheduler.js';
 import emailService from './emailService.js';
 
@@ -139,7 +141,6 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
       try {
         if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
           // Use Mailjet if API keys are present
-          const Mailjet = require('node-mailjet');
           const mailjet = Mailjet.connect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
 
           const request = mailjet.post('send', { version: 'v3.1' }).request({
@@ -160,7 +161,6 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
           console.log('Contact email sent to support via Mailjet:', SUPPORT_EMAIL);
         } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
           // Fallback: use Nodemailer SMTP
-          const nodemailer = require('nodemailer');
           const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -208,7 +208,6 @@ app.post('/api/send-email', async (req, res) => {
     if (!to || !subject || !html) return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
 
     if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-      const Mailjet = require('node-mailjet');
       const mailjet = Mailjet.connect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
 
       const request = mailjet.post('send', { version: 'v3.1' }).request({
@@ -230,7 +229,6 @@ app.post('/api/send-email', async (req, res) => {
     }
 
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-      const nodemailer = require('nodemailer');
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587', 10),
