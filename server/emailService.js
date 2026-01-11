@@ -4,9 +4,9 @@ const templates = require('./emailTemplates');
 // Configuration
 const MAILJET_API_KEY = process.env.MAILJET_API_KEY;
 const MAILJET_API_SECRET = process.env.MAILJET_API_SECRET;
-const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM || process.env.MAILJET_FROM_EMAIL || 'support@ciphervault.com';
+const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM || process.env.MAILJET_FROM_EMAIL || 'support@ciphervault.online';
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Cypher Vault';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@ciphervault.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'cyphervault6@gmail.com';
 
 // Initialize Mailjet Client
 let mailjet = null;
