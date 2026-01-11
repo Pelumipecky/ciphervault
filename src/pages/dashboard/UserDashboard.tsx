@@ -1162,6 +1162,13 @@ function UserDashboard() {
         
         // Cast to any to satisfy TypeScript in environments where WithdrawalRecord may differ
         const savedWithdrawal = await supabaseDb.createWithdrawal(newWithdrawal as any)
+
+        // Deduct balance from database immediately to lock funds
+        if (currentUser?.idnum) {
+            const currentBalance = currentUser.balance || 0;
+            const newBalance = currentBalance - amount;
+            await supabaseDb.updateUser(currentUser.idnum, { balance: newBalance });
+        }
         
         // Send email notification
         await sendWithdrawalNotification(
