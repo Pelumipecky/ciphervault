@@ -300,14 +300,19 @@ export const supabaseAuth = {
     const userStr = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser')
     if (!userStr) return null
 
+    let userData
     try {
-      const userData = JSON.parse(userStr)
-      if (userData.idnum) {
-        return await supabaseDb.getUserByIdnum(userData.idnum)
-      }
+      userData = JSON.parse(userStr)
     } catch (error) {
       console.error('Error parsing user session:', error)
+      return null
     }
+
+    if (userData.idnum) {
+      // Allow database errors to propagate so we can distinguish "not found" vs "error"
+      return await supabaseDb.getUserByIdnum(userData.idnum)
+    }
+
     return null
   },
 }

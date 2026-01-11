@@ -71,9 +71,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
               setUser(mappedUser)
               localStorage.setItem('activeUser', JSON.stringify(mappedUser))
+            } else {
+              // User no longer exists in database (deleted)
+              console.warn('User session invalidated: User record not found')
+              localStorage.removeItem('activeUser')
+              sessionStorage.removeItem('activeUser')
+              setUser(null)
             }
           } catch (err) {
-            console.log('Could not refresh user data:', err)
+            console.log('Could not refresh user data (keeping cached session):', err)
           }
         }
       } catch (error) {
