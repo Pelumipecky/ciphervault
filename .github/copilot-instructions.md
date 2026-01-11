@@ -360,4 +360,16 @@ eact-i18next renders source text properly.
   - Updated `src/App.tsx` to mount the new Tawk.to widget globally (excluding admin routes).
   - Verified successful build.
 
+- [x] Revamp Downloads Page & Documentation
+  - Converted `Downloads.tsx` into a professional "Resource Center" using Tailwind CSS and Framer Motion.
+  - Implemented `PDFGuides.tsx` and `GuideReader.tsx` for viewing multi-lingual user guides.
+  - Added comprehensive content in `guideContent.ts`.
+  - Added `VideoGuides.tsx` placeholder.
+  - Configured Tailwind CSS (`tailwind.config.js`, `postcss.config.js`, `@tailwind` directives).
+
+- [x] Fix Navbar Logo Sizing Issue
+  - Identified logo regression caused by Tailwind's preflight (resetting img to display:block).
+  - Updated `Navbar.tsx` to explicitly set `className="h-9 w-auto"` and inline styles to force correct 36px height.
+  - Verified logo renders correctly without distortion.
+
 
