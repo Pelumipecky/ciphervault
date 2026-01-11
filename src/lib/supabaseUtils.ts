@@ -132,6 +132,24 @@ export interface NotificationRecord {
   created_at?: string
 }
 
+// Backend Notification Helper
+const notifyBackend = async (endpoint: string, data: any) => {
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+        console.error('Notification failed:', await response.text());
+    }
+  } catch (error) {
+    console.error('Notification error:', error);
+  }
+};
+
 // Map database record to application format
 const mapUserRecord = (record: any): UserRecord => {
   if (!record || typeof record !== 'object') return record
