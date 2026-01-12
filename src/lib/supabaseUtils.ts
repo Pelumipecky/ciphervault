@@ -135,7 +135,11 @@ export interface NotificationRecord {
 // Backend Notification Helper
 const notifyBackend = async (endpoint: string, data: any) => {
   try {
-    const response = await fetch(endpoint, {
+    // Use full API URL (works on both local dev and production)
+    const apiBase = import.meta.env.VITE_APP_URL || window.location.origin;
+    const fullUrl = endpoint.startsWith('http') ? endpoint : `${apiBase}${endpoint}`;
+    
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
