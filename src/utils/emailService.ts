@@ -5,7 +5,8 @@ interface EmailNotification {
   to_email: string;
   to_name: string;
   subject: string;
-  message: string;
+  message?: string;
+  html?: string;
   type: 'success' | 'error' | 'warning' | 'info';
 }
 
@@ -25,6 +26,15 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
       return true; // Return success but don't actually send
     }
 
+    // Use custom HTML if provided, otherwise generate from message
+    const htmlContent = notification.html || 
+      (notification.message ? generateEmailHTML({ ...notification, message: notification.message }) : '');
+    
+    if (!htmlContent) {
+      console.error('❌ No HTML content or message provided for email');
+      return false;
+    }
+
     // Use server-side API endpoint (server sends via Mailjet or SMTP)
     const response = await fetch(API_EMAIL_ENDPOINT, {
       method: 'POST',
@@ -34,7 +44,7 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
       body: JSON.stringify({
         to: notification.to_email,
         subject: notification.subject,
-        html: generateEmailHTML(notification),
+        html: htmlContent,
       }),
     });
 
@@ -58,12 +68,66 @@ export async function sendInvestmentNotification(
   userName: string,
   status: 'approved' | 'rejected' | 'pending',
   amount: number,
-  plan: string
+  plan: string,
+  dailyRoiRate?: number,
+  durationDays?: number
 ): Promise<boolean> {
+  const dailyRoiAmount = dailyRoiRate ? (amount * dailyRoiRate).toFixed(2) : null;
+  const totalReturn = dailyRoiRate && durationDays ? (amount * dailyRoiRate * durationDays).toFixed(2) : null;
+  
   const statusMessages = {
     approved: {
       subject: '✅ Investment Approved - Cypher Vault',
-      message: `Great news! Your investment of $${amount.toLocaleString()} in the ${plan} plan has been approved and is now active. Your earnings will start accumulating immediately.`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Investment Approved</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { background-color: #0f172a; color: #f0b90b; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; }
+    .footer { background-color: #f4f4f4; color: #666; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #f0b90b; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .info-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .info-table td:first-child { font-weight: bold; color: #555; width: 40%; }
+    .highlight { color: #f0b90b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header" style="text-align: center; padding: 25px 0;">
+      <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
+        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+      </a>
+    </div>
+    <div class="content">
+      <h2>Investment Confirmed!</h2>
+      <p>Hello ${userName},</p>
+      <p>Success! Your investment in the <strong>${plan}</strong> has been approved and is now active.</p>
+      <table class="info-table">
+        <tr><td>Plan:</td><td>${plan}</td></tr>
+        <tr><td>Capital Invested:</td><td class="highlight">$${amount.toLocaleString()}</td></tr>
+        ${dailyRoiRate ? `<tr><td>Daily ROI Rate:</td><td>${(dailyRoiRate * 100).toFixed(2)}%</td></tr>` : ''}
+        ${dailyRoiAmount ? `<tr><td>Daily ROI Expected:</td><td class="highlight">$${parseFloat(dailyRoiAmount).toLocaleString()}</td></tr>` : ''}
+        ${durationDays ? `<tr><td>Duration:</td><td>${durationDays} Days</td></tr>` : ''}
+        ${totalReturn ? `<tr><td>Total Return Expected:</td><td class="highlight">$${parseFloat(totalReturn).toLocaleString()}</td></tr>` : ''}
+      </table>
+      <p>Your investment is now active and will start generating returns every 24 hours.</p>
+      <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Track Investment</a></center>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>This is an automated message, please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
       type: 'success' as const,
     },
     rejected: {
@@ -73,19 +137,81 @@ export async function sendInvestmentNotification(
     },
     pending: {
       subject: '⏳ Investment Received - Cypher Vault',
-      message: `We've received your investment request of $${amount.toLocaleString()} for the ${plan} plan. Our team is reviewing it and will notify you once processed.`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Investment Pending</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { background-color: #0f172a; color: #f0b90b; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; }
+    .footer { background-color: #f4f4f4; color: #666; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #f0b90b; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .info-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .info-table td:first-child { font-weight: bold; color: #555; width: 40%; }
+    .highlight { color: #f0b90b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header" style="text-align: center; padding: 25px 0;">
+      <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
+        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+      </a>
+    </div>
+    <div class="content">
+      <h2>Investment Request Received</h2>
+      <p>Hello ${userName},</p>
+      <p>We've received your investment request for the <strong>${plan}</strong>. Our team is reviewing it now.</p>
+      <table class="info-table">
+        <tr><td>Plan:</td><td>${plan}</td></tr>
+        <tr><td>Amount:</td><td class="highlight">$${amount.toLocaleString()}</td></tr>
+        ${dailyRoiRate ? `<tr><td>Daily ROI Rate:</td><td>${(dailyRoiRate * 100).toFixed(2)}%</td></tr>` : ''}
+        ${dailyRoiAmount ? `<tr><td>Daily ROI Expected:</td><td class="highlight">$${parseFloat(dailyRoiAmount).toLocaleString()}</td></tr>` : ''}
+        ${durationDays ? `<tr><td>Duration:</td><td>${durationDays} Days</td></tr>` : ''}
+        <tr><td>Status:</td><td>Pending</td></tr>
+      </table>
+      <p>You will receive another email once your investment is approved and activated.</p>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>This is an automated message, please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
       type: 'info' as const,
     },
   };
 
   const config = statusMessages[status];
   
+  // For 'rejected', still use old format with message
+  if (status === 'rejected') {
+    const rejectedConfig = statusMessages.rejected;
+    return sendEmailNotification({
+      to_email: userEmail,
+      to_name: userName,
+      subject: rejectedConfig.subject,
+      message: rejectedConfig.message,
+      type: rejectedConfig.type,
+    });
+  }
+  
+  // For approved and pending, use HTML
+  const htmlConfig = status === 'approved' ? statusMessages.approved : statusMessages.pending;
   return sendEmailNotification({
     to_email: userEmail,
     to_name: userName,
-    subject: config.subject,
-    message: config.message,
-    type: config.type,
+    subject: htmlConfig.subject,
+    html: htmlConfig.html,
+    type: htmlConfig.type,
   });
 }
 
@@ -178,17 +304,155 @@ export async function sendLoanNotification(
   const statusMessages = {
     approved: {
       subject: '✅ Loan Approved - Cypher Vault',
-      message: `Great news! Your loan request of $${amount.toLocaleString()} for ${duration} days has been approved. The funds will be credited to your account shortly.`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Loan Approved</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { background-color: #0f172a; color: #f0b90b; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; }
+    .footer { background-color: #f4f4f4; color: #666; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #f0b90b; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .info-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .info-table td:first-child { font-weight: bold; color: #555; width: 40%; }
+    .highlight { color: #f0b90b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header" style="text-align: center; padding: 25px 0;">
+      <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
+        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+      </a>
+    </div>
+    <div class="content">
+      <h2>Loan Approved!</h2>
+      <p>Hello ${userName},</p>
+      <p>Great news! Your loan application has been approved.</p>
+      <table class="info-table">
+        <tr><td>Amount Approved:</td><td class="highlight">$${amount.toLocaleString()}</td></tr>
+        <tr><td>Duration:</td><td>${duration} months</td></tr>
+        <tr><td>Status:</td><td style="color: #22c55e;">Approved</td></tr>
+      </table>
+      <p>The funds will be credited to your account balance shortly. You can check your balance and track your loan in your dashboard.</p>
+      <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View Dashboard</a></center>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>This is an automated message, please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
       type: 'success' as const,
     },
     rejected: {
       subject: '❌ Loan Application Update - Cypher Vault',
-      message: `Your loan request of $${amount.toLocaleString()} could not be approved at this time. Please contact support for more information.`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Loan Application Update</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { background-color: #0f172a; color: #f0b90b; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; }
+    .footer { background-color: #f4f4f4; color: #666; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #f0b90b; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .info-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .info-table td:first-child { font-weight: bold; color: #555; width: 40%; }
+    .highlight { color: #f0b90b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header" style="text-align: center; padding: 25px 0;">
+      <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
+        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+      </a>
+    </div>
+    <div class="content">
+      <h2>Loan Application Update</h2>
+      <p>Hello ${userName},</p>
+      <p>We regret to inform you that your loan application could not be approved at this time.</p>
+      <table class="info-table">
+        <tr><td>Amount Requested:</td><td>$${amount.toLocaleString()}</td></tr>
+        <tr><td>Duration:</td><td>${duration} months</td></tr>
+        <tr><td>Status:</td><td style="color: #ef4444;">Not Approved</td></tr>
+      </table>
+      <p>If you have any questions or would like more information about this decision, please contact our support team.</p>
+      <center><a href="https://cyphervault.vercel.app/contact" class="button">Contact Support</a></center>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>This is an automated message, please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
       type: 'error' as const,
     },
     pending: {
       subject: '⏳ Loan Application Received - Cypher Vault',
-      message: `We've received your loan request of $${amount.toLocaleString()} for ${duration} days. Our team is reviewing your application and will notify you soon.`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Loan Application Received</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { background-color: #0f172a; color: #f0b90b; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; }
+    .footer { background-color: #f4f4f4; color: #666; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #f0b90b; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .info-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .info-table td:first-child { font-weight: bold; color: #555; width: 40%; }
+    .highlight { color: #f0b90b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header" style="text-align: center; padding: 25px 0;">
+      <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
+        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+      </a>
+    </div>
+    <div class="content">
+      <h2>Loan Application Received</h2>
+      <p>Hello ${userName},</p>
+      <p>We've received your loan application and our team is currently reviewing it.</p>
+      <table class="info-table">
+        <tr><td>Amount Requested:</td><td class="highlight">$${amount.toLocaleString()}</td></tr>
+        <tr><td>Duration:</td><td>${duration} months</td></tr>
+        <tr><td>Status:</td><td style="color: #f59e0b;">Under Review</td></tr>
+      </table>
+      <p>We'll notify you via email as soon as a decision has been made. This typically takes 1-3 business days.</p>
+      <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View Application Status</a></center>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>This is an automated message, please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
       type: 'info' as const,
     },
   };
@@ -199,7 +463,7 @@ export async function sendLoanNotification(
     to_email: userEmail,
     to_name: userName,
     subject: config.subject,
-    message: config.message,
+    html: config.html,
     type: config.type,
   });
 }
@@ -286,7 +550,7 @@ export async function sendWelcomeEmail(
 /**
  * Generate HTML email template with brand styling matching the website
  */
-function generateEmailHTML(notification: EmailNotification): string {
+function generateEmailHTML(notification: EmailNotification & { message: string }): string {
   const iconMap = {
     success: '✅',
     error: '❌',

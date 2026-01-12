@@ -23,6 +23,21 @@ After adding these records to your domain provider (GoDaddy, Namecheap, Vercel, 
 2. Click "Check DNS" or "Validate".
 3. It may take up to 24 hours to propagate, but usually happens within minutes.
 
+## 4. (Optional but Recommended) DMARC Record
+Add a DMARC TXT record to improve deliverability and reporting. This will **not** break mail—using `p=none` only monitors.
+
+- **Type:** `TXT`
+- **Host/Name:** `_dmarc`
+- **Value:**
+```
+v=DMARC1; p=none; rua=mailto:dmarc@ciphervault.online; ruf=mailto:dmarc@ciphervault.online; pct=100; adkim=s; aspf=s
+```
+
+Notes:
+- `p=none` is monitoring-only; change to `quarantine`/`reject` later if desired.
+- `adkim=s` / `aspf=s` align DKIM/SPF strictly with your domain.
+- `rua`/`ruf` send aggregate/forensic reports to your mailbox; you can remove `ruf` if you prefer fewer reports.
+
 ---
 
 # Vercel Deployment Fixes Applied

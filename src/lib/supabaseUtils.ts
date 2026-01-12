@@ -136,7 +136,7 @@ export interface NotificationRecord {
 const notifyBackend = async (endpoint: string, data: any) => {
   try {
     // Use full API URL (works on both local dev and production)
-    const apiBase = import.meta.env.VITE_APP_URL || window.location.origin;
+    const apiBase = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, ''); // Remove trailing slash
     const fullUrl = endpoint.startsWith('http') ? endpoint : `${apiBase}${endpoint}`;
     
     const response = await fetch(fullUrl, {

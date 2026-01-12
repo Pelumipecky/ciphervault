@@ -245,9 +245,15 @@ app.post('/api/notify/investment-created', async (req, res) => {
 app.post('/api/send-email', async (req, res) => {
   try {
     const { to, subject, html } = req.body || {};
-    if (!to || !subject || !html) return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
+    console.log('📧 /api/send-email - Received request:', { to, subject: subject?.substring(0, 50) });
+    
+    if (!to || !subject || !html) {
+      console.error('❌ Missing required fields:', { to: !!to, subject: !!subject, html: !!html });
+      return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
+    }
 
     if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+      console.log('📤 Sending via Mailjet to:', to);
       const mailjet = Mailjet.connect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
 
       const request = mailjet.post('send', { version: 'v3.1' }).request({
@@ -264,8 +270,13 @@ app.post('/api/send-email', async (req, res) => {
         ]
       });
 
-      await request;
-      return res.json({ sent: true });
+      const result = await request;
+      console.log('✅ Mailjet send successful:', { 
+        to, 
+        status: result.response?.status,
+        messageId: result.body?.Messages?.[0]?.To?.[0]?.MessageID 
+      });
+      return res.json({ sent: true, messageId: result.body?.Messages?.[0]?.To?.[0]?.MessageID });
     }
 
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -292,8 +303,17 @@ app.post('/api/send-email', async (req, res) => {
 
     return res.status(400).json({ error: 'No mail provider configured (MAILJET or SMTP)' });
   } catch (err) {
-    console.error('Send email error:', err);
-    return res.status(500).json({ error: 'Failed to send email' });
+    console.error('❌ Send email error:', {
+      message: err.message,
+      statusCode: err.statusCode,
+      errorMessage: err.response?.body?.ErrorMessage,
+      errorInfo: err.response?.body?.ErrorInfo,
+      fullError: JSON.stringify(err.response?.body || err, null, 2)
+    });
+    return res.status(500).json({ 
+      error: 'Failed to send email',
+      details: err.response?.body?.ErrorMessage || err.message 
+    });
   }
 });
 

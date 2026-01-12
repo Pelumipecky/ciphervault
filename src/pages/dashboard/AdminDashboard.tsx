@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { supabaseDb, supabaseRealtime, supabase } from '@/lib/supabaseUtils'
+import { getPlanByName } from '@/utils/planConfig'
 import { 
   sendInvestmentNotification, 
   sendWithdrawalNotification, 
@@ -472,12 +473,15 @@ function AdminDashboard() {
 
       // Send email notification
       console.log('Sending email notification...')
+      const planConfig = getPlanByName(investment.plan || '')
       await sendInvestmentNotification(
         investment.userEmail,
         investment.userName,
         'approved',
         investment.capital || 0,
-        investment.plan || 'Investment Plan'
+        investment.plan || 'Investment Plan',
+        planConfig?.dailyRate,
+        planConfig?.durationDays
       )
       console.log('Email sent successfully')
 
@@ -504,12 +508,15 @@ function AdminDashboard() {
       // Send email notification
       const investment = allInvestments.find(inv => inv.id === investmentId)
       if (investment) {
+        const planConfig = getPlanByName(investment.plan || '')
         await sendInvestmentNotification(
           investment.userEmail,
           investment.userName,
           'rejected',
           investment.capital || 0,
-          investment.plan || 'Investment Plan'
+          investment.plan || 'Investment Plan',
+          planConfig?.dailyRate,
+          planConfig?.durationDays
         )
       }
 

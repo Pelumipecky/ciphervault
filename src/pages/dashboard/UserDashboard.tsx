@@ -1496,7 +1496,9 @@ function UserDashboard() {
             currentUser.userName || currentUser.name || '',
             'pending',
             capital,
-            selectedPlan.name
+            selectedPlan.name,
+            selectedPlan.dailyRate,
+            selectedPlan.durationDays
           )
         }
       } catch (dbError) {
