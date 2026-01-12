@@ -60,7 +60,9 @@ const sendEmail = async (to, subject, html) => {
     console.log(`📧 Email sent to ${to}: ${JSON.stringify(result.body.Messages.map(m => m.Status))}`);
     return true;
   } catch (error) {
-    console.error(`❌ Error sending email to ${to}:`, error.statusCode, error.message);
+    const status = error?.statusCode || error?.response?.status;
+    const detail = error?.response?.body || error?.message || error;
+    console.error(`❌ Error sending email to ${to}:`, status, detail);
     return false;
   }
 };
