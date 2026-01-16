@@ -7,7 +7,6 @@ import { PLAN_CONFIG, formatPercent } from '@/utils/planConfig'
 import { UserRole } from '@/utils/roles'
 import { fetchCryptoPrices, fetchDetailedCryptoPrices, formatPrice, formatMarketCap, CryptoPrice, CryptoPrices } from '@/utils/cryptoPrices'
 import {
-  sendInvestmentNotification,
   sendWithdrawalNotification,
   sendKYCNotification,
   sendLoanNotification
