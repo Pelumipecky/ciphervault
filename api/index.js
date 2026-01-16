@@ -87,6 +87,95 @@ app.post('/api/notify/withdrawal-status', async (req, res) => {
   res.json({ success: sent });
 });
 
+// Admin: Approve investment (backend-driven, idempotent email)
+app.post('/api/admin/investments/approve', async (req, res) => {
+  try {
+    const { investmentId } = req.body || {};
+    if (!investmentId) return res.status(400).json({ error: 'investmentId is required' });
+
+    // Fetch investment
+    const { data: investment, error: invError } = await supabase
+      .from('investments')
+      .select('*')
+      .eq('id', investmentId)
+      .single();
+
+    if (invError) {
+      console.error('❌ fetch investment error:', invError);
+      return res.status(500).json({ error: 'Failed to fetch investment' });
+    }
+
+    if (!investment) return res.status(404).json({ error: 'Investment not found' });
+
+    const statusLower = (investment.status || '').toLowerCase();
+    const authLower = (investment.authstatus || investment.authStatus || '').toLowerCase();
+    if (statusLower === 'active' || authLower === 'approved') {
+      return res.json({ success: true, alreadyApproved: true, investment });
+    }
+
+    const startDate = new Date().toISOString();
+
+    // Update to Active + approved with correct column names
+    const { data: updated, error: updateError } = await supabase
+      .from('investments')
+      .update({ status: 'Active', authstatus: 'approved', start_date: startDate })
+      .eq('id', investmentId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('❌ update investment error:', updateError);
+      return res.status(500).json({ error: 'Failed to approve investment' });
+    }
+
+    // Fetch user for notification + email
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('idnum, email, userName, name')
+      .eq('idnum', updated.idnum)
+      .single();
+
+    if (userError) {
+      console.error('❌ fetch user for investment approval error:', userError);
+      return res.status(500).json({ error: 'Failed to fetch user for approval' });
+    }
+
+    // Persist in-app notification (best-effort)
+    try {
+      await supabase.from('notifications').insert({
+        idnum: user.idnum,
+        title: 'Investment Approved',
+        message: `Your investment ${investmentId} in ${updated.plan} is approved.`,
+        type: 'success',
+        read: false,
+        created_at: new Date().toISOString()
+      });
+    } catch (notifyErr) {
+      console.error('⚠️ notification insert failed:', notifyErr);
+    }
+
+    // Send approval email (idempotent guard handled by status check above)
+    const emailDetails = {
+      id: investmentId,
+      amount: updated.capital,
+      plan: updated.plan || 'Investment Plan',
+      startDate: updated.start_date || startDate,
+      status: updated.status || 'Active'
+    };
+
+    const emailSent = await emailService.sendInvestmentApproved(
+      user.email,
+      user.userName || user.name || user.email,
+      emailDetails
+    );
+
+    return res.json({ success: true, emailSent, investment: updated });
+  } catch (err) {
+    console.error('❌ Approve investment handler error:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // rate limiter for contact endpoint
 const contactLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 12, standardHeaders: true, legacyHeaders: false });
 

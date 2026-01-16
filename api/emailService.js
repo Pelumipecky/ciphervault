@@ -117,6 +117,11 @@ const emailService = {
   async sendInvestmentCreated(userEmail, userName, plan, capital, roi, duration) {
     const html = templates.investmentCreated(userName, plan, capital, roi, duration);
     return await sendEmail(userEmail, 'Investment Activated Successfully', html);
+  },
+
+  async sendInvestmentApproved(userEmail, userName, details) {
+    const html = templates.investmentApproved(userName, details);
+    return await sendEmail(userEmail, 'Investment Approved', html);
   }
 };
 
