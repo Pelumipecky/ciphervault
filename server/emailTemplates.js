@@ -142,5 +142,20 @@ module.exports = {
     <p>Your withdrawal request for <strong>$${amount}</strong> has been <strong>${status.toUpperCase()}</strong>.</p>
     ${status === 'rejected' && reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
     ${status === 'approved' ? '<p>The funds should appear in your wallet shortly.</p>' : ''}
+  `),
+
+  investmentApproved: (name, details) => wrapTemplate('Investment Approved', `
+    <h2>Investment Approved</h2>
+    <p>Hello ${name},</p>
+    <p>Great news! Your investment has been reviewed and activated.</p>
+    <table class="info-table">
+      <tr><td>Investment ID:</td><td>${details.id}</td></tr>
+      <tr><td>Plan:</td><td>${details.plan}</td></tr>
+      <tr><td>Amount:</td><td class="highlight">$${Number(details.amount || 0).toLocaleString()}</td></tr>
+      <tr><td>Start Date:</td><td>${details.startDate}</td></tr>
+      <tr><td>Status:</td><td style="color: #22c55e;">${details.status || 'Active'}</td></tr>
+    </table>
+    <p>You will now begin earning daily returns based on your selected plan. You can track progress anytime from your dashboard.</p>
+    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View My Investment</a></center>
   `)
 };

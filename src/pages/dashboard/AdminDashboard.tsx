@@ -3,9 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { supabaseDb, supabaseRealtime, supabase } from '@/lib/supabaseUtils'
-import { getPlanByName } from '@/utils/planConfig'
 import { 
-  sendInvestmentNotification, 
   sendWithdrawalNotification, 
   sendKYCNotification, 
   sendLoanNotification,
@@ -432,25 +430,14 @@ function AdminDashboard() {
         return
       }
 
-      console.log('Found investment:', investment)
-
-      // Update status in database and set startDate to approval time
-      console.log('Updating investment in database...')
-      await supabaseDb.updateInvestment(investmentId, { 
-        status: 'Active',
-        authStatus: 'approved'
-      })
-      console.log('Investment updated successfully')
+      // Backend-driven approval (handles email + notification server-side)
+      const approved = await supabaseDb.approveInvestment(investmentId)
 
       // Add invested capital to user's balance
       const currentUser = allUsers.find(u => u.idnum === investment.idnum)
       if (currentUser) {
-        console.log('Found user:', currentUser.idnum, 'current balance:', currentUser.balance)
         const newBalance = (currentUser.balance || 0) + (investment.capital || 0)
-        console.log('New balance will be:', newBalance)
-        
         await supabaseDb.updateUser(currentUser.idnum, { balance: newBalance })
-        console.log('User balance updated successfully')
 
         // Update local state for users
         setAllUsers(prev => 
@@ -463,28 +450,15 @@ function AdminDashboard() {
         console.warn('User not found for investment:', investment.idnum)
       }
 
-      // Update local state for investments
+      // Update local state for investments with server values
       setAllInvestments(prev => 
         prev.map(inv => inv.id === investmentId ? { 
           ...inv, 
-          status: 'Active', 
-          authStatus: 'approved'
+          status: approved.status || 'Active', 
+          authStatus: approved.authStatus || 'approved',
+          startDate: approved.startDate || inv.startDate
         } : inv)
       )
-
-      // Send email notification
-      console.log('Sending email notification...')
-      const planConfig = getPlanByName(investment.plan || '')
-      await sendInvestmentNotification(
-        investment.userEmail,
-        investment.userName,
-        'approved',
-        investment.capital || 0,
-        investment.plan || 'Investment Plan',
-        planConfig?.dailyRate,
-        planConfig?.durationDays
-      )
-      console.log('Email sent successfully')
 
       showAlert('success', t('alerts.investmentApprovedTitle'), t('alerts.investmentApprovedMessage'))
     } catch (error) {
@@ -505,21 +479,6 @@ function AdminDashboard() {
       setAllInvestments(prev => 
         prev.map(inv => inv.id === investmentId ? { ...inv, status: 'Rejected', authStatus: 'rejected' } : inv)
       )
-
-      // Send email notification
-      const investment = allInvestments.find(inv => inv.id === investmentId)
-      if (investment) {
-        const planConfig = getPlanByName(investment.plan || '')
-        await sendInvestmentNotification(
-          investment.userEmail,
-          investment.userName,
-          'rejected',
-          investment.capital || 0,
-          investment.plan || 'Investment Plan',
-          planConfig?.dailyRate,
-          planConfig?.durationDays
-        )
-      }
 
       showAlert('error', t('alerts.investmentRejectedTitle'), t('alerts.investmentRejectedMessage'))
     } catch (error) {

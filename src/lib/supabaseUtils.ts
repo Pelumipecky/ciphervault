@@ -488,16 +488,6 @@ export const supabaseDb = {
     }
     
     console.log('✅ [createInvestment] Investment created successfully:', data);
-
-    // Send email notification via backend
-    notifyBackend('/api/notify/investment-created', {
-      idnum: data.idnum,
-      plan: data.plan,
-      capital: data.capital,
-      roi: data.roi,
-      duration: data.duration
-    });
-
     return mapInvestmentRecord(data)
   },
 
@@ -511,6 +501,27 @@ export const supabaseDb = {
     
     if (error) throw error
     return mapInvestmentRecord(data)
+  },
+
+  async approveInvestment(investmentId: string): Promise<InvestmentRecord> {
+    const apiBase = (import.meta.env.VITE_SERVER_URL || import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+    const response = await fetch(`${apiBase}/api/admin/investments/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ investmentId })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Failed to approve investment');
+    }
+
+    const payload = await response.json();
+    if (!payload || !payload.investment) {
+      throw new Error('Invalid approval response from server');
+    }
+
+    return mapInvestmentRecord(payload.investment);
   },
 
   async deleteInvestment(id: string): Promise<void> {

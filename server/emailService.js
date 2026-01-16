@@ -110,6 +110,11 @@ const emailService = {
   async sendWithdrawalStatus(userEmail, userName, amount, status, reason) {
     const html = templates.withdrawalStatus(userName, amount, status, reason);
     return await sendEmail(userEmail, `Withdrawal ${status === 'approved' ? 'Processed' : 'Update'}`, html);
+  },
+
+  async sendInvestmentApproved(userEmail, userName, details) {
+    const html = templates.investmentApproved(userName, details);
+    return await sendEmail(userEmail, 'Investment Approved', html);
   }
 };
 
