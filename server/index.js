@@ -110,10 +110,10 @@ app.post('/api/admin/investments/approve', async (req, res) => {
 
     const startDate = new Date().toISOString();
 
-    // Update investment atomically to Active/approved with startDate
+    // Update investment atomically to Active/approved with start_date/authstatus columns
     const { data: updated, error: updateError } = await supabase
       .from('investments')
-      .update({ status: 'Active', authStatus: 'approved', startDate })
+      .update({ status: 'Active', authstatus: 'approved', start_date: startDate })
       .eq('id', investmentId)
       .select()
       .single();
@@ -154,8 +154,8 @@ app.post('/api/admin/investments/approve', async (req, res) => {
       id: investmentId,
       amount: updated.capital,
       plan: updated.plan || 'Investment Plan',
-      startDate,
-      status: 'Active'
+      startDate: updated.start_date || startDate,
+      status: updated.status || 'Active'
     };
 
     const emailSent = await emailService.sendInvestmentApproved(
