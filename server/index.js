@@ -113,7 +113,7 @@ app.post('/api/admin/investments/approve', async (req, res) => {
     // Update investment atomically to Active/approved with start_date/authstatus columns
     const { data: updated, error: updateError } = await supabase
       .from('investments')
-      .update({ status: 'Active', authstatus: 'approved', start_date: startDate })
+      .update({ status: 'Active', authStatus: 'approved', startDate: startDate })
       .eq('id', investmentId)
       .select()
       .single();

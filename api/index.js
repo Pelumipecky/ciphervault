@@ -115,10 +115,11 @@ app.post('/api/admin/investments/approve', async (req, res) => {
 
     const startDate = new Date().toISOString();
 
-    // Update to Active + approved with correct column names
+    // Update to Active + approved with correct column names (CamelCase for schema compatibility)
     const { data: updated, error: updateError } = await supabase
       .from('investments')
-      .update({ status: 'Active', authstatus: 'approved', start_date: startDate })
+      // Use exact column names from schema: "authStatus" and "startDate"
+      .update({ status: 'Active', authStatus: 'approved', startDate: startDate })
       .eq('id', investmentId)
       .select()
       .single();
