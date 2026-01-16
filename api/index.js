@@ -177,6 +177,82 @@ app.post('/api/admin/investments/approve', async (req, res) => {
   }
 });
 
+// Admin: Approve withdrawal (backend-driven, idempotent email)
+app.post('/api/admin/withdrawals/approve', async (req, res) => {
+  try {
+    const { withdrawalId } = req.body || {};
+    if (!withdrawalId) return res.status(400).json({ error: 'withdrawalId is required' });
+
+    // Fetch withdrawal
+    const { data: withdrawal, error: fetchError } = await supabase
+      .from('withdrawals')
+      .select('*')
+      .eq('id', withdrawalId)
+      .single();
+
+    if (fetchError || !withdrawal) {
+      console.error('❌ fetch withdrawal error:', fetchError);
+      return res.status(404).json({ error: 'Withdrawal not found' });
+    }
+
+    if (withdrawal.status === 'Approved') {
+      return res.json({ success: true, alreadyApproved: true, withdrawal });
+    }
+
+    // Update Withdrawal
+    const { data: updated, error: updateError } = await supabase
+      .from('withdrawals')
+      .update({ status: 'Approved', authStatus: 'approved' })
+      .eq('id', withdrawalId)
+      .select()
+      .single();
+    
+    if (updateError) {
+       console.error('❌ update withdrawal error:', updateError);
+       return res.status(500).json({ error: 'Failed to approve withdrawal' });
+    }
+    
+    // Fetch user for notification
+    const { data: user } = await supabase
+      .from('users')
+      .select('email, userName, name, idnum')
+      .eq('idnum', withdrawal.idnum)
+      .single();
+
+    if (user) {
+        // Persist Notification
+        try {
+          await supabase.from('notifications').insert({
+              idnum: user.idnum,
+              title: 'Withdrawal Approved',
+              message: `Your withdrawal of $${Number(withdrawal.amount).toLocaleString()} via ${withdrawal.method} has been approved.`,
+              type: 'success',
+              read: false, 
+              created_at: new Date().toISOString()
+          });
+        } catch (nErr) {
+          console.warn('⚠️ Notification insert failed', nErr);
+        }
+
+        // Send Email
+        const destination = withdrawal.wallet || withdrawal.walletAddress || withdrawal.bankName || withdrawal.accountNumber || 'N/A';
+        await emailService.sendWithdrawalApproved(
+             user.email,
+             user.userName || user.name || 'User',
+             withdrawal.amount,
+             withdrawal.method,
+             destination
+        );
+        console.log(`✅ Withdrawal ${withdrawalId} approved, email sent to ${user.email}`);
+    }
+
+    return res.json({ success: true, withdrawal: updated });
+  } catch (err) {
+    console.error('❌ Withdrawal approval error:', err);
+    return res.status(500).json({ error: 'Server error approving withdrawal' });
+  }
+});
+
 // rate limiter for contact endpoint
 const contactLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 12, standardHeaders: true, legacyHeaders: false });
 

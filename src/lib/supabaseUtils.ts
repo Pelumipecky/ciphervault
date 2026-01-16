@@ -211,6 +211,30 @@ const mapInvestmentRecord = (record: any): InvestmentRecord => {
   }
 }
 
+const mapWithdrawalRecord = (record: any): WithdrawalRecord => {
+  if (!record || typeof record !== 'object') return record
+  const { 
+    wallet_address, 
+    bank_name, 
+    account_number, 
+    account_name, 
+    routing_number,
+    authstatus,
+    authStatus, 
+    ...rest 
+  } = record
+
+  return {
+    ...rest,
+    walletAddress: record.walletAddress ?? record.wallet_address ?? null,
+    bankName: record.bankName ?? record.bank_name ?? null,
+    accountNumber: record.accountNumber ?? record.account_number ?? null,
+    accountName: record.accountName ?? record.account_name ?? null,
+    routingNumber: record.routingNumber ?? record.routing_number ?? null,
+    authStatus: authStatus ?? authstatus ?? 'pending'
+  }
+}
+
 const normalizeInvestmentPayload = (investmentData: Partial<InvestmentRecord> = {}) => ({
   idnum: investmentData.idnum,
   plan: investmentData.plan,
@@ -522,6 +546,27 @@ export const supabaseDb = {
     }
 
     return mapInvestmentRecord(payload.investment);
+  },
+
+  async approveWithdrawal(withdrawalId: string): Promise<WithdrawalRecord> {
+    const apiBase = (import.meta.env.VITE_SERVER_URL || import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+    const response = await fetch(`${apiBase}/api/admin/withdrawals/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ withdrawalId })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Failed to approve withdrawal');
+    }
+
+    const payload = await response.json();
+    if (!payload || !payload.withdrawal) {
+      throw new Error('Invalid approval response from server');
+    }
+
+    return mapWithdrawalRecord(payload.withdrawal);
   },
 
   async deleteInvestment(id: string): Promise<void> {

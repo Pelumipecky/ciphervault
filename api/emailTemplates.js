@@ -171,5 +171,18 @@ export default {
     </table>
     <p>You will now begin earning daily returns based on your selected plan. Track your performance anytime from your dashboard.</p>
     <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View My Investment</a></center>
+  `),
+
+  withdrawalApproved: (name, amount, method, wallet) => wrapTemplate('Withdrawal Approved', `
+    <h2>Withdrawal Approved</h2>
+    <p>Hello ${name},</p>
+    <p>Your withdrawal request for <span class="highlight">$${amount}</span> has been approved and processed.</p>
+    <table class="info-table">
+      <tr><td>Amount:</td><td class="highlight">$${amount}</td></tr>
+      <tr><td>Method:</td><td>${method}</td></tr>
+      <tr><td>Destination:</td><td><small>${wallet || 'N/A'}</small></td></tr>
+      <tr><td>Status:</td><td style="color: #22c55e;">Approved</td></tr>
+    </table>
+    <p>The funds should reflect in your account shortly depending on the network speed.</p>
   `)
 };

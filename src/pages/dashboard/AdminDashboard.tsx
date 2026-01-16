@@ -523,36 +523,17 @@ function AdminDashboard() {
 
   const handleApproveWithdrawal = async (withdrawalId: number) => {
     try {
-      // Update status in database
-      await supabaseDb.updateWithdrawal(withdrawalId.toString(), { 
-        status: 'Approved'
-      })
+      // Backend-driven approval (handles email + notification server-side)
+      const approved = await supabaseDb.approveWithdrawal(withdrawalId.toString())
 
-      // Update local state
+      // Update local state for withdrawals
       setAllWithdrawals(prev => 
-        prev.map(w => w.id === withdrawalId ? { ...w, status: 'Approved' } : w)
+        prev.map(w => w.id === withdrawalId ? { 
+          ...w, 
+          status: approved.status || 'Approved',
+          authStatus: approved.authStatus || 'approved'
+        } : w)
       )
-
-      // Send email notification
-      const withdrawal = allWithdrawals.find(w => w.id === withdrawalId)
-      if (withdrawal) {
-        await sendWithdrawalNotification(
-          withdrawal.userEmail,
-          withdrawal.userName,
-          'approved',
-          withdrawal.amount || 0,
-          withdrawal.method || 'Bank Transfer'
-        )
-        
-        // Create in-app notification
-        await supabaseDb.createNotification({
-            idnum: withdrawal.idnum,
-            title: 'Withdrawal Approved',
-            message: `Your withdrawal of $${(withdrawal.amount || 0).toLocaleString()} via ${withdrawal.method} has been approved.`,
-            type: 'success',
-            read: false
-        })
-      }
 
       showAlert('success', t('alerts.withdrawalApprovedTitle'), t('alerts.withdrawalApprovedMessage'))
     } catch (error) {
@@ -1873,6 +1854,7 @@ function AdminDashboard() {
                       <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>User</th>
                       <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Amount</th>
                       <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Method</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Details</th>
                       <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Date</th>
                       <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Status</th>
                       <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600, color: '#f0b90b', textTransform: 'uppercase', fontSize: '0.75rem' }}>Actions</th>
@@ -1881,7 +1863,7 @@ function AdminDashboard() {
                   <tbody>
                     {allWithdrawals.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                           <i className="icofont-money" style={{ fontSize: '3rem', marginBottom: '1rem', display: 'block', opacity: 0.5 }}></i>
                           No withdrawal records found
                         </td>
@@ -1899,6 +1881,20 @@ function AdminDashboard() {
                           ${(withdrawal.amount || 0).toLocaleString()}
                         </td>
                         <td style={{ padding: '1rem', color: '#cbd5e1' }}>{withdrawal.method}</td>
+                        <td style={{ padding: '1rem', color: '#94a3b8', fontSize: '0.75rem', maxWidth: '200px' }}>
+                          {withdrawal.method === 'Bank Transfer' ? (
+                            <>
+                              <div style={{color: '#f8fafc', fontWeight: 500}}>{withdrawal.bankName}</div>
+                              <div>{withdrawal.accountNumber}</div>
+                              <div>{withdrawal.accountName}</div>
+                              {withdrawal.routingNumber && <div>Routing: {withdrawal.routingNumber}</div>}
+                            </>
+                          ) : (
+                            <>
+                              <div style={{wordBreak: 'break-all'}}>{withdrawal.wallet || withdrawal.walletAddress}</div>
+                            </>
+                          )}
+                        </td>
                         <td style={{ padding: '1rem', color: '#cbd5e1' }}>
                           {new Date(withdrawal.date).toLocaleDateString()}
                         </td>

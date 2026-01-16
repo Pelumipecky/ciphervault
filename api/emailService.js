@@ -122,6 +122,11 @@ const emailService = {
   async sendInvestmentApproved(userEmail, userName, details) {
     const html = templates.investmentApproved(userName, details);
     return await sendEmail(userEmail, 'Investment Approved', html);
+  },
+
+  async sendWithdrawalApproved(userEmail, userName, amount, method, wallet) {
+    const html = templates.withdrawalApproved(userName, amount, method, wallet);
+    return await sendEmail(userEmail, 'Withdrawal Approved', html);
   }
 };
 
