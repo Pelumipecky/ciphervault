@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabaseDb } from '@/lib/supabaseUtils';
 import { supabase } from '@/config/supabase';
 import { useTranslation } from 'react-i18next';
+import { sendDepositNotification } from '@/utils/emailService';
 
 const paymentMethods = [
   {
@@ -172,6 +173,15 @@ const Deposit: React.FC = () => {
           type: 'info',
           read: false
         });
+
+        // Send Email Notification
+        await sendDepositNotification(
+          currentUser.email,
+          currentUser.userName || currentUser.name,
+          'pending',
+          depositData.amount,
+          depositData.method
+        );
       } catch (notifError) {
         console.error('Error creating notification:', notifError);
         // Continue even if notification fails

@@ -372,4 +372,11 @@ eact-i18next renders source text properly.
   - Updated `Navbar.tsx` to explicitly set `className="h-9 w-auto"` and inline styles to force correct 36px height.
   - Verified logo renders correctly without distortion.
 
+- [x] Fix Deposit Approval Email
+  - Identified missing `sendDepositNotification` in `utils/emailService.ts` and usages in `AdminDashboard.tsx`.
+  - Added `sendDepositNotification` function to `src/utils/emailService.ts`.
+  - Updated `handleApproveDeposit` and `handleRejectDeposit` in `AdminDashboard.tsx` to send emails.
+  - Updated `Deposit.tsx` to send 'pending' email on submission.
+  - Verified successful build.
+
 

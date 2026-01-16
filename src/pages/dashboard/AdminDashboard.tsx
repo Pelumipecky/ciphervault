@@ -9,7 +9,8 @@ import {
   sendWithdrawalNotification, 
   sendKYCNotification, 
   sendLoanNotification,
-  sendBalanceUpdateNotification
+  sendBalanceUpdateNotification,
+  sendDepositNotification
 } from '@/utils/emailService'
 import '../../styles/dashboard.css'
 import '../../styles/modern-dashboard.css'
@@ -687,6 +688,19 @@ function AdminDashboard() {
           type: 'success',
           read: false
         })
+
+        // Send Email
+        const deposit = allDeposits.find(d => d.id === depositId);
+        if (deposit && user.email) {
+            await sendDepositNotification(
+                user.email,
+                user.userName || user.name || 'User',
+                'approved',
+                amount,
+                deposit.method || 'Crypto',
+                deposit.transaction_hash
+            )
+        }
       }
 
       showAlert('success', 'Deposit Approved', `Deposit of $${amount.toLocaleString()} has been approved and added to user balance.`)
@@ -707,7 +721,7 @@ function AdminDashboard() {
       // Notify User
       const deposit = allDeposits.find(d => d.id === depositId);
       if (deposit) {
-          const user = allUsers.find(u => u.id === deposit.user_id);
+          const user = allUsers.find(u => u.id === deposit.user_id || u.idnum === deposit.idnum);
           if (user?.idnum) {
               await supabaseDb.createNotification({
                   idnum: user.idnum,
@@ -716,6 +730,19 @@ function AdminDashboard() {
                   type: 'error',
                   read: false
               })
+          }
+          
+          if (user) {
+             // Send Email
+             if (user.email) {
+                 await sendDepositNotification(
+                    user.email,
+                    user.userName || user.name || 'User',
+                    'rejected',
+                    deposit.amount,
+                    deposit.method || 'Crypto'
+                 )
+             }
           }
       }
 

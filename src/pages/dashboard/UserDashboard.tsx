@@ -1489,18 +1489,7 @@ function UserDashboard() {
         console.log('Investment saved to database');
         investmentSaved = true;
         
-        // Send email notification
-        if (currentUser) {
-          await sendInvestmentNotification(
-            currentUser.email || '',
-            currentUser.userName || currentUser.name || '',
-            'pending',
-            capital,
-            selectedPlan.name,
-            selectedPlan.dailyRate,
-            selectedPlan.durationDays
-          )
-        }
+        // Notification only, no email for pending investment
       } catch (dbError) {
         console.error('Database save failed:', dbError);
         console.log('Database unavailable, storing locally')
