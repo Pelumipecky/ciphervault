@@ -913,6 +913,23 @@ function UserDashboard() {
         console.log('Investment idnum:', newInvestment.idnum);
         console.log('Current user idnum:', currentUser?.idnum);
         console.log('Payment proof URL:', paymentProofUrl);
+
+        // Notify backend to send investment created email
+        try {
+          await fetch('/api/notify/investment-created', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              idnum: currentUser?.idnum || '',
+              plan: selectedPlan.name,
+              capital: parseFloat(investmentForm.capital),
+              roi: selectedPlan.roi,
+              duration: selectedPlan.duration
+            })
+          });
+        } catch (notifyErr) {
+          console.warn('Failed to notify backend for investment created email:', notifyErr);
+        }
         
         // Refetch investments from Supabase to ensure persistence
         console.log('📥 [Investment] Fetching all investments for user:', currentUser?.idnum);
