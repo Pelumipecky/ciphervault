@@ -74,22 +74,30 @@ const emailService = {
   },
 
   async sendDepositRequest(userEmail, userName, amount, method, currency, txHash, proofUrl) {
+    console.log('[DepositEmail] sendDepositRequest called with:', { userEmail, userName, amount, method, currency, txHash, proofUrl });
     // 1. Notify User
     const userHtml = templates.depositRequestUser(userName, amount, method, currency, txHash);
-    await sendEmail(userEmail, 'Deposit Request Received', userHtml);
+    const userResult = await sendEmail(userEmail, 'Deposit Request Received', userHtml);
+    console.log('[DepositEmail] User email result:', userResult);
     
     // 2. Notify Admin
     const adminHtml = templates.depositRequestAdmin(userName, amount, `${method} ${currency || ''}`, txHash, proofUrl);
-    await sendEmail(ADMIN_EMAIL, `New Deposit: $${amount} from ${userName}`, adminHtml);
+    const adminResult = await sendEmail(ADMIN_EMAIL, `New Deposit: $${amount} from ${userName}`, adminHtml);
+    console.log('[DepositEmail] Admin email result:', adminResult);
   },
 
   async sendDepositStatus(userEmail, userName, amount, status, reason) {
+    console.log('[DepositEmail] sendDepositStatus called with:', { userEmail, userName, amount, status, reason });
     if (status === 'approved') {
       const html = templates.depositApproved(userName, amount);
-      return await sendEmail(userEmail, 'Deposit Approved', html);
+      const result = await sendEmail(userEmail, 'Deposit Approved', html);
+      console.log('[DepositEmail] Approved email result:', result);
+      return result;
     } else {
       const html = templates.depositRejected(userName, amount, reason);
-      return await sendEmail(userEmail, 'Deposit Rejected', html);
+      const result = await sendEmail(userEmail, 'Deposit Rejected', html);
+      console.log('[DepositEmail] Rejected email result:', result);
+      return result;
     }
   },
 
