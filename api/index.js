@@ -253,6 +253,90 @@ app.post('/api/admin/withdrawals/approve', async (req, res) => {
   }
 });
 
+// 6. Admin: Approve deposit (status update)
+app.post('/api/admin/deposits/approve', async (req, res) => {
+  try {
+    const { depositId } = req.body || {};
+    if (!depositId) return res.status(400).json({ error: 'depositId is required' });
+
+    // Fetch deposit
+    const { data: deposit, error: fetchError } = await supabase
+      .from('deposits')
+      .select('*')
+      .eq('id', depositId)
+      .single();
+
+    if (fetchError || !deposit) {
+      console.error('❌ fetch deposit error:', fetchError);
+      return res.status(404).json({ error: 'Deposit not found' });
+    }
+
+    if (deposit.status === 'Approved') {
+      return res.json({ success: true, alreadyApproved: true, deposit });
+    }
+
+    // Update Deposit
+    const { data: updated, error: updateError } = await supabase
+      .from('deposits')
+      .update({ status: 'Approved', authStatus: 'approved' })
+      .eq('id', depositId)
+      .select()
+      .single();
+    
+    if (updateError) {
+       console.error('❌ update deposit error:', updateError);
+       return res.status(500).json({ error: 'Failed to approve deposit' });
+    }
+    
+    // Fetch user for notification
+    const { data: user } = await supabase
+      .from('users')
+      .select('email, userName, name, idnum')
+      .eq('idnum', deposit.idnum)
+      .single();
+
+    if (user) {
+        // Persist Notification
+        try {
+          await supabase.from('notifications').insert({
+              idnum: user.idnum,
+              title: 'Deposit Approved',
+              message: `Your deposit of $${Number(deposit.amount).toLocaleString()} has been approved and credited to your balance.`,
+              type: 'success',
+              read: false, 
+              created_at: new Date().toISOString()
+          });
+        } catch (nErr) {
+          console.warn('⚠️ Notification insert failed', nErr);
+        }
+
+        // Add logging for email notification
+        console.log('[DepositEmail] sendDepositStatus will be called with:', {
+          userEmail: user.email,
+          userName: user.userName || user.name || 'User',
+          amount: deposit.amount,
+          status: 'approved',
+          reason: undefined
+        });
+        // Send Email
+        const emailResult = await emailService.sendDepositStatus(
+             user.email,
+             user.userName || user.name || 'User',
+             deposit.amount,
+             'approved',
+             undefined
+        );
+        console.log('[DepositEmail] sendDepositStatus result:', emailResult);
+        console.log(`✅ Deposit ${depositId} approved, email sent to ${user.email}`);
+    }
+
+    return res.json({ success: true, deposit: updated });
+  } catch (err) {
+    console.error('❌ Deposit approval error:', err);
+    return res.status(500).json({ error: 'Server error approving deposit' });
+  }
+});
+
 // rate limiter for contact endpoint
 const contactLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 12, standardHeaders: true, legacyHeaders: false });
 
