@@ -469,6 +469,7 @@ app.post('/api/notify/investment-created', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Send investment created email
     const sent = await emailService.sendInvestmentCreated(
       user.email,
       user.userName || 'Investor',
@@ -477,17 +478,11 @@ app.post('/api/notify/investment-created', async (req, res) => {
       roi,
       duration
     );
-
-    if (sent) {
-      console.log(`✅ Investment email sent to ${user.email} for plan ${plan}`);
-      return res.json({ sent: true });
-    } else {
-      console.warn(`⚠️ Investment email NOT sent (Mock mode or Error) to ${user.email}`);
-      return res.status(200).json({ sent: false, reason: 'Mailjet keys missing or sending failed' });
-    }
+    console.log('[InvestmentEmail] sendInvestmentCreated result:', sent);
+    res.json({ success: sent });
   } catch (err) {
-    console.error('Investment notification error:', err);
-    return res.status(500).json({ error: 'Failed to send notification' });
+    console.error('❌ Investment created notification error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
