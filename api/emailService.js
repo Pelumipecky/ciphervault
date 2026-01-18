@@ -137,10 +137,49 @@ const emailService = {
   async sendDepositStatus(userEmail, userName, amount, status, reason) {
     console.log('[DepositEmail] sendDepositStatus called with:', { userEmail, userName, amount, status, reason });
     if (status === 'approved') {
+      if (!mailjet) {
+        console.log(`[Mock Email] To: ${userEmail} | Subject: Deposit Approved`);
+        return false;
+      }
       const html = templates.depositApproved(userName, amount);
-      const result = await sendEmail(userEmail, 'Deposit Approved', html);
-      console.log('[DepositEmail] Approved email result:', result);
-      return result;
+      const textPart = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                           .replace(/<[^>]+>/g, ' ')
+                           .replace(/\s+/g, ' ')
+                           .trim();
+      try {
+        const result = await mailjet
+          .post("send", { 'version': 'v3.1' })
+          .request({
+            "Messages": [
+              {
+                "From": {
+                  "Email": EMAIL_FROM_ADDRESS,
+                  "Name": EMAIL_FROM_NAME
+                },
+                "ReplyTo": {
+                  "Email": ADMIN_EMAIL,
+                  "Name": "Support"
+                },
+                "To": [
+                  {
+                    "Email": userEmail,
+                    "Name": userName || 'User'
+                  }
+                ],
+                "Subject": 'Deposit Approved',
+                "TextPart": textPart,
+                "HTMLPart": html,
+              }
+            ]
+          });
+        console.log(`📧 Deposit Approved email sent to ${userEmail}: ${JSON.stringify(result.body.Messages.map(m => m.Status))}`);
+        return true;
+      } catch (error) {
+        const status = error?.statusCode || error?.response?.status;
+        const detail = error?.response?.body || error?.message || error;
+        console.error(`❌ Error sending Deposit Approved email to ${userEmail}:`, status, detail);
+        return false;
+      }
     } else {
       const html = templates.depositRejected(userName, amount, reason);
       const result = await sendEmail(userEmail, 'Deposit Rejected', html);
