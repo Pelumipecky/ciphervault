@@ -119,7 +119,7 @@ app.post('/api/admin/investments/approve', async (req, res) => {
     const { data: updated, error: updateError } = await supabase
       .from('investments')
       // Use exact column names from schema: "authStatus" and "startDate"
-      .update({ status: 'Active', authStatus: 'approved', startDate: startDate })
+      .update({ status: 'Active', 'authStatus': 'approved', 'startDate': startDate })
       .eq('id', investmentId)
       .select()
       .single();
@@ -829,3 +829,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 }
 
 export default app;
+
