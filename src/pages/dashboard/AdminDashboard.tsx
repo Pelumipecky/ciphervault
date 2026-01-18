@@ -413,6 +413,92 @@ function AdminDashboard() {
     initAdminDashboard()
   }, [navigate])
 
+  // Auto-refresh tables every 20 seconds
+  useEffect(() => {
+    let refreshInterval: ReturnType<typeof setInterval> | null = null
+
+    const refreshAllData = async () => {
+      try {
+        const [users, investments, withdrawals, kycRequests, loans, deposits] = await Promise.all([
+          supabaseDb.getAllUsers(),
+          supabaseDb.getAllInvestments(),
+          supabaseDb.getAllWithdrawals(),
+          supabaseDb.getAllKycRequests(),
+          supabaseDb.getAllLoans(),
+          supabaseDb.getAllDeposits(),
+        ])
+
+        // Filter out current admin from users
+        const adminStr = localStorage.getItem('adminData') || sessionStorage.getItem('adminData')
+        const activeUserStr = localStorage.getItem('activeUser') || sessionStorage.getItem('activeUser')
+        const adminData = JSON.parse(adminStr || activeUserStr || '{}')
+        const filteredUsers = users.filter((u: any) => u.idnum !== adminData.idnum)
+
+        // Join with user data
+        const investmentsWithUsers = investments.map((investment: any) => {
+          const user = users.find((u: any) => u.idnum === investment.idnum)
+          return {
+            ...investment,
+            userName: user?.userName || user?.name || 'Unknown User',
+            userEmail: user?.email || ''
+          }
+        })
+
+        const withdrawalsWithUsers = withdrawals.map((withdrawal: any) => {
+          const user = users.find((u: any) => u.idnum === withdrawal.idnum)
+          return {
+            ...withdrawal,
+            userName: user?.userName || user?.name || 'Unknown User',
+            userEmail: user?.email || ''
+          }
+        })
+
+        const kycWithUsers = kycRequests.map((kyc: any) => {
+          const user = users.find((u: any) => u.idnum === kyc.idnum)
+          return {
+            ...kyc,
+            userName: user?.userName || user?.name || 'Unknown User',
+            userEmail: user?.email || ''
+          }
+        })
+
+        const loansWithUsers = loans.map((loan: any) => {
+          const user = users.find((u: any) => u.idnum === loan.idnum)
+          return {
+            ...loan,
+            userName: user?.userName || user?.name || 'Unknown User',
+            userEmail: user?.email || ''
+          }
+        })
+
+        const depositsWithUsers = (deposits || []).map((deposit: any) => {
+          const user = users.find((u: any) => u.idnum === deposit.idnum)
+          return {
+            ...deposit,
+            userName: user?.userName || user?.name || 'Unknown User',
+            userEmail: user?.email || ''
+          }
+        })
+
+        setAllUsers(filteredUsers)
+        setAllInvestments(investmentsWithUsers)
+        setAllWithdrawals(withdrawalsWithUsers)
+        setAllKycRequests(kycWithUsers)
+        setAllLoans(loansWithUsers)
+        setAllDeposits(depositsWithUsers)
+      } catch (error) {
+        console.warn('Auto-refresh failed:', error)
+      }
+    }
+
+    // Start auto-refresh interval (20 seconds)
+    refreshInterval = setInterval(refreshAllData, 20000)
+
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval)
+    }
+  }, [])
+
   const handleLogout = () => {
     logout()
     navigate('/login')

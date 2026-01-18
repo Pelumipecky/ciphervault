@@ -532,6 +532,49 @@ function UserDashboard() {
     };
   }, []);
 
+  // Auto-refresh all tables every 20 seconds
+  useEffect(() => {
+    let refreshInterval: ReturnType<typeof setInterval> | null = null;
+    
+    const refreshAllData = async () => {
+      try {
+        if (!currentUser?.idnum) return;
+
+        // Fetch all user data in parallel
+        const [investments, withdrawals, loans, deposits] = await Promise.all([
+          supabaseDb.getInvestmentsByUser(currentUser.idnum),
+          supabaseDb.getWithdrawalsByUser(currentUser.idnum),
+          supabaseDb.getLoansByUser(currentUser.idnum),
+          supabaseDb.getDepositsByUser(currentUser.idnum),
+        ]);
+
+        // Update all state with fresh data
+        if (investments) {
+          setInvestments(investments);
+        }
+        if (withdrawals) {
+          setWithdrawals(withdrawals);
+        }
+        if (loans) {
+          setLoans(loans);
+        }
+        if (deposits) {
+          setDeposits(deposits);
+        }
+      } catch (error) {
+        console.warn('Auto-refresh failed for user dashboard:', error);
+      }
+    };
+
+    // Set up auto-refresh interval (20 seconds)
+    refreshInterval = setInterval(refreshAllData, 20000);
+
+    // Cleanup interval on unmount
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
+  }, [currentUser?.idnum]);
+
   // Placeholder alert/confirm functions
   function showAlert(type: string, title: string, message: string) {
     setModalAlert({ show: true, type, title, message });
