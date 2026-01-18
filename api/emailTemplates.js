@@ -1,40 +1,63 @@
 
 const styles = `
-  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
-  .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-  .header { background-color: #0f172a; color: #f0b90b; padding: 20px; text-align: center; }
-  .header h1 { margin: 0; font-size: 24px; }
-  .content { padding: 30px 20px; }
-  .footer { background-color: #f4f4f4; color: #666; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; }
-  .button { display: inline-block; padding: 10px 20px; background-color: #f0b90b; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
-  .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-  .info-table td { padding: 8px; border-bottom: 1px solid #eee; }
-  .info-table td:first-child { font-weight: bold; color: #555; width: 40%; }
-  .highlight { color: #f0b90b; font-weight: bold; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #2c3e50; background-color: #ecf0f1; margin: 0; padding: 0; }
+  .container { max-width: 650px; margin: 15px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #1a2637 100%); padding: 50px 20px; text-align: center; position: relative; }
+  .header-logo { display: inline-block; margin-bottom: 15px; }
+  .header-logo img { max-width: 180px; height: auto; border: 0; }
+  .header h1 { margin: 15px 0 0 0; font-size: 28px; color: #f0b90b; font-weight: 600; letter-spacing: 0.5px; }
+  .header-divider { height: 3px; background: linear-gradient(90deg, #f0b90b, rgba(240, 185, 11, 0.3)); margin-top: 15px; }
+  .content { padding: 40px 30px; }
+  .content h2 { color: #0f172a; font-size: 22px; margin-bottom: 15px; font-weight: 600; }
+  .content p { color: #555; margin-bottom: 15px; line-height: 1.7; }
+  .content ul { margin-left: 20px; margin-bottom: 20px; }
+  .content ul li { margin-bottom: 8px; color: #555; }
+  .footer { background: linear-gradient(135deg, #0f172a 0%, #1a2637 100%); color: #cbd5e1; padding: 25px 20px; text-align: center; font-size: 12px; border-top: 1px solid #1e293b; }
+  .footer p { margin: 5px 0; }
+  .button { display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #f0b90b, #ffd700); color: #0f172a; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 20px; box-shadow: 0 2px 6px rgba(240, 185, 11, 0.3); transition: all 0.3s; }
+  .button:hover { opacity: 0.9; }
+  .info-table { width: 100%; border-collapse: collapse; margin: 25px 0; background: #f8fafc; border-radius: 8px; overflow: hidden; }
+  .info-table tr { border-bottom: 1px solid #e2e8f0; }
+  .info-table tr:last-child { border-bottom: none; }
+  .info-table td { padding: 14px 16px; }
+  .info-table td:first-child { font-weight: 600; color: #0f172a; width: 40%; background: #f1f5f9; }
+  .info-table td:last-child { color: #1f2937; font-weight: 500; }
+  .highlight { color: #f0b90b; font-weight: 700; }
+  .status-active { color: #10b981; font-weight: 600; }
+  .status-pending { color: #f59e0b; font-weight: 600; }
+  .status-rejected { color: #ef4444; font-weight: 600; }
+  .section { margin-bottom: 25px; }
+  .center { text-align: center; }
+  .small-text { font-size: 13px; color: #9ca3af; }
 `;
 
 const wrapTemplate = (title, bodyContent) => `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <style>${styles}</style>
 </head>
 <body>
   <div class="container">
-    <div class="header" style="text-align: center; padding: 25px 0;">
-      <!-- Logo Image (Remote URL) -->
-      <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
-      </a>
+    <div class="header">
+      <div class="header-logo">
+        <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
+          <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" style="display: block; max-width: 100%; height: auto; border: 0;" />
+        </a>
+      </div>
+      <h1>${title}</h1>
+      <div class="header-divider"></div>
     </div>
     <div class="content">
       ${bodyContent}
     </div>
     <div class="footer">
       <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
-      <p>This is an automated message, please do not reply.</p>
+      <p class="small-text">This is an automated message, please do not reply.</p>
     </div>
   </div>
 </body>
@@ -83,11 +106,33 @@ export default {
   `),
 
   depositApproved: (name, amount) => wrapTemplate('Deposit Approved', `
-    <h2>Deposit Approved!</h2>
-    <p>Hello ${name},</p>
-    <p>Great news! Your deposit of <span class="highlight">$${amount}</span> has been successfully approved and credited to your account balance.</p>
-    <p>You can now use these funds to purchase an investment plan.</p>
-    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View Balance</a></center>
+    <div class="section">
+      <p>Hello <strong>${name}</strong>,</p>
+      <p>✅ Great news! Your deposit of <span class="highlight">$${amount}</span> has been successfully approved and credited to your account balance.</p>
+    </div>
+    
+    <div class="section">
+      <h2>Transaction Details</h2>
+      <table class="info-table">
+        <tr>
+          <td>Amount Deposited</td>
+          <td><span class="highlight">$${amount}</span></td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><span class="status-active">✓ Approved</span></td>
+        </tr>
+        <tr>
+          <td>Processed Date</td>
+          <td>${new Date().toLocaleDateString()}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section">
+      <p>You can now use these funds to purchase an investment plan and start earning daily returns.</p>
+      <div class="center"><a href="https://cyphervault.vercel.app/dashboard" class="button">View Balance</a></div>
+    </div>
   `),
   
   depositRejected: (name, amount, reason) => wrapTemplate('Deposit Rejected', `
@@ -99,16 +144,36 @@ export default {
   `),
 
   roiCredited: (name, planName, amount, newBalance, date) => wrapTemplate('Daily ROI Credited', `
-    <h2>Daily Profit Received</h2>
-    <p>Hello ${name},</p>
-    <p>Your daily ROI for the plan <strong>${planName}</strong> has been credited.</p>
-    <table class="info-table">
-      <tr><td>Amount Credited:</td><td class="highlight">+$${amount}</td></tr>
-      <tr><td>Plan:</td><td>${planName}</td></tr>
-      <tr><td>Date:</td><td>${date}</td></tr>
-      <tr><td>Current Balance:</td><td>$${newBalance}</td></tr>
-    </table>
-    <p>Keep your investment active to continue earning daily returns!</p>
+    <div class="section">
+      <p>Hello <strong>${name}</strong>,</p>
+      <p>💰 Your daily ROI has been credited! Keep your investment active to continue earning.</p>
+    </div>
+    
+    <div class="section">
+      <h2>Earnings Summary</h2>
+      <table class="info-table">
+        <tr>
+          <td>Amount Credited</td>
+          <td><span class="highlight">+$${amount}</span></td>
+        </tr>
+        <tr>
+          <td>Plan Name</td>
+          <td>${planName}</td>
+        </tr>
+        <tr>
+          <td>Credited Date</td>
+          <td>${date}</td>
+        </tr>
+        <tr>
+          <td>Current Balance</td>
+          <td><strong>$${newBalance}</strong></td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section">
+      <p>Your investment is performing excellently. Continue to monitor your portfolio and watch your wealth grow!</p>
+    </div>
   `),
 
   withdrawalRequestUser: (name, amount, method, wallet) => wrapTemplate('Withdrawal Request Submitted', `
@@ -159,79 +224,114 @@ export default {
     <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Track Investment</a></center>
   `),
 
-   investmentSubmitted: (name, plan, capital, roi, duration) => wrapTemplate('Investment Submitted', `
-    <h2>Investment Submitted</h2>
-    <p>Hello ${name},</p>
-    <p>Your request to purchase the <strong>${plan}</strong> investment plan has been received and is currently <strong>pending admin approval</strong>.</p>
-    <table class="info-table">
-      <tr><td>Plan:</td><td>${plan}</td></tr>
-      <tr><td>Capital:</td><td class="highlight">$${capital}</td></tr>
-      <tr><td>Daily ROI:</td><td>${roi}%</td></tr>
-      <tr><td>Duration:</td><td>${duration} Days</td></tr>
-      <tr><td>Status:</td><td>Pending Approval</td></tr>
-    </table>
-    <p>You will receive another email once your investment is approved and activated.</p>
-    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View My Investments</a></center>
+  investmentSubmitted: (name, plan, capital, roi, duration) => wrapTemplate('Investment Submitted', `
+    <div class="section">
+      <p>Hello <strong>${name}</strong>,</p>
+      <p>📝 Your request to purchase the <strong>${plan}</strong> investment plan has been received and is currently <span class="status-pending">pending admin approval</span>.</p>
+    </div>
+    
+    <div class="section">
+      <h2>Investment Details</h2>
+      <table class="info-table">
+        <tr>
+          <td>Plan Name</td>
+          <td>${plan}</td>
+        </tr>
+        <tr>
+          <td>Capital Amount</td>
+          <td><span class="highlight">$${capital}</span></td>
+        </tr>
+        <tr>
+          <td>Daily ROI</td>
+          <td><strong>${roi}%</strong></td>
+        </tr>
+        <tr>
+          <td>Duration</td>
+          <td>${duration} Days</td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><span class="status-pending">⏳ Pending Approval</span></td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section">
+      <p>You will receive another email once your investment is approved and activated. In the meantime, you can monitor your application in your dashboard.</p>
+      <div class="center"><a href="https://cyphervault.vercel.app/dashboard" class="button">View My Investments</a></div>
+    </div>
   `),
 
   investmentApproved: (name, details) => wrapTemplate('Investment Approved', `
-    <h2>Investment Approved</h2>
-    <p>Hello ${name},</p>
-    <p>Your investment has been reviewed and activated.</p>
-    <table class="info-table">
-      <tr><td>Investment ID:</td><td>${details.id}</td></tr>
-      <tr><td>Plan:</td><td>${details.plan}</td></tr>
-      <tr><td>Amount:</td><td class="highlight">$${Number(details.amount || 0).toLocaleString()}</td></tr>
-      <tr><td>Start Date:</td><td>${details.startDate}</td></tr>
-      <tr><td>Status:</td><td style="color: #22c55e;">${details.status || 'Active'}</td></tr>
-    </table>
-    <p>You will now begin earning daily returns based on your selected plan. Track your performance anytime from your dashboard.</p>
-    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View My Investment</a></center>
+    <div class="section">
+      <p>Hello <strong>${name}</strong>,</p>
+      <p>🎉 Great news! Your investment has been reviewed and is now <span class="status-active">ACTIVE</span>.</p>
+    </div>
+    
+    <div class="section">
+      <h2>Investment Details</h2>
+      <table class="info-table">
+        <tr>
+          <td>Investment ID</td>
+          <td><strong>${details.id}</strong></td>
+        </tr>
+        <tr>
+          <td>Plan Name</td>
+          <td>${details.plan}</td>
+        </tr>
+        <tr>
+          <td>Amount Invested</td>
+          <td><span class="highlight">$${Number(details.amount || 0).toLocaleString()}</span></td>
+        </tr>
+        <tr>
+          <td>Start Date</td>
+          <td>${details.startDate}</td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><span class="status-active">✓ ${details.status || 'Active'}</span></td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section">
+      <p>Your investment is now live and will begin generating <strong>daily returns</strong> based on your selected plan. Track your performance anytime from your dashboard.</p>
+      <div class="center">
+        <a href="https://cyphervault.vercel.app/dashboard" class="button">View My Investment</a>
+      </div>
+    </div>
   `),
 
   withdrawalApproved: (name, amount, method, wallet) => wrapTemplate('Withdrawal Approved', `
-    <h2>Withdrawal Approved</h2>
-    <p>Hello ${name},</p>
-    <p>Your withdrawal request for <span class="highlight">$${amount}</span> has been approved and processed.</p>
-    <table class="info-table">
-      <tr><td>Amount:</td><td class="highlight">$${amount}</td></tr>
-      <tr><td>Method:</td><td>${method}</td></tr>
-      <tr><td>Destination:</td><td><small>${wallet || 'N/A'}</small></td></tr>
-      <tr><td>Status:</td><td style="color: #22c55e;">Approved</td></tr>
-    </table>
-    <p>The funds should reflect in your account shortly depending on the network speed.</p>
-  `),
+    <div class="section">
+      <p>Hello <strong>${name}</strong>,</p>
+      <p>✅ Your withdrawal request for <span class="highlight">$${amount}</span> has been approved and processed.</p>
+    </div>
 
-  kycSubmitted: (name) => wrapTemplate('KYC Verification Submitted', `
-    <h2>KYC Submission Received</h2>
-    <p>Hello ${name},</p>
-    <p>Thank you for submitting your KYC (Know Your Customer) verification documents. We have received your submission and our team is reviewing your information.</p>
-    <p>This process typically takes 24-48 hours. You will receive another email once your verification is approved or if we need additional information.</p>
-    <p><strong>Status:</strong> Pending Review</p>
-    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Check Status</a></center>
-  `),
+    <div class="section">
+      <h2>Withdrawal Details</h2>
+      <table class="info-table">
+        <tr>
+          <td>Amount</td>
+          <td><span class="highlight">$${amount}</span></td>
+        </tr>
+        <tr>
+          <td>Payment Method</td>
+          <td>${method}</td>
+        </tr>
+        <tr>
+          <td>Destination</td>
+          <td><small>${wallet || 'N/A'}</small></td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><span class="status-active">✓ Approved</span></td>
+        </tr>
+      </table>
+    </div>
 
-  kycApproved: (name) => wrapTemplate('KYC Verification Approved', `
-    <h2>KYC Verification Approved!</h2>
-    <p>Hello ${name},</p>
-    <p>Great news! Your KYC (Know Your Customer) verification has been approved. Your account is now fully verified and you can enjoy all features of Cypher Vault without restrictions.</p>
-    <p>You can now:</p>
-    <ul>
-      <li>Make deposits and withdrawals</li>
-      <li>Invest in our investment plans</li>
-      <li>Unlock premium features</li>
-    </ul>
-    <p><strong>Status:</strong> Verified</p>
-    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Go to Dashboard</a></center>
-  `),
-
-  kycRejected: (name, reason) => wrapTemplate('KYC Verification Rejected', `
-    <h2>KYC Verification Rejected</h2>
-    <p>Hello ${name},</p>
-    <p>Unfortunately, your KYC (Know Your Customer) verification has been rejected.</p>
-    ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
-    <p>You may resubmit your verification with corrected documents. Please ensure all documents are clear, legible, and meet our requirements.</p>
-    <p>If you have questions, please contact our support team.</p>
-    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Resubmit KYC</a></center>
+    <div class="section">
+      <p>The funds should reflect in your account shortly depending on the network speed and payment method used.</p>
+    </div>
   `)
 };
