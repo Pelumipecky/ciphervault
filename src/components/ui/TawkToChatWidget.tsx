@@ -1,6 +1,14 @@
 import React, { useEffect } from 'react'
+import { useAuth } from '@/context/AuthContext'
 
 const TawkToChatWidget: React.FC = () => {
+  const { user } = useAuth()
+
+  // Don't show for admin, superadmin users
+  if (user && (user.role === 'admin' || user.role === 'superadmin')) {
+    return null
+  }
+
   useEffect(() => {
     // Tawk.to Script
     const w = window as any;
