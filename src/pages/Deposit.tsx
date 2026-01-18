@@ -39,7 +39,7 @@ const paymentMethods = [
   {
     name: 'Bank Transfer',
     accountName: 'Cypher Vault Investments Ltd.',
-    accountNumber: '1234567890',
+    accountNumber: '1682302387',
     bankName: 'Global Trust Bank',
     routingNumber: 'GTB001234',
     swiftCode: 'GTBKUS33',

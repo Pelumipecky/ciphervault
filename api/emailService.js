@@ -1,17 +1,22 @@
-require('dotenv').config();
-const Mailjet = require('node-mailjet');
-const emailTemplates = require('./emailTemplates');
+import Mailjet from 'node-mailjet';
+import templates from './emailTemplates.js';
 
-const EMAIL_FROM_ADDRESS = process.env.MAILJET_FROM_EMAIL || 'no-reply@cyphervault.online';
-const EMAIL_FROM_NAME = process.env.MAILJET_FROM_NAME || 'Cypher Vault';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@cyphervault.online';
+// Configuration
+const MAILJET_API_KEY = process.env.MAILJET_API_KEY;
+const MAILJET_API_SECRET = process.env.MAILJET_API_SECRET;
+const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM || process.env.MAILJET_FROM_EMAIL || 'no-reply@ciphervault.online';
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Cypher Vault';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'cyphervault6@gmail.com';
 
+// Initialize Mailjet Client
 let mailjet = null;
-if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-  mailjet = Mailjet.apiConnect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
-}
 
-const templates = emailTemplates;
+if (MAILJET_API_KEY && MAILJET_API_SECRET) {
+  mailjet = Mailjet.connect(MAILJET_API_KEY, MAILJET_API_SECRET);
+  console.log('✅ Email Service: Mailjet Configured');
+} else {
+  console.warn('⚠️ Email Service: Mailjet API keys missing. Emails will not be sent.');
+}
 
 const sendEmail = async (to, subject, html) => {
   if (!mailjet) {
@@ -34,6 +39,10 @@ const sendEmail = async (to, subject, html) => {
             "From": {
               "Email": EMAIL_FROM_ADDRESS,
               "Name": EMAIL_FROM_NAME
+            },
+            "ReplyTo": {
+              "Email": ADMIN_EMAIL,
+              "Name": "Support"
             },
             "To": [
               {
@@ -134,20 +143,41 @@ const emailService = {
     }
   },
 
-  async sendKycSubmitted(userEmail, userName) {
-    const html = templates.kycSubmitted(userName);
-    return await sendEmail(userEmail, 'KYC Verification Submitted', html);
+  async sendRoiCredit(userEmail, userName, planName, amount, newBalance) {
+    const date = new Date().toLocaleString();
+    const html = templates.roiCredited(userName, planName, amount, newBalance, date);
+    return await sendEmail(userEmail, 'Daily Investment Return Credited', html);
   },
 
-  async sendKycApproved(userEmail, userName) {
-    const html = templates.kycApproved(userName);
-    return await sendEmail(userEmail, 'KYC Verification Approved', html);
+  async sendWithdrawalRequest(userEmail, userName, amount, method, wallet) {
+    // 1. Notify User
+    const userHtml = templates.withdrawalRequestUser(userName, amount, method, wallet);
+    await sendEmail(userEmail, 'Withdrawal Request Submitted', userHtml);
+
+    // 2. Notify Admin
+    const adminHtml = templates.withdrawalRequestAdmin(userName, amount, method, wallet);
+    await sendEmail(ADMIN_EMAIL, `New Withdrawal: $${amount} from ${userName}`, adminHtml);
   },
 
-  async sendKycRejected(userEmail, userName, reason) {
-    const html = templates.kycRejected(userName, reason);
-    return await sendEmail(userEmail, 'KYC Verification Rejected', html);
+  async sendWithdrawalStatus(userEmail, userName, amount, status, reason) {
+    const html = templates.withdrawalStatus(userName, amount, status, reason);
+    return await sendEmail(userEmail, `Withdrawal ${status === 'approved' ? 'Processed' : 'Update'}`, html);
+  },
+
+  async sendInvestmentCreated(userEmail, userName, plan, capital, roi, duration) {
+    const html = templates.investmentCreated(userName, plan, capital, roi, duration);
+    return await sendEmail(userEmail, 'Investment Activated Successfully', html);
+  },
+
+  async sendInvestmentApproved(userEmail, userName, details) {
+    const html = templates.investmentApproved(userName, details);
+    return await sendEmail(userEmail, 'Investment Approved', html);
+  },
+
+  async sendWithdrawalApproved(userEmail, userName, amount, method, wallet) {
+    const html = templates.withdrawalApproved(userName, amount, method, wallet);
+    return await sendEmail(userEmail, 'Withdrawal Approved', html);
   }
 };
 
-module.exports = emailService;
+export default emailService;

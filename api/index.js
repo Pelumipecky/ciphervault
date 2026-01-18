@@ -108,25 +108,31 @@ app.post('/api/admin/investments/approve', async (req, res) => {
     if (!investment) return res.status(404).json({ error: 'Investment not found' });
 
     const statusLower = (investment.status || '').toLowerCase();
-    const authLower = (investment.authstatus || investment.authStatus || '').toLowerCase();
+    const authLower = (investment.authStatus || '').toLowerCase();
     if (statusLower === 'active' || authLower === 'approved') {
       return res.json({ success: true, alreadyApproved: true, investment });
     }
 
     const startDate = new Date().toISOString();
 
-    // Update to Active + approved with correct column names (CamelCase for schema compatibility)
+    // Update to Active + approved 
+    // Note: Supabase converts camelCase to snake_case for unquoted columns
+    console.log('📝 Attempting investment update for:', investmentId);
     const { data: updated, error: updateError } = await supabase
       .from('investments')
-      // Use exact column names from schema: "authStatus" and "startDate"
-      .update({ status: 'Active', 'authStatus': 'approved', 'startDate': startDate })
+      .update({ 
+        status: 'Active', 
+        'authStatus': 'approved',  // Quoted to preserve camelCase
+        'startDate': startDate     // Quoted to preserve camelCase
+      })
       .eq('id', investmentId)
       .select()
       .single();
 
     if (updateError) {
-      console.error('❌ update investment error:', updateError);
-      return res.status(500).json({ error: 'Failed to approve investment' });
+      console.error('❌ update investment error:', JSON.stringify(updateError, null, 2));
+      console.error('Update payload:', { status: 'Active', authStatus: 'approved', startDate });
+      return res.status(500).json({ error: 'Failed to approve investment', details: updateError?.message });
     }
 
     // Fetch user for notification + email
@@ -160,17 +166,23 @@ app.post('/api/admin/investments/approve', async (req, res) => {
       id: investmentId,
       amount: updated.capital,
       plan: updated.plan || 'Investment Plan',
-      startDate: updated.start_date || startDate,
+      startDate: updated.startDate || startDate,
       status: updated.status || 'Active'
     };
 
-    const emailSent = await emailService.sendInvestmentApproved(
-      user.email,
-      user.userName || user.name || user.email,
-      emailDetails
-    );
-
-    return res.json({ success: true, emailSent, investment: updated });
+    try {
+      const emailSent = await emailService.sendInvestmentApproved(
+        user.email,
+        user.userName || user.name || user.email,
+        emailDetails
+      );
+      console.log('✅ Investment approval email sent:', emailSent);
+      return res.json({ success: true, emailSent, investment: updated });
+    } catch (emailErr) {
+      console.error('⚠️ Email send error:', emailErr.message || emailErr);
+      // Still return success even if email fails, the investment is already approved
+      return res.json({ success: true, emailSent: false, investment: updated, emailError: emailErr.message });
+    }
   } catch (err) {
     console.error('❌ Approve investment handler error:', err);
     return res.status(500).json({ error: 'Server error' });
@@ -829,4 +841,3 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 }
 
 export default app;
-
