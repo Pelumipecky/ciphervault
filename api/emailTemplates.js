@@ -1,5 +1,5 @@
-// Embedded logo as base64 data URI
-const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChoAAAJnCAYAAABrxht8AAAABmJLR0QA/wD/AP+gvaeTAAD/u0lEQVQYGezBCYCdBX2o/ef/npkQksyZOWcmCwHJogYFISgioCJaBdd+Vm2r9966V";
+// Logo - using external URL with image caching for reliability
+const LOGO_IMAGE = 'https://cyphervault.vercel.app/images/ciphervaultlogobig.png';
 
 const styles = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -48,7 +48,7 @@ const wrapTemplate = (title, bodyContent) => `
     <div class="header">
       <div class="header-logo">
         <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-          <img src="${LOGO_BASE64}" alt="Cypher Vault" style="display: block; max-width: 100%; height: auto; border: 0;" />
+          <img src="${LOGO_IMAGE}" alt="Cypher Vault" style="display: block; max-width: 100%; height: auto; border: 0;" />
         </a>
       </div>
       <h1>${title}</h1>
