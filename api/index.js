@@ -469,8 +469,8 @@ app.post('/api/notify/investment-created', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Send investment created email
-    const sent = await emailService.sendInvestmentCreated(
+    // Send investment submitted email
+    const sent = await emailService.sendInvestmentSubmitted(
       user.email,
       user.userName || 'Investor',
       plan,
@@ -478,7 +478,7 @@ app.post('/api/notify/investment-created', async (req, res) => {
       roi,
       duration
     );
-    console.log('[InvestmentEmail] sendInvestmentCreated result:', sent);
+    console.log('[InvestmentEmail] sendInvestmentSubmitted result:', sent);
     res.json({ success: sent });
   } catch (err) {
     console.error('❌ Investment created notification error:', err);

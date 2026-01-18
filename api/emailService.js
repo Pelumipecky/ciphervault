@@ -68,6 +68,54 @@ const sendEmail = async (to, subject, html) => {
 };
 
 const emailService = {
+  async sendInvestmentSubmitted(userEmail, userName, plan, capital, roi, duration) {
+    const html = templates.investmentSubmitted(userName, plan, capital, roi, duration);
+    return await (async function(to, subject, html) {
+      if (!mailjet) {
+        console.log(`[Mock Email] To: ${to} | Subject: ${subject}`);
+        return false;
+      }
+      // Create a plain text version from the HTML (basic stripping of tags)
+      const textPart = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                           .replace(/<[^>]+>/g, ' ')
+                           .replace(/\s+/g, ' ')
+                           .trim();
+      try {
+        const result = await mailjet
+          .post("send", { 'version': 'v3.1' })
+          .request({
+            "Messages": [
+              {
+                "From": {
+                  "Email": EMAIL_FROM_ADDRESS,
+                  "Name": EMAIL_FROM_NAME
+                },
+                "ReplyTo": {
+                  "Email": ADMIN_EMAIL,
+                  "Name": "Support"
+                },
+                "To": [
+                  {
+                    "Email": to,
+                    "Name": to.split('@')[0]
+                  }
+                ],
+                "Subject": subject,
+                "TextPart": textPart,
+                "HTMLPart": html,
+              }
+            ]
+          });
+        console.log(`📧 Investment Submitted email sent to ${to}: ${JSON.stringify(result.body.Messages.map(m => m.Status))}`);
+        return true;
+      } catch (error) {
+        const status = error?.statusCode || error?.response?.status;
+        const detail = error?.response?.body || error?.message || error;
+        console.error(`❌ Error sending Investment Submitted email to ${to}:`, status, detail);
+        return false;
+      }
+    })(userEmail, 'Investment Submitted', html);
+  },
   async sendWelcome(email, name) {
     const html = templates.welcome(name);
     return await sendEmail(email, 'Welcome to Cypher Vault', html);

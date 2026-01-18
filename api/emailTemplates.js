@@ -144,6 +144,7 @@ export default {
     ${status === 'approved' ? '<p>The funds should appear in your wallet shortly.</p>' : ''}
   `),
 
+
   investmentCreated: (name, plan, capital, roi, duration) => wrapTemplate('Investment Created', `
     <h2>Investment Confirmed!</h2>
     <p>Hello ${name},</p>
@@ -156,6 +157,21 @@ export default {
     </table>
     <p>Your investment is now active and will start generating returns every 24 hours.</p>
     <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Track Investment</a></center>
+  `),
+
+  investmentSubmitted: (name, plan, capital, roi, duration) => wrapTemplate('Investment Submitted', `
+    <h2>Investment Submitted</h2>
+    <p>Hello ${name},</p>
+    <p>Your request to purchase the <strong>${plan}</strong> investment plan has been received and is currently <strong>pending admin approval</strong>.</p>
+    <table class="info-table">
+      <tr><td>Plan:</td><td>${plan}</td></tr>
+      <tr><td>Capital:</td><td class="highlight">$${capital}</td></tr>
+      <tr><td>Daily ROI:</td><td>${roi}%</td></tr>
+      <tr><td>Duration:</td><td>${duration} Days</td></tr>
+      <tr><td>Status:</td><td>Pending Approval</td></tr>
+    </table>
+    <p>You will receive another email once your investment is approved and activated.</p>
+    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View My Investments</a></center>
   `),
 
   investmentApproved: (name, details) => wrapTemplate('Investment Approved', `
