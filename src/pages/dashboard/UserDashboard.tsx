@@ -566,8 +566,8 @@ function UserDashboard() {
       }
     };
 
-    // Set up auto-refresh interval (20 seconds)
-    refreshInterval = setInterval(refreshAllData, 20000);
+    // Set up auto-refresh interval (5 seconds)
+    refreshInterval = setInterval(refreshAllData, 5000);
 
     // Cleanup interval on unmount
     return () => {

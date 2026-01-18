@@ -491,8 +491,8 @@ function AdminDashboard() {
       }
     }
 
-    // Start auto-refresh interval (20 seconds)
-    refreshInterval = setInterval(refreshAllData, 20000)
+    // Start auto-refresh interval (5 seconds)
+    refreshInterval = setInterval(refreshAllData, 5000)
 
     return () => {
       if (refreshInterval) clearInterval(refreshInterval)
