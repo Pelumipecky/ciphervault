@@ -183,6 +183,21 @@ const emailService = {
   async sendWithdrawalApproved(userEmail, userName, amount, method, wallet) {
     const html = templates.withdrawalApproved(userName, amount, method, wallet);
     return await sendEmail(userEmail, 'Withdrawal Approved', html);
+  },
+
+  async sendKycSubmitted(userEmail, userName) {
+    const html = templates.kycSubmitted(userName);
+    return await sendEmail(userEmail, 'KYC Verification Submitted', html);
+  },
+
+  async sendKycApproved(userEmail, userName) {
+    const html = templates.kycApproved(userName);
+    return await sendEmail(userEmail, 'KYC Verification Approved', html);
+  },
+
+  async sendKycRejected(userEmail, userName, reason) {
+    const html = templates.kycRejected(userName, reason);
+    return await sendEmail(userEmail, 'KYC Verification Rejected', html);
   }
 };
 

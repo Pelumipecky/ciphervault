@@ -159,7 +159,7 @@ export default {
     <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Track Investment</a></center>
   `),
 
-  investmentSubmitted: (name, plan, capital, roi, duration) => wrapTemplate('Investment Submitted', `
+   investmentSubmitted: (name, plan, capital, roi, duration) => wrapTemplate('Investment Submitted', `
     <h2>Investment Submitted</h2>
     <p>Hello ${name},</p>
     <p>Your request to purchase the <strong>${plan}</strong> investment plan has been received and is currently <strong>pending admin approval</strong>.</p>
@@ -200,5 +200,38 @@ export default {
       <tr><td>Status:</td><td style="color: #22c55e;">Approved</td></tr>
     </table>
     <p>The funds should reflect in your account shortly depending on the network speed.</p>
+  `),
+
+  kycSubmitted: (name) => wrapTemplate('KYC Verification Submitted', `
+    <h2>KYC Submission Received</h2>
+    <p>Hello ${name},</p>
+    <p>Thank you for submitting your KYC (Know Your Customer) verification documents. We have received your submission and our team is reviewing your information.</p>
+    <p>This process typically takes 24-48 hours. You will receive another email once your verification is approved or if we need additional information.</p>
+    <p><strong>Status:</strong> Pending Review</p>
+    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Check Status</a></center>
+  `),
+
+  kycApproved: (name) => wrapTemplate('KYC Verification Approved', `
+    <h2>KYC Verification Approved!</h2>
+    <p>Hello ${name},</p>
+    <p>Great news! Your KYC (Know Your Customer) verification has been approved. Your account is now fully verified and you can enjoy all features of Cypher Vault without restrictions.</p>
+    <p>You can now:</p>
+    <ul>
+      <li>Make deposits and withdrawals</li>
+      <li>Invest in our investment plans</li>
+      <li>Unlock premium features</li>
+    </ul>
+    <p><strong>Status:</strong> Verified</p>
+    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Go to Dashboard</a></center>
+  `),
+
+  kycRejected: (name, reason) => wrapTemplate('KYC Verification Rejected', `
+    <h2>KYC Verification Rejected</h2>
+    <p>Hello ${name},</p>
+    <p>Unfortunately, your KYC (Know Your Customer) verification has been rejected.</p>
+    ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+    <p>You may resubmit your verification with corrected documents. Please ensure all documents are clear, legible, and meet our requirements.</p>
+    <p>If you have questions, please contact our support team.</p>
+    <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Resubmit KYC</a></center>
   `)
 };
