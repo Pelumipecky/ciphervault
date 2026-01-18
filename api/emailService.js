@@ -1,22 +1,17 @@
-import Mailjet from 'node-mailjet';
-import templates from './emailTemplates.js';
+require('dotenv').config();
+const Mailjet = require('node-mailjet');
+const emailTemplates = require('./emailTemplates');
 
-// Configuration
-const MAILJET_API_KEY = process.env.MAILJET_API_KEY;
-const MAILJET_API_SECRET = process.env.MAILJET_API_SECRET;
-const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM || process.env.MAILJET_FROM_EMAIL || 'no-reply@ciphervault.online';
-const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Cypher Vault';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'cyphervault6@gmail.com';
+const EMAIL_FROM_ADDRESS = process.env.MAILJET_FROM_EMAIL || 'no-reply@cyphervault.online';
+const EMAIL_FROM_NAME = process.env.MAILJET_FROM_NAME || 'Cypher Vault';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@cyphervault.online';
 
-// Initialize Mailjet Client
 let mailjet = null;
-
-if (MAILJET_API_KEY && MAILJET_API_SECRET) {
-  mailjet = Mailjet.connect(MAILJET_API_KEY, MAILJET_API_SECRET);
-  console.log('✅ Email Service: Mailjet Configured');
-} else {
-  console.warn('⚠️ Email Service: Mailjet API keys missing. Emails will not be sent.');
+if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+  mailjet = Mailjet.apiConnect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
 }
+
+const templates = emailTemplates;
 
 const sendEmail = async (to, subject, html) => {
   if (!mailjet) {
@@ -39,10 +34,6 @@ const sendEmail = async (to, subject, html) => {
             "From": {
               "Email": EMAIL_FROM_ADDRESS,
               "Name": EMAIL_FROM_NAME
-            },
-            "ReplyTo": {
-              "Email": ADMIN_EMAIL,
-              "Name": "Support"
             },
             "To": [
               {
@@ -69,52 +60,46 @@ const sendEmail = async (to, subject, html) => {
 
 const emailService = {
   async sendInvestmentSubmitted(userEmail, userName, plan, capital, roi, duration) {
+    console.log('[InvestmentEmail] sendInvestmentSubmitted called with:', { userEmail, userName, plan, capital, roi, duration });
+    if (!mailjet) {
+      console.log(`[Mock Email] To: ${userEmail} | Subject: Investment Submitted`);
+      return false;
+    }
     const html = templates.investmentSubmitted(userName, plan, capital, roi, duration);
-    return await (async function(to, subject, html) {
-      if (!mailjet) {
-        console.log(`[Mock Email] To: ${to} | Subject: ${subject}`);
-        return false;
-      }
-      // Create a plain text version from the HTML (basic stripping of tags)
-      const textPart = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                           .replace(/<[^>]+>/g, ' ')
-                           .replace(/\s+/g, ' ')
-                           .trim();
-      try {
-        const result = await mailjet
-          .post("send", { 'version': 'v3.1' })
-          .request({
-            "Messages": [
-              {
-                "From": {
-                  "Email": EMAIL_FROM_ADDRESS,
-                  "Name": EMAIL_FROM_NAME
-                },
-                "ReplyTo": {
-                  "Email": ADMIN_EMAIL,
-                  "Name": "Support"
-                },
-                "To": [
-                  {
-                    "Email": to,
-                    "Name": to.split('@')[0]
-                  }
-                ],
-                "Subject": subject,
-                "TextPart": textPart,
-                "HTMLPart": html,
-              }
-            ]
-          });
-        console.log(`📧 Investment Submitted email sent to ${to}: ${JSON.stringify(result.body.Messages.map(m => m.Status))}`);
-        return true;
-      } catch (error) {
-        const status = error?.statusCode || error?.response?.status;
-        const detail = error?.response?.body || error?.message || error;
-        console.error(`❌ Error sending Investment Submitted email to ${to}:`, status, detail);
-        return false;
-      }
-    })(userEmail, 'Investment Submitted', html);
+    const textPart = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                         .replace(/<[^>]+>/g, ' ')
+                         .replace(/\s+/g, ' ')
+                         .trim();
+    try {
+      const result = await mailjet
+        .post("send", { 'version': 'v3.1' })
+        .request({
+          "Messages": [
+            {
+              "From": {
+                "Email": EMAIL_FROM_ADDRESS,
+                "Name": EMAIL_FROM_NAME
+              },
+              "To": [
+                {
+                  "Email": userEmail,
+                  "Name": userName || 'Investor'
+                }
+              ],
+              "Subject": 'Investment Submitted',
+              "TextPart": textPart,
+              "HTMLPart": html,
+            }
+          ]
+        });
+      console.log(`📧 Investment Submitted email sent to ${userEmail}: ${JSON.stringify(result.body.Messages.map(m => m.Status))}`);
+      return true;
+    } catch (error) {
+      const status = error?.statusCode || error?.response?.status;
+      const detail = error?.response?.body || error?.message || error;
+      console.error(`❌ Error sending Investment Submitted email to ${userEmail}:`, status, detail);
+      return false;
+    }
   },
   async sendWelcome(email, name) {
     const html = templates.welcome(name);
@@ -137,91 +122,16 @@ const emailService = {
   async sendDepositStatus(userEmail, userName, amount, status, reason) {
     console.log('[DepositEmail] sendDepositStatus called with:', { userEmail, userName, amount, status, reason });
     if (status === 'approved') {
-      if (!mailjet) {
-        console.log(`[Mock Email] To: ${userEmail} | Subject: Deposit Approved`);
-        return false;
-      }
       const html = templates.depositApproved(userName, amount);
-      const textPart = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                           .replace(/<[^>]+>/g, ' ')
-                           .replace(/\s+/g, ' ')
-                           .trim();
-      try {
-        const result = await mailjet
-          .post("send", { 'version': 'v3.1' })
-          .request({
-            "Messages": [
-              {
-                "From": {
-                  "Email": EMAIL_FROM_ADDRESS,
-                  "Name": EMAIL_FROM_NAME
-                },
-                "ReplyTo": {
-                  "Email": ADMIN_EMAIL,
-                  "Name": "Support"
-                },
-                "To": [
-                  {
-                    "Email": userEmail,
-                    "Name": userName || 'User'
-                  }
-                ],
-                "Subject": 'Deposit Approved',
-                "TextPart": textPart,
-                "HTMLPart": html,
-              }
-            ]
-          });
-        console.log(`📧 Deposit Approved email sent to ${userEmail}: ${JSON.stringify(result.body.Messages.map(m => m.Status))}`);
-        return true;
-      } catch (error) {
-        const status = error?.statusCode || error?.response?.status;
-        const detail = error?.response?.body || error?.message || error;
-        console.error(`❌ Error sending Deposit Approved email to ${userEmail}:`, status, detail);
-        return false;
-      }
+      const result = await sendEmail(userEmail, 'Deposit Approved', html);
+      console.log('[DepositEmail] Approved email result:', result);
+      return result;
     } else {
       const html = templates.depositRejected(userName, amount, reason);
       const result = await sendEmail(userEmail, 'Deposit Rejected', html);
       console.log('[DepositEmail] Rejected email result:', result);
       return result;
     }
-  },
-
-  async sendRoiCredit(userEmail, userName, planName, amount, newBalance) {
-    const date = new Date().toLocaleString();
-    const html = templates.roiCredited(userName, planName, amount, newBalance, date);
-    return await sendEmail(userEmail, 'Daily Investment Return Credited', html);
-  },
-
-  async sendWithdrawalRequest(userEmail, userName, amount, method, wallet) {
-    // 1. Notify User
-    const userHtml = templates.withdrawalRequestUser(userName, amount, method, wallet);
-    await sendEmail(userEmail, 'Withdrawal Request Submitted', userHtml);
-
-    // 2. Notify Admin
-    const adminHtml = templates.withdrawalRequestAdmin(userName, amount, method, wallet);
-    await sendEmail(ADMIN_EMAIL, `New Withdrawal: $${amount} from ${userName}`, adminHtml);
-  },
-
-  async sendWithdrawalStatus(userEmail, userName, amount, status, reason) {
-    const html = templates.withdrawalStatus(userName, amount, status, reason);
-    return await sendEmail(userEmail, `Withdrawal ${status === 'approved' ? 'Processed' : 'Update'}`, html);
-  },
-
-  async sendInvestmentCreated(userEmail, userName, plan, capital, roi, duration) {
-    const html = templates.investmentCreated(userName, plan, capital, roi, duration);
-    return await sendEmail(userEmail, 'Investment Activated Successfully', html);
-  },
-
-  async sendInvestmentApproved(userEmail, userName, details) {
-    const html = templates.investmentApproved(userName, details);
-    return await sendEmail(userEmail, 'Investment Approved', html);
-  },
-
-  async sendWithdrawalApproved(userEmail, userName, amount, method, wallet) {
-    const html = templates.withdrawalApproved(userName, amount, method, wallet);
-    return await sendEmail(userEmail, 'Withdrawal Approved', html);
   },
 
   async sendKycSubmitted(userEmail, userName) {
@@ -240,4 +150,4 @@ const emailService = {
   }
 };
 
-export default emailService;
+module.exports = emailService;
