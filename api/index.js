@@ -502,23 +502,40 @@ app.post('/api/notify/investment-created', async (req, res) => {
 app.post('/api/send-email', async (req, res) => {
   try {
     const { to, subject, html } = req.body || {};
-    console.log('📧 /api/send-email - Received request:', { to, subject: subject?.substring(0, 50) });
+    console.log('\n' + '='.repeat(70));
+    console.log('📧 /api/send-email - Email Request Received');
+    console.log('='.repeat(70));
+    console.log('Details:', { 
+      to, 
+      subject: subject?.substring(0, 60), 
+      htmlLength: html?.length || 0 
+    });
     
     if (!to || !subject || !html) {
       console.error('❌ Missing required fields:', { to: !!to, subject: !!subject, html: !!html });
       return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
     }
 
-    if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-      console.log('📤 Sending via Mailjet to:', to);
+    // Check for Mailjet credentials
+    const hasMailjetKey = !!process.env.MAILJET_API_KEY;
+    const hasMailjetSecret = !!process.env.MAILJET_API_SECRET;
+    console.log('Mailjet Config:', { hasKey: hasMailjetKey, hasSecret: hasMailjetSecret });
+
+    if (hasMailjetKey && hasMailjetSecret) {
+      console.log('📤 Attempting to send via Mailjet...');
       const mailjet = Mailjet.connect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
+      
+      const fromEmail = process.env.MAILJET_FROM_EMAIL || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`;
+      const fromName = process.env.MAILJET_FROM_NAME || 'Cyphervault';
+      
+      console.log('From:', { email: fromEmail, name: fromName });
 
       const request = mailjet.post('send', { version: 'v3.1' }).request({
         Messages: [
           {
             From: {
-              Email: process.env.MAILJET_FROM_EMAIL || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`,
-              Name: process.env.MAILJET_FROM_NAME || 'Cyphervault'
+              Email: fromEmail,
+              Name: fromName
             },
             To: [{ Email: to }],
             Subject: subject,
@@ -528,15 +545,24 @@ app.post('/api/send-email', async (req, res) => {
       });
 
       const result = await request;
-      console.log('✅ Mailjet send successful:', { 
-        to, 
+      console.log('✅ Mailjet API Response:', { 
         status: result.response?.status,
+        messageId: result.body?.Messages?.[0]?.To?.[0]?.MessageID,
+        msgStatus: result.body?.Messages?.[0]?.Status
+      });
+      console.log('='.repeat(70) + '\n');
+      return res.json({ 
+        sent: true, 
         messageId: result.body?.Messages?.[0]?.To?.[0]?.MessageID 
       });
-      return res.json({ sent: true, messageId: result.body?.Messages?.[0]?.To?.[0]?.MessageID });
     }
 
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    // Check for SMTP credentials
+    const hasSMTP = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+    console.log('SMTP Config:', { available: hasSMTP });
+
+    if (hasSMTP) {
+      console.log('📤 Attempting to send via SMTP...');
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -555,18 +581,22 @@ app.post('/api/send-email', async (req, res) => {
       };
 
       await transporter.sendMail(mailOptions);
+      console.log('✅ SMTP send successful to:', to);
+      console.log('='.repeat(70) + '\n');
       return res.json({ sent: true });
     }
 
+    console.error('❌ No email provider configured!');
+    console.log('='.repeat(70) + '\n');
     return res.status(400).json({ error: 'No mail provider configured (MAILJET or SMTP)' });
   } catch (err) {
-    console.error('❌ Send email error:', {
+    console.error('❌ Email Send Error:', {
       message: err.message,
       statusCode: err.statusCode,
-      errorMessage: err.response?.body?.ErrorMessage,
-      errorInfo: err.response?.body?.ErrorInfo,
-      fullError: JSON.stringify(err.response?.body || err, null, 2)
+      mailjetError: err.response?.body?.ErrorMessage,
+      fullError: err.response?.body || err.message
     });
+    console.log('='.repeat(70) + '\n');
     return res.status(500).json({ 
       error: 'Failed to send email',
       details: err.response?.body?.ErrorMessage || err.message 

@@ -680,22 +680,33 @@ function AdminDashboard() {
 
   const handleApproveDeposit = async (depositId: string, userId: string, amount: number) => {
     try {
+      console.log('\n' + '='.repeat(70));
+      console.log('🔄 DEPOSIT APPROVAL FLOW STARTED');
+      console.log('='.repeat(70));
+      console.log('Step 1: Update deposit status');
+      
       // 1. Update deposit status
       await supabaseDb.updateDeposit(depositId, { status: 'Approved' })
+      console.log('✅ Deposit status updated to Approved');
 
       // 2. Fetch current user to get balance
+      console.log('Step 2: Fetch user data');
       const users = await supabaseDb.getAllUsers();
       const user = users.find(u => u.id === userId || u.idnum === userId);
       
       if (!user) throw new Error('User not found')
+      console.log('✅ User found:', { email: user.email, name: user.name });
 
       // 3. Update user balance
+      console.log('Step 3: Update user balance');
       const newBalance = (user.balance || 0) + amount
       if (user.idnum) {
          await supabaseDb.updateUser(user.idnum, { balance: newBalance })
+         console.log(`✅ User balance updated: $${newBalance}`);
       }
 
       // 4. Update local state
+      console.log('Step 4: Update UI state');
       setAllDeposits(prev => 
         prev.map(d => d.id === depositId ? { ...d, status: 'Approved' } : d)
       )
@@ -704,8 +715,10 @@ function AdminDashboard() {
       setAllUsers(prev => prev.map(u => 
         (u.id === userId || u.idnum === userId) ? { ...u, balance: newBalance } : u
       ))
+      console.log('✅ UI state updated');
 
       // 5. Notify User
+      console.log('Step 5: Create in-app notification');
       if (user.idnum) {
         await supabaseDb.createNotification({
           idnum: user.idnum,
@@ -714,12 +727,14 @@ function AdminDashboard() {
           type: 'success',
           read: false
         })
+        console.log('✅ In-app notification created');
 
         // Send Email
+        console.log('Step 6: Send approval email');
         const deposit = allDeposits.find(d => d.id === depositId);
         if (deposit && user.email) {
           try {
-            console.log('📧 Attempting to send deposit approval email to:', user.email);
+            console.log(`📧 Sending approval email to: ${user.email}`);
             await sendDepositNotification(
                 user.email,
                 user.userName || user.name || 'User',
@@ -728,7 +743,7 @@ function AdminDashboard() {
                 deposit.method || 'Crypto',
                 deposit.transaction_hash
             );
-            console.log('✅ Deposit approval email sent to:', user.email);
+            console.log('✅ Deposit approval email sent successfully');
           } catch (emailError) {
             console.error('❌ Error sending deposit approval email:', emailError);
             // Continue - notification already created
@@ -736,9 +751,15 @@ function AdminDashboard() {
         }
       }
 
+      console.log('='.repeat(70));
+      console.log('✅ DEPOSIT APPROVAL COMPLETED SUCCESSFULLY');
+      console.log('='.repeat(70) + '\n');
+      
       showAlert('success', 'Deposit Approved', `Deposit of $${amount.toLocaleString()} has been approved and added to user balance.`)
     } catch (error) {
-      console.error('Error approving deposit:', error)
+      console.error('='.repeat(70));
+      console.error('❌ DEPOSIT APPROVAL FAILED:', error)
+      console.error('='.repeat(70) + '\n');
       showAlert('error', 'Error', 'Failed to approve deposit')
     }
   }
