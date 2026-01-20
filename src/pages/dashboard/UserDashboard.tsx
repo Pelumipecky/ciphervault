@@ -959,23 +959,23 @@ function UserDashboard() {
 
         // Notify backend to send investment pending email via server endpoint
         try {
-          console.log('📧 Calling /api/investments/pending-notification for user:', currentUser?.email);
-          await fetch('/api/investments/pending-notification', {
+          console.log('📧 Calling /api/investments/send-pending-notification for investment:', newInvestment.id);
+          const emailResponse = await fetch('/api/investments/send-pending-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               investmentId: newInvestment.id || '',
-              userId: currentUser?.idnum || '',
-              // Optional fallback fields (endpoint will fetch from DB if available)
-              plan: selectedPlan.name,
-              amount: parseFloat(investmentForm.capital),
-              dailyRoiRate: selectedPlan.roi,
-              duration: selectedPlan.duration,
-              userEmail: currentUser?.email || '',
-              userName: currentUser?.userName || currentUser?.name || 'User'
+              userId: currentUser?.idnum || ''
             })
           });
-          console.log('✅ Investment pending notification request sent');
+          
+          if (emailResponse.ok) {
+            const result = await emailResponse.json();
+            console.log('✅ Investment pending notification sent:', result.messageId);
+          } else {
+            const error = await emailResponse.json();
+            console.warn('⚠️  Email send failed:', error);
+          }
         } catch (notifyErr) {
           console.warn('⚠️  Failed to request investment pending notification:', notifyErr);
         }

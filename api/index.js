@@ -12,6 +12,7 @@ import emailService from './emailService.js';
 import handleDepositApproval from './deposits/approve.js';
 import handleInvestmentPending from './investments/pending.js';
 import handleInvestmentPendingNotification from './investments/pending-notification.js';
+import handleSendPendingNotification from './investments/send-pending-notification.js';
 
 dotenv.config();
 
@@ -863,6 +864,7 @@ app.get('/api/scheduler/status', (req, res) => {
 app.post('/api/deposits/approve', handleDepositApproval);
 app.post('/api/investments/pending', handleInvestmentPending);
 app.post('/api/investments/pending-notification', handleInvestmentPendingNotification);
+app.post('/api/investments/send-pending-notification', handleSendPendingNotification);
 // ========== END ISOLATED EMAIL ENDPOINTS ==========
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
