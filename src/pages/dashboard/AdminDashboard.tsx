@@ -718,6 +718,8 @@ function AdminDashboard() {
         // Send Email
         const deposit = allDeposits.find(d => d.id === depositId);
         if (deposit && user.email) {
+          try {
+            console.log('📧 Attempting to send deposit approval email to:', user.email);
             await sendDepositNotification(
                 user.email,
                 user.userName || user.name || 'User',
@@ -725,7 +727,12 @@ function AdminDashboard() {
                 amount,
                 deposit.method || 'Crypto',
                 deposit.transaction_hash
-            )
+            );
+            console.log('✅ Deposit approval email sent to:', user.email);
+          } catch (emailError) {
+            console.error('❌ Error sending deposit approval email:', emailError);
+            // Continue - notification already created
+          }
         }
       }
 
@@ -761,13 +768,20 @@ function AdminDashboard() {
           if (user) {
              // Send Email
              if (user.email) {
+               try {
+                 console.log('📧 Attempting to send deposit rejection email to:', user.email);
                  await sendDepositNotification(
                     user.email,
                     user.userName || user.name || 'User',
                     'rejected',
                     deposit.amount,
                     deposit.method || 'Crypto'
-                 )
+                 );
+                 console.log('✅ Deposit rejection email sent to:', user.email);
+               } catch (emailError) {
+                 console.error('❌ Error sending deposit rejection email:', emailError);
+                 // Continue - notification already created
+               }
              }
           }
       }
