@@ -965,7 +965,13 @@ function UserDashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               investmentId: newInvestment.id || '',
-              userId: currentUser?.idnum || ''
+              userId: currentUser?.idnum || '',
+              amount: parseFloat(investmentForm.capital),
+              plan: selectedPlan.name,
+              dailyRoiRate: selectedPlan.roi,
+              duration: selectedPlan.duration,
+              userEmail: currentUser?.email || '',
+              userName: currentUser?.userName || currentUser?.name || 'User'
             })
           });
           
