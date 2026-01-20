@@ -957,21 +957,26 @@ function UserDashboard() {
         console.log('Current user idnum:', currentUser?.idnum);
         console.log('Payment proof URL:', paymentProofUrl);
 
-        // Notify backend to send investment created email
+        // Notify backend to send investment pending email via server endpoint
         try {
-          await fetch('/api/notify/investment-created', {
+          console.log('📧 Calling /api/investments/pending for user:', currentUser?.email);
+          await fetch('/api/investments/pending', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              idnum: currentUser?.idnum || '',
+              investmentId: newInvestment.id || '',
+              userId: currentUser?.idnum || '',
+              amount: parseFloat(investmentForm.capital),
               plan: selectedPlan.name,
-              capital: parseFloat(investmentForm.capital),
-              roi: selectedPlan.roi,
-              duration: selectedPlan.duration
+              dailyRoiRate: selectedPlan.roi,
+              duration: selectedPlan.duration,
+              userEmail: currentUser?.email || '',
+              userName: currentUser?.userName || currentUser?.name || 'User'
             })
           });
+          console.log('✅ Investment pending email queued via server');
         } catch (notifyErr) {
-          console.warn('Failed to notify backend for investment created email:', notifyErr);
+          console.warn('Failed to notify backend for investment pending email:', notifyErr);
         }
         
         // Refetch investments from Supabase to ensure persistence

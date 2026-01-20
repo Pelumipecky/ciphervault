@@ -729,23 +729,34 @@ function AdminDashboard() {
         })
         console.log('✅ In-app notification created');
 
-        // Send Email
-        console.log('Step 6: Send approval email');
+        // Send Email via Server Endpoint
+        console.log('Step 6: Send approval email via server endpoint');
         const deposit = allDeposits.find(d => d.id === depositId);
         if (deposit && user.email) {
           try {
-            console.log(`📧 Sending approval email to: ${user.email}`);
-            await sendDepositNotification(
-                user.email,
-                user.userName || user.name || 'User',
-                'approved',
-                amount,
-                deposit.method || 'Crypto',
-                deposit.transaction_hash
-            );
-            console.log('✅ Deposit approval email sent successfully');
+            console.log(`📧 Calling /api/deposits/approve for: ${user.email}`);
+            const response = await fetch('/api/deposits/approve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                depositId: depositId,
+                userId: user.idnum,
+                amount: amount,
+                method: deposit.method || 'Crypto',
+                transactionHash: deposit.transaction_hash,
+                userEmail: user.email,
+                userName: user.userName || user.name || 'User'
+              })
+            });
+            
+            if (response.ok) {
+              console.log('✅ Deposit approval email queued via server');
+            } else {
+              const error = await response.json();
+              console.warn('⚠️  Server returned error:', error);
+            }
           } catch (emailError) {
-            console.error('❌ Error sending deposit approval email:', emailError);
+            console.error('❌ Error calling email endpoint:', emailError);
             // Continue - notification already created
           }
         }
