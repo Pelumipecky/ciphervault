@@ -959,24 +959,25 @@ function UserDashboard() {
 
         // Notify backend to send investment pending email via server endpoint
         try {
-          console.log('📧 Calling /api/investments/pending for user:', currentUser?.email);
-          await fetch('/api/investments/pending', {
+          console.log('📧 Calling /api/investments/pending-notification for user:', currentUser?.email);
+          await fetch('/api/investments/pending-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               investmentId: newInvestment.id || '',
               userId: currentUser?.idnum || '',
-              amount: parseFloat(investmentForm.capital),
+              // Optional fallback fields (endpoint will fetch from DB if available)
               plan: selectedPlan.name,
+              amount: parseFloat(investmentForm.capital),
               dailyRoiRate: selectedPlan.roi,
               duration: selectedPlan.duration,
               userEmail: currentUser?.email || '',
               userName: currentUser?.userName || currentUser?.name || 'User'
             })
           });
-          console.log('✅ Investment pending email queued via server');
+          console.log('✅ Investment pending notification request sent');
         } catch (notifyErr) {
-          console.warn('Failed to notify backend for investment pending email:', notifyErr);
+          console.warn('⚠️  Failed to request investment pending notification:', notifyErr);
         }
         
         // Refetch investments from Supabase to ensure persistence
