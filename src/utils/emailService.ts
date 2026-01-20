@@ -21,8 +21,17 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
     // Check if email notifications are enabled
     const emailEnabled = import.meta.env.VITE_EMAIL_NOTIFICATIONS_ENABLED === 'true';
     
+    console.log('📧 sendEmailNotification called:', {
+      to: notification.to_email,
+      subject: notification.subject,
+      hasHtml: !!notification.html,
+      hasMessage: !!notification.message,
+      type: notification.type,
+      emailEnabled
+    });
+    
     if (!emailEnabled) {
-      console.log('📧 Email notifications disabled. Would have sent:', notification);
+      console.log('📧 Email notifications disabled. Would have sent to:', notification.to_email);
       return true; // Return success but don't actually send
     }
 
@@ -36,6 +45,7 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
     }
 
     // Use server-side API endpoint (server sends via Mailjet or SMTP)
+    console.log('📤 Posting to API endpoint:', API_EMAIL_ENDPOINT);
     const response = await fetch(API_EMAIL_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -52,7 +62,8 @@ export async function sendEmailNotification(notification: EmailNotification): Pr
       throw new Error(`Email API error: ${response.statusText}`);
     }
 
-    console.log('✅ Email sent via API to:', notification.to_email);
+    const result = await response.json();
+    console.log('✅ Email sent via API to:', notification.to_email, '- Result:', result);
     return true;
   } catch (error) {
     console.error('❌ Failed to send email notification:', error);
@@ -332,24 +343,65 @@ export async function sendDepositNotification(
     },
     pending: {
       subject: '⏳ Deposit Received - Cypher Vault',
-      message: `We've received your deposit of $${amount.toLocaleString()} via ${method}. Our team is verifying the transaction. You will be notified once credited.`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Deposit Received</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { background-color: #0f172a; color: #f0b90b; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; }
+    .footer { background-color: #f4f4f4; color: #666; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #f0b90b; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .info-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .info-table td:first-child { font-weight: bold; color: #555; width: 40%; }
+    .highlight { color: #f0b90b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header" style="text-align: center; padding: 25px 0;">
+      <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
+        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+      </a>
+    </div>
+    <div class="content">
+      <h2>Deposit Received - Awaiting Verification</h2>
+      <p>Hello ${userName},</p>
+      <p>Thank you! We've received your deposit request and are now verifying the transaction details. This typically takes 24-48 hours.</p>
+      <table class="info-table">
+        <tr><td>Amount:</td><td class="highlight">$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
+        <tr><td>Method:</td><td>${method}</td></tr>
+        <tr><td>Status:</td><td style="color: #f59e0b;">⏳ Pending Verification</td></tr>
+        <tr><td>Expected Duration:</td><td>24-48 hours</td></tr>
+      </table>
+      <p style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <strong>What happens next?</strong><br>
+        Our team will verify your payment proof and transaction hash. Once approved, the funds will be instantly credited to your account. You'll receive a confirmation email.
+      </p>
+      <p>You can track your deposit status anytime from your dashboard.</p>
+      <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View Dashboard</a></center>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>This is an automated message, please do not reply. For support, visit our website.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
       type: 'info' as const,
     },
   };
 
   const config = statusMessages[status];
   
-  if (status === 'pending') {
-      return sendEmailNotification({
-        to_email: userEmail,
-        to_name: userName,
-        subject: config.subject,
-        message: 'message' in config ? config.message : '',
-        type: config.type,
-      });
-  }
-
-  // cast to any to access html property safely or just use it as is since we know the structure
+  // All statuses now use HTML templates
   const htmlConfig = config as { subject: string, html: string, type: 'success' | 'error' | 'info' };
   
   return sendEmailNotification({

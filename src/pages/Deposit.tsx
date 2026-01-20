@@ -174,14 +174,21 @@ const Deposit: React.FC = () => {
           read: false
         });
 
-        // Send Email Notification
-        await sendDepositNotification(
-          currentUser.email,
-          currentUser.userName || currentUser.name,
-          'pending',
-          depositData.amount,
-          depositData.method
-        );
+      // Send Email Notification
+        try {
+          console.log('📧 Attempting to send deposit notification email to:', currentUser.email);
+          const emailSent = await sendDepositNotification(
+            currentUser.email,
+            currentUser.userName || currentUser.name,
+            'pending',
+            depositData.amount,
+            depositData.method
+          );
+          console.log('📧 Email notification result:', emailSent);
+        } catch (notifError) {
+          console.error('❌ Error sending deposit notification:', notifError);
+          // Continue even if notification fails
+        }
       } catch (notifError) {
         console.error('Error creating notification:', notifError);
         // Continue even if notification fails
