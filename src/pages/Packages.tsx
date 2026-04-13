@@ -19,7 +19,7 @@ function Packages() {
   return (
     <div className="packages-page">
       <header className="packages-page__header">
-        <p className="eyebrow">Cypher Vault portfolios</p>
+        <p className="eyebrow">eToro Trust Capital portfolios</p>
         <h1>Six investment plans for every growth strategy</h1>
         <p className="lead">
           Pick the mix that matches your risk tolerance and liquidity needs. Each package is rebalanced by our 
@@ -43,7 +43,7 @@ function Packages() {
 
       <div className="packages-page__access">
         <div>
-          <h2>Already investing with Cypher Vault?</h2>
+          <h2>Already investing with eToro Trust Capital?</h2>
           <p>Launch your dashboard to allocate instantly, or spin up a new account in minutes.</p>
         </div>
         <div className="packages-page__access-actions">

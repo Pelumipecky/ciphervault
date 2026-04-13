@@ -14,6 +14,20 @@ const TawkToChatWidget: React.FC = () => {
     const w = window as any;
     w.Tawk_API = w.Tawk_API || {};
     w.Tawk_LoadStart = new Date();
+    
+    // Set company context for the chat widget
+    w.Tawk_API.visitor = {
+      name: 'eToro Trust Capital',
+    };
+    
+    // Handle Tawk.to onLoad to customize the greeting
+    w.Tawk_API.onLoad = function() {
+      // Set custom greeting message
+      w.Tawk_API.setAttributes({
+        'email': '',
+        'name': 'Guest'
+      }, function(error) {});
+    };
 
     const s1 = document.createElement("script");
     const s0 = document.getElementsByTagName("script")[0];

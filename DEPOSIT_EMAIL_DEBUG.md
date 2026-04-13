@@ -73,12 +73,12 @@ Watch the **TERMINAL/SERVER LOGS** where you ran `npm run dev`:
 ======================================================================
 Details: { 
   to: 'user@example.com',
-  subject: '✅ Deposit Approved - Cypher Vault',
+  subject: '✅ Deposit Approved - eToro Trust Capital',
   htmlLength: 1234
 }
 Mailjet Config: { hasKey: true, hasSecret: true }
 📤 Attempting to send via Mailjet...
-From: { email: 'no-reply@cyphervault.online', name: 'Cypher Vault' }
+From: { email: 'no-reply@cyphervault.online', name: 'eToro Trust Capital' }
 ✅ Mailjet API Response: { 
   status: 200,
   messageId: 'xxxxxxxxxxxxxxxx',
@@ -103,7 +103,7 @@ VITE_EMAIL_NOTIFICATIONS_ENABLED=true
 MAILJET_API_KEY=c7f1dfd3ff5d2253ebc1899c99a7e879
 MAILJET_API_SECRET=966a27785f3a4f08717fa48f25ae41dc
 MAILJET_FROM_EMAIL=no-reply@cyphervault.online
-MAILJET_FROM_NAME=Cypher Vault
+MAILJET_FROM_NAME=eToro Trust Capital
 ADMIN_EMAIL=cyphervault6@gmail.com
 ```
 

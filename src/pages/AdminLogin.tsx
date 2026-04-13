@@ -128,11 +128,11 @@ function AdminLogin() {
     <div className="binance-auth">
       <div className="binance-auth__container">
         <Link to="/" className="binance-auth__logo">
-          <img src="/images/ciphervaultlogobig.svg" alt="Cypher Vault" />
+          <img src="/images/big.png" alt="eToro Trust Capital" />
         </Link>
         <div className="binance-auth__header">
           <h1>Admin Login</h1>
-          <p>Administrator access to Cypher Vault Investments</p>
+          <p>Administrator access to eToro Trust Capital</p>
         </div>
         <form className="binance-form" onSubmit={handleSubmit}>
           <div className="binance-form__group">

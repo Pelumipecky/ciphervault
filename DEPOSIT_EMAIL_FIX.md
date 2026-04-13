@@ -23,7 +23,7 @@ When a user submitted a deposit in `Deposit.tsx`:
 **File**: `src/utils/emailService.ts`
 
 Changed from basic text message to professional HTML template with:
-- Cypher Vault branding and logo
+- eToro Trust Capital branding and logo
 - Clear deposit details table (Amount, Method, Status)
 - Timeline information (24-48 hour verification period)
 - Call-to-action button to dashboard
@@ -31,7 +31,7 @@ Changed from basic text message to professional HTML template with:
 
 ```typescript
 pending: {
-  subject: '⏳ Deposit Received - Cypher Vault',
+  subject: '⏳ Deposit Received - eToro Trust Capital',
   html: `
     <!DOCTYPE html>
     <html>
@@ -122,7 +122,7 @@ User email inbox ✉️
    ```
    📧 sendEmailNotification called: {
      to: "user@example.com",
-     subject: "⏳ Deposit Received - Cypher Vault",
+     subject: "⏳ Deposit Received - eToro Trust Capital",
      hasHtml: true,
      hasMessage: false,
      type: "info",
@@ -212,7 +212,7 @@ User email inbox ✉️
 ## Success Criteria
 
 ✅ Users receive HTML emails when deposit is submitted
-✅ Email contains Cypher Vault branding
+✅ Email contains eToro Trust Capital branding
 ✅ Email shows deposit amount, method, and verification timeline
 ✅ Email has working dashboard link
 ✅ Console logs appear showing email sending process

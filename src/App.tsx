@@ -25,6 +25,7 @@ import { getDashboardRoute } from '@/utils/roles'
 // Chat widgets: keep SuppaChatLoader for client-only lazy loading and also include the floating buttons
 import TawkToChatWidget from '@/components/ui/TawkToChatWidget'
 import TelegramFloatingButton from '@/components/ui/TelegramFloatingButton'
+import WhatsAppFloatingButton from '@/components/ui/WhatsAppFloatingButton'
 
 function RoleBasedRedirect() {
   const { user, isAuthenticated } = useAuth()
@@ -210,6 +211,7 @@ function App() {
       {!isAdminRoute && (
         <>
           <TelegramFloatingButton />
+          <WhatsAppFloatingButton />
         </>
       )}
     </ThemeProvider>

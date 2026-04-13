@@ -1,7 +1,7 @@
 // src/components/ui/WhatsAppFloatingButton.tsx
 import React from 'react'
 
-const WHATSAPP_LINK = 'https://wa.me/1234567890'; // Replace with your WhatsApp number (in international format)
+const WHATSAPP_LINK = 'https://wa.me/17302416651'; // eToro Trust Capital WhatsApp support
 
 const WhatsAppFloatingButton: React.FC = () => (
   <a
@@ -11,7 +11,7 @@ const WhatsAppFloatingButton: React.FC = () => (
     style={{
       position: 'fixed',
       bottom: 96,
-      right: 24,
+      left: 24,
       zIndex: 9999,
       background: '#25D366',
       color: '#fff',

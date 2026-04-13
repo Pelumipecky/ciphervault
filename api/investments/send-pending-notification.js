@@ -72,7 +72,7 @@ export default async function handler(req, res) {
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="eToro Trust Capital" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
             Name: fromName
           },
           To: [{ Email: userEmail }],
-          Subject: '⏳ Investment Request Received - Cypher Vault',
+          Subject: '⏳ Investment Request Received - eToro Trust Capital',
           HTMLPart: html
         }
       ]

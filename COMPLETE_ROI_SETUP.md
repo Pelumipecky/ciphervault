@@ -161,7 +161,7 @@ Edit with `crontab -e`:
 
 #### Windows Task Scheduler
 1. Open Task Scheduler
-2. Find "Cypher Vault - Daily ROI Crediting"
+2. Find "eToro Trust Capital - Daily ROI Crediting"
 3. Right-click → Properties → Triggers
 4. Edit trigger and change "Start time"
 
@@ -223,7 +223,7 @@ log stream --predicate 'eventMessage contains[cd] "cron"' --level debug  # Mac
 Get-Content logs/roi-cron.log -Wait
 
 # Or check Task Scheduler history
-Get-ScheduledTask -TaskName "Cypher Vault - Daily ROI Crediting" | Get-ScheduledTaskInfo
+Get-ScheduledTask -TaskName "eToro Trust Capital - Daily ROI Crediting" | Get-ScheduledTaskInfo
 ```
 
 ---

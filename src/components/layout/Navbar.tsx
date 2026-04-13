@@ -71,11 +71,11 @@ function Navbar() {
         <Link to="/" className="navbar__brand" onClick={closeMenu}>
           {/* Explicit height class needed to override Tailwind base reset */}
           <img 
-            src="/images/ciphervaultlogobig.svg" 
-            alt="Cypher Vault Investments" 
-            height={36} 
-            className="h-9 w-auto"
-            style={{ maxHeight: '36px', width: 'auto' }} 
+            src="/images/big.png" 
+            alt="eToro Trust Capital Investments" 
+            height={48} 
+            className="h-12 w-auto"
+            style={{ maxHeight: '48px', width: 'auto' }} 
           />
         </Link>
         <nav className={`navbar__links ${isOpen ? 'navbar__links--open' : ''}`}>

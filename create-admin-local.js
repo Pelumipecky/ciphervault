@@ -26,7 +26,7 @@ localStorage.setItem('activeUser', JSON.stringify(adminUser));
 sessionStorage.setItem('activeUser', JSON.stringify(adminUser));
 
 console.log('✅ Admin user created successfully!');
-console.log('📧 Email: admin@ciphervault.com');
+console.log('📧 Email: admin@etorotroptrustcapital.com');
 console.log('🔑 Password: Admin123!');
 console.log('💰 Balance: $10,000');
 console.log('👨‍💼 Admin: true');

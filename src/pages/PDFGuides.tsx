@@ -113,7 +113,7 @@ const guides = [
   {
     id: 'loan-guide',
     title: 'Loan Application Guide',
-    description: 'Complete guide to applying for loans on Cypher Vault. Understand eligibility requirements, loan terms, interest rates, and repayment options.',
+    description: 'Complete guide to applying for loans on eToro Trust Capital. Understand eligibility requirements, loan terms, interest rates, and repayment options.',
     pages: 16,
     difficulty: 'Intermediate',
     icon: '🏦',
@@ -194,10 +194,10 @@ function PDFGuides() {
           </div>
           
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Cypher Vault <span className="bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">User Guides</span>
+            eToro Trust Capital <span className="bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">User Guides</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-2">
-            Comprehensive documentation to help you master every feature of Cypher Vault
+            Comprehensive documentation to help you master every feature of eToro Trust Capital
           </p>
           <p className="text-gray-400">
             Available in <span className="text-yellow-500 font-semibold">{LANGUAGES.length} languages</span>

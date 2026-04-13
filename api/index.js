@@ -414,7 +414,7 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
               {
                 From: {
                   Email: process.env.MAILJET_FROM_EMAIL || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`,
-                  Name: process.env.MAILJET_FROM_NAME || 'Cyphervault'
+                  Name: process.env.MAILJET_FROM_NAME || 'eToro Trust Capital'
                 },
                 To: [{ Email: SUPPORT_EMAIL, Name: 'Support' }],
                 Subject: `New Contact Message: ${subject || '(no subject)'}`,
@@ -530,7 +530,7 @@ app.post('/api/send-email', async (req, res) => {
       const mailjet = Mailjet.connect(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
       
       const fromEmail = process.env.MAILJET_FROM_EMAIL || `no-reply@${process.env.APP_DOMAIN || 'ciphervault.example'}`;
-      const fromName = process.env.MAILJET_FROM_NAME || 'Cyphervault';
+      const fromName = process.env.MAILJET_FROM_NAME || 'eToro Trust Capital';
       
       console.log('From:', { email: fromEmail, name: fromName });
 

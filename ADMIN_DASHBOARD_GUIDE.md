@@ -13,7 +13,7 @@ The admin dashboard provides comprehensive management capabilities for the Cyphe
 - **Gradient Stat Cards**: 4 beautiful gradient cards (purple, pink, blue, green)
 - **Professional Tables**: Sortable, filterable tables with hover effects
 - **Responsive Layout**: Mobile-friendly with collapsible sidebar
-- **Dark Theme**: Consistent with Cypher Vault branding (#0f172a, #1e293b, #f0b90b)
+- **Dark Theme**: Consistent with eToro Trust Capital branding (#0f172a, #1e293b, #f0b90b)
 
 ### 2. **Dashboard Tabs**
 
@@ -213,7 +213,7 @@ const newUser = {
 ### Color Palette
 - **Background**: `#0f172a` (dark slate)
 - **Secondary BG**: `#1e293b` (slate gray)
-- **Primary Gold**: `#f0b90b` (Cypher Vault yellow)
+- **Primary Gold**: `#f0b90b` (eToro Trust Capital yellow)
 - **Success Green**: `#10b981` (emerald)
 - **Error Red**: `#ef4444` (red)
 - **Warning Yellow**: `#fbbf24` (amber)

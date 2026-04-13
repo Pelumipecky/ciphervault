@@ -14,7 +14,7 @@
     "hero": {
       "eyebrow": "Institutional crypto platform",
       "title": "Disciplined exposure for serious digital-asset teams.",
-      "subtitle": "Cypher Vault blends custody, quantitative research, and transparent reporting so every allocation is as resilient as a vault.",
+      "subtitle": "eToro Trust Capital blends custody, quantitative research, and transparent reporting so every allocation is as resilient as a vault.",
       "cta": "Open an account",
       "ctaDashboard": "Go to Dashboard",
       "ctaExplore": "Explore packages",
@@ -22,7 +22,7 @@
       "pillCopy": "Available for new clients through Q1."
     },
     "features": {
-      "title": "Why Choose Cypher Vault?",
+      "title": "Why Choose eToro Trust Capital?",
       "security": {
         "title": "Bank-Level Security",
         "description": "Advanced encryption and multi-factor authentication protect your investments"
@@ -69,7 +69,7 @@
       "blog": { "title": "Blog + Research", "copy": "Weekly on-chain insights and macro notes straight from the quant floor.", "cta": "Read Insights" }
     },
     "about": {
-      "eyebrow": "About Cypher Vault",
+      "eyebrow": "About eToro Trust Capital",
       "title": "Security-first infrastructure with data-driven allocations.",
       "lead": "Every wallet is verified, every counterparty audited, and every rebalance recorded. Family offices, treasuries, and protocol foundations trust us to scale exposure without compromising governance.",
       "checklist": {

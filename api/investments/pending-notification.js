@@ -168,7 +168,7 @@ export default async function handler(req, res) {
       </div>
     </div>
     <div class="footer">
-      <p>&copy; 2026 Cypher Vault. All rights reserved.</p>
+      <p>&copy; 2026 eToro Trust Capital. All rights reserved.</p>
       <p>This is an automated message. Please do not reply.</p>
     </div>
   </div>
@@ -179,7 +179,7 @@ export default async function handler(req, res) {
     console.log('\n📤 Creating Mailjet connection and sending...');
     const mailjet = Mailjet.connect(MAILJET_API_KEY, MAILJET_API_SECRET);
     const fromEmail = process.env.MAILJET_FROM_EMAIL || 'no-reply@cyphervault.online';
-    const fromName = process.env.MAILJET_FROM_NAME || 'Cypher Vault';
+    const fromName = process.env.MAILJET_FROM_NAME || 'eToro Trust Capital';
 
     const result = await mailjet.post('send', { version: 'v3.1' }).request({
       Messages: [{

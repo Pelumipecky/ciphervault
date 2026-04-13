@@ -88,7 +88,7 @@ export async function sendInvestmentNotification(
   
   const statusMessages = {
     approved: {
-      subject: '✅ Investment Approved - Cypher Vault',
+      subject: '✅ Investment Approved - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -113,7 +113,7 @@ export async function sendInvestmentNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="eToro Trust Capital" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -132,7 +132,7 @@ export async function sendInvestmentNotification(
       <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Track Investment</a></center>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} eToro Trust Capital. All rights reserved.</p>
       <p>This is an automated message, please do not reply.</p>
     </div>
   </div>
@@ -142,12 +142,12 @@ export async function sendInvestmentNotification(
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ Investment Update - Cypher Vault',
+      subject: '❌ Investment Update - eToro Trust Capital',
       message: `Your investment request of $${amount.toLocaleString()} for the ${plan} plan has been reviewed. Please contact support for more details.`,
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ Investment Received - Cypher Vault',
+      subject: '⏳ Investment Received - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -172,7 +172,7 @@ export async function sendInvestmentNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src=\"https://cyphervault.vercel.app/images/big.png\" alt=\"eToro Trust Capital\" width=\"200\" style=\"display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;\" />
       </a>
     </div>
     <div class="content">
@@ -239,7 +239,7 @@ export async function sendDepositNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ Deposit Approved - Cypher Vault',
+      subject: '✅ Deposit Approved - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -264,7 +264,7 @@ export async function sendDepositNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="eToro Trust Capital" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -281,7 +281,7 @@ export async function sendDepositNotification(
       <center><a href="https://cyphervault.vercel.app/dashboard" class="button">Go to Dashboard</a></center>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} eToro Trust Capital. All rights reserved.</p>
       <p>This is an automated message, please do not reply.</p>
     </div>
   </div>
@@ -291,7 +291,7 @@ export async function sendDepositNotification(
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ Deposit Update - Cypher Vault',
+      subject: '❌ Deposit Update - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -316,7 +316,7 @@ export async function sendDepositNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="eToro Trust Capital" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -332,7 +332,7 @@ export async function sendDepositNotification(
       <center><a href="https://cyphervault.vercel.app/contact" class="button">Contact Support</a></center>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} eToro Trust Capital. All rights reserved.</p>
       <p>This is an automated message, please do not reply.</p>
     </div>
   </div>
@@ -342,7 +342,7 @@ export async function sendDepositNotification(
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ Deposit Received - Cypher Vault',
+      subject: '⏳ Deposit Received - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -367,7 +367,7 @@ export async function sendDepositNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -425,17 +425,17 @@ export async function sendWithdrawalNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ Withdrawal Approved - Cypher Vault',
+      subject: '✅ Withdrawal Approved - eToro Trust Capital',
       message: `Your withdrawal request of $${amount.toLocaleString()} via ${method} has been approved and processed. Funds should arrive within 1-3 business days.`,
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ Withdrawal Update - Cypher Vault',
+      subject: '❌ Withdrawal Update - eToro Trust Capital',
       message: `Your withdrawal request of $${amount.toLocaleString()} could not be processed. Please contact support for assistance.`,
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ Withdrawal Request Received - Cypher Vault',
+      subject: '⏳ Withdrawal Request Received - eToro Trust Capital',
       message: `We've received your withdrawal request of $${amount.toLocaleString()} via ${method}. Our team is processing it and will notify you once completed.`,
       type: 'info' as const,
     },
@@ -462,17 +462,17 @@ export async function sendKYCNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ KYC Verified - Cypher Vault',
-      message: `Congratulations! Your identity verification has been completed successfully. You now have full access to all Cypher Vault features.`,
+      subject: '✅ KYC Verified - eToro Trust Capital',
+      message: `Congratulations! Your identity verification has been completed successfully. You now have full access to all eToro Trust Capital features.`,
       type: 'success' as const,
     },
     rejected: {
-      subject: '❌ KYC Verification Update - Cypher Vault',
+      subject: '❌ KYC Verification Update - eToro Trust Capital',
       message: `Your KYC verification could not be completed. Please resubmit your documents or contact support for assistance.`,
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ KYC Submitted - Cypher Vault',
+      subject: '⏳ KYC Submitted - eToro Trust Capital',
       message: `We've received your KYC documents and are currently reviewing them. This typically takes 24-48 hours. We'll notify you once complete.`,
       type: 'info' as const,
     },
@@ -501,7 +501,7 @@ export async function sendLoanNotification(
 ): Promise<boolean> {
   const statusMessages = {
     approved: {
-      subject: '✅ Loan Approved - Cypher Vault',
+      subject: '✅ Loan Approved - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -526,7 +526,7 @@ export async function sendLoanNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="eToro Trust Capital" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -542,7 +542,7 @@ export async function sendLoanNotification(
       <center><a href="https://cyphervault.vercel.app/dashboard" class="button">View Dashboard</a></center>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} eToro Trust Capital. All rights reserved.</p>
       <p>This is an automated message, please do not reply.</p>
     </div>
   </div>
@@ -551,8 +551,8 @@ export async function sendLoanNotification(
       `,
       type: 'success' as const,
     },
-    rejected: {
-      subject: '❌ Loan Application Update - Cypher Vault',
+    loanRejected: {
+      subject: '❌ Loan Application Update - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -577,7 +577,7 @@ export async function sendLoanNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="eToro Trust Capital" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -603,7 +603,7 @@ export async function sendLoanNotification(
       type: 'error' as const,
     },
     pending: {
-      subject: '⏳ Loan Application Received - Cypher Vault',
+      subject: '⏳ Loan Application Received - eToro Trust Capital',
       html: `
 <!DOCTYPE html>
 <html>
@@ -628,7 +628,7 @@ export async function sendLoanNotification(
   <div class="container">
     <div class="header" style="text-align: center; padding: 25px 0;">
       <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-        <img src="https://cyphervault.vercel.app/images/ciphervaultlogobig.png" alt="Cypher Vault" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
+        <img src="https://cyphervault.vercel.app/images/big.png" alt="eToro Trust Capital" width="200" style="display: inline-block; max-width: 100%; height: auto; border: 0; font-family: sans-serif; font-size: 24px; color: #f0b90b; font-weight: bold;" />
       </a>
     </div>
     <div class="content">
@@ -681,7 +681,7 @@ export async function sendBalanceUpdateNotification(
   return sendEmailNotification({
     to_email: userEmail,
     to_name: userName,
-    subject: '💰 Balance Update - Cypher Vault',
+    subject: '💰 Balance Update - eToro Trust Capital',
     message: `Your account balance has been ${changeType} by $${Math.abs(difference).toLocaleString()}. New balance: $${newBalance.toLocaleString()}`,
     type: 'info',
   });
@@ -701,7 +701,7 @@ export async function sendROINotification(
   return sendEmailNotification({
     to_email: userEmail,
     to_name: userName,
-    subject: '💰 Daily ROI Credited - Cypher Vault',
+    subject: '💰 Daily ROI Credited - eToro Trust Capital',
     message: `Great news! Your daily ROI of $${roiAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from the ${investmentPlan} has been credited to your account. Total earnings so far: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Current balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     type: 'success',
   });
@@ -723,7 +723,7 @@ export async function sendInvestmentCompletionNotification(
   return sendEmailNotification({
     to_email: userEmail,
     to_name: userName,
-    subject: '🎉 Investment Plan Completed - Cypher Vault',
+    subject: '🎉 Investment Plan Completed - eToro Trust Capital',
     message: `Congratulations! Your ${investmentPlan} investment has completed successfully. Total ROI earned: $${totalROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Bonus credited: $${bonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Total earnings: $${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Your new balance: $${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     type: 'success',
   });
@@ -739,8 +739,8 @@ export async function sendWelcomeEmail(
   return sendEmailNotification({
     to_email: userEmail,
     to_name: userName,
-    subject: '🎉 Welcome to Cypher Vault!',
-    message: `Welcome to Cypher Vault, ${userName}! We're excited to have you join our investment platform. Start exploring our investment plans and grow your wealth with us.`,
+    subject: '🎉 Welcome to eToro Trust Capital!',
+    message: `Welcome to eToro Trust Capital, ${userName}! We're excited to have you join our investment platform. Start exploring our investment plans and grow your wealth with us.`,
     type: 'success',
   });
 }
@@ -769,7 +769,7 @@ function generateEmailHTML(notification: EmailNotification & { message: string }
   const ACCENT_COLOR = '#f0b90b';       // Gold/Yellow accent
   const TEXT_PRIMARY = '#f8fafc';       // Light text
   const TEXT_SECONDARY = '#cbd5e1';     // Dimmer text
-  const LOGO_URL = 'https://raw.githubusercontent.com/yourusername/yourrepo/main/public/images/ciphervaultlogobig.svg';
+  const LOGO_URL = 'https://raw.githubusercontent.com/yourusername/yourrepo/main/public/images/big.png';
 
   return `
     <!DOCTYPE html>
@@ -800,7 +800,7 @@ function generateEmailHTML(notification: EmailNotification & { message: string }
               <!-- Header with Logo -->
               <tr>
                 <td style="background: linear-gradient(135deg, ${ACCENT_COLOR} 0%, #d19e09 100%); padding: 40px 30px; text-align: center; border-bottom: 3px solid ${ACCENT_COLOR};">
-                  <img src="${LOGO_URL}" alt="Cypher Vault" style="width: 180px; height: auto; margin: 0; display: block; margin-bottom: 15px;" />
+                  <img src="${LOGO_URL}" alt="eToro Trust Capital" style="width: 180px; height: auto; margin: 0; display: block; margin-bottom: 15px;" />
                   <h1 style="margin: 0; color: ${PRIMARY_COLOR}; font-size: 28px; font-weight: 700; letter-spacing: 0.5px;">
                     ${iconMap[notification.type]} ${notification.subject.split(' - ')[0]}
                   </h1>
@@ -823,7 +823,7 @@ function generateEmailHTML(notification: EmailNotification & { message: string }
 
                   <!-- CTA Button -->
                   <div style="text-align: center; margin: 35px 0;">
-                    <a href="${import.meta.env.VITE_APP_URL || 'https://ciphervault.com'}/dashboard" style="display: inline-block; background: linear-gradient(135deg, ${ACCENT_COLOR} 0%, #d19e09 100%); color: ${PRIMARY_COLOR}; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; letter-spacing: 0.5px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(240, 185, 11, 0.3);">
+                    <a href="${import.meta.env.VITE_APP_URL || 'https://etorotroptrustcapital.com'}/dashboard" style="display: inline-block; background: linear-gradient(135deg, ${ACCENT_COLOR} 0%, #d19e09 100%); color: ${PRIMARY_COLOR}; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; letter-spacing: 0.5px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(240, 185, 11, 0.3);">
                       Go to Dashboard
                     </a>
                   </div>
@@ -843,19 +843,19 @@ function generateEmailHTML(notification: EmailNotification & { message: string }
                 <td style="background-color: ${PRIMARY_COLOR}; padding: 30px; text-align: center; border-top: 1px solid rgba(240, 185, 11, 0.1);">
                   <!-- Social Links -->
                   <div style="margin: 0 0 20px 0;">
-                    <a href="https://twitter.com/ciphervault" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                    <a href="https://twitter.com/etorotrust" style="display: inline-block; margin: 0 10px; text-decoration: none;">
                       <span style="color: ${ACCENT_COLOR}; font-size: 18px;">𝕏</span>
                     </a>
-                    <a href="https://discord.gg/ciphervault" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                    <a href="https://discord.gg/etorotrust" style="display: inline-block; margin: 0 10px; text-decoration: none;">
                       <span style="color: ${ACCENT_COLOR}; font-size: 18px;">💬</span>
                     </a>
-                    <a href="https://telegram.me/ciphervault" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                    <a href="https://telegram.me/etorotrust" style="display: inline-block; margin: 0 10px; text-decoration: none;">
                       <span style="color: ${ACCENT_COLOR}; font-size: 18px;">✈️</span>
                     </a>
                   </div>
 
                   <p style="margin: 0 0 10px 0; color: ${TEXT_SECONDARY}; font-size: 13px;">
-                    © ${new Date().getFullYear()} Cypher Vault. All rights reserved.
+                    © ${new Date().getFullYear()} eToro Trust Capital. All rights reserved.
                   </p>
                   <p style="margin: 0; color: ${TEXT_SECONDARY}; font-size: 12px;">
                     This is an automated notification. Please do not reply to this email.

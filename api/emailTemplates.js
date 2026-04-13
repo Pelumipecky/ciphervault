@@ -1,5 +1,5 @@
 // Logo - using external URL with image caching for reliability
-const LOGO_IMAGE = 'https://cyphervault.vercel.app/images/ciphervaultlogobig.png';
+const LOGO_IMAGE = 'https://cyphervault.vercel.app/images/big.png';
 
 const styles = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -48,7 +48,7 @@ const wrapTemplate = (title, bodyContent) => `
     <div class="header">
       <div class="header-logo">
         <a href="https://cyphervault.vercel.app" target="_blank" style="text-decoration: none;">
-          <img src="${LOGO_IMAGE}" alt="Cypher Vault" style="display: block; max-width: 100%; height: auto; border: 0;" />
+          <img src="${LOGO_IMAGE}" alt="eToro Trust Capital" style="display: block; max-width: 100%; height: auto; border: 0;" />
         </a>
       </div>
       <h1>${title}</h1>
@@ -58,7 +58,7 @@ const wrapTemplate = (title, bodyContent) => `
       ${bodyContent}
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Cypher Vault. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} eToro Trust Capital. All rights reserved.</p>
       <p class="small-text">This is an automated message, please do not reply.</p>
     </div>
   </div>
@@ -67,9 +67,9 @@ const wrapTemplate = (title, bodyContent) => `
 `;
 
 export default {
-  welcome: (name) => wrapTemplate('Welcome to Cypher Vault', `
+  welcome: (name) => wrapTemplate('Welcome to eToro Trust Capital', `
     <h2>Welcome, ${name}!</h2>
-    <p>Thank you for joining Cypher Vault. We are thrilled to have you on board.</p>
+    <p>Thank you for joining eToro Trust Capital. We are thrilled to have you on board.</p>
     <p>Your account has been successfully created. You can now access your dashboard, explore our investment plans, and start your journey to financial freedom.</p>
     <p><strong>Next Steps:</strong></p>
     <ul>

@@ -1,7 +1,7 @@
 // src/components/ui/TelegramFloatingButton.tsx
 import React from 'react'
 
-const TELEGRAM_LINK = 'https://t.me/cyphervault6'; // Cypher Vault Telegram support
+const TELEGRAM_LINK = 'https://t.me/cyphervault6'; // eToro Trust Capital Telegram support
 
 const TelegramFloatingButton: React.FC = () => (
   <a

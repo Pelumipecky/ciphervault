@@ -1,7 +1,7 @@
 // src/components/ui/WhatsAppChatButton.tsx
 import React from 'react'
 
-const WHATSAPP_LINK = 'https://wa.me/1234567890'; // Replace with your WhatsApp number (in international format)
+const WHATSAPP_LINK = 'https://wa.me/17302416651'; // eToro Trust Capital WhatsApp support
 
 // Define a uniquely named component for this file
 const WhatsAppChatButton: React.FC = () => (

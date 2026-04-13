@@ -10,7 +10,7 @@ Updated loan and investment email notifications to use professional HTML styling
 - **Changes:**
   - Replaced simple text notifications with professional HTML templates
   - Added styled email layout matching other notifications (blue header, gold accents)
-  - Includes Cypher Vault logo
+  - Includes eToro Trust Capital logo
   - Added color-coded status indicators:
     - 🟢 Approved: Green status
     - 🔴 Rejected: Red status  
@@ -73,7 +73,7 @@ All notifications now follow this consistent structure:
 ```
 ┌─────────────────────────────────┐
 │  HEADER (Dark Blue #0f172a)    │
-│  - Cypher Vault Logo            │
+│  - eToro Trust Capital Logo            │
 │  - Gold accent color #f0b90b    │
 ├─────────────────────────────────┤
 │  CONTENT (White background)     │

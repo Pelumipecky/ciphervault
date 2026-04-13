@@ -1,4 +1,4 @@
--- Create Admin User for CipherVault
+-- Create Admin User for eToro Trust Capital
 -- Run this in your Supabase SQL Editor to create an admin account
 
 -- Insert admin user with generated bcrypt hash
@@ -60,7 +60,7 @@ INSERT INTO kyc_verifications (idnum, status, "documentType", "documentNumber", 
 
 -- Create sample notifications for the admin
 INSERT INTO notifications (idnum, type, title, message, "isRead", date) VALUES
-('ADM001', 'system', 'Welcome to CipherVault', 'Your admin account has been created successfully.', true, NOW() - INTERVAL '30 days'),
+('ADM001', 'system', 'Welcome to eToro Trust Capital', 'Your admin account has been created successfully.', true, NOW() - INTERVAL '30 days'),
 ('ADM001', 'investment', 'Investment Approved', 'Your Premium Plan investment of $10,000 has been approved.', true, NOW() - INTERVAL '15 days'),
 ('ADM001', 'withdrawal', 'Withdrawal Processed', 'Your withdrawal of $2,000 has been processed.', true, NOW() - INTERVAL '20 days');
 

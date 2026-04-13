@@ -4,8 +4,8 @@ import templates from './emailTemplates.js';
 // Configuration
 const MAILJET_API_KEY = process.env.MAILJET_API_KEY;
 const MAILJET_API_SECRET = process.env.MAILJET_API_SECRET;
-const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM || process.env.MAILJET_FROM_EMAIL || 'no-reply@ciphervault.online';
-const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Cypher Vault';
+const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM || process.env.MAILJET_FROM_EMAIL || 'no-reply@etorotroptrustcapital.online';
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'eToro Trust Capital';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'cyphervault6@gmail.com';
 
 // Initialize Mailjet Client
@@ -112,7 +112,7 @@ const emailService = {
   },
   async sendWelcome(email, name) {
     const html = templates.welcome(name);
-    return await sendEmail(email, 'Welcome to Cypher Vault', html);
+    return await sendEmail(email, 'Welcome to eToro Trust Capital', html);
   },
 
   async sendDepositRequest(userEmail, userName, amount, method, currency, txHash, proofUrl) {
@@ -181,3 +181,4 @@ const emailService = {
 };
 
 export default emailService;
+

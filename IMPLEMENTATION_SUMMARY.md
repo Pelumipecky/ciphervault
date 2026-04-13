@@ -244,7 +244,7 @@ Successfully converted the legacy Binance clone (HTML/CSS/JS) into a modern Reac
     network: 'Ethereum Network (ERC-20)'
   },
   Bank: {
-    accountName: 'Cypher Vault Investments Ltd.',
+    accountName: 'eToro Trust Capital Investments Ltd.',
     accountNumber: '1234567890',
     bankName: 'Global Trust Bank',
     routingNumber: 'GTB001234',

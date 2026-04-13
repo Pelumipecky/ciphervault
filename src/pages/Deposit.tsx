@@ -38,7 +38,7 @@ const paymentMethods = [
   },
   {
     name: 'Bank Transfer',
-    accountName: 'Cypher Vault Investments Ltd.',
+    accountName: 'eToro Trust Capital Investments Ltd.',
     accountNumber: '1682302387',
     bankName: 'Global Trust Bank',
     routingNumber: 'GTB001234',

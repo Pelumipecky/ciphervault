@@ -14,13 +14,13 @@ export interface GuideContent {
 export const GUIDE_CONTENT: Record<string, GuideContent> = {
   'getting-started': {
     id: 'getting-started',
-    title: 'Getting Started with Cypher Vault',
+    title: 'Getting Started with eToro Trust Capital',
     subtitle: 'Your journey to financial freedom begins here',
     sections: [
       {
         title: 'Creating Your Account',
         content: `
-          <p>Welcome to Cypher Vault! Creating an account is the first step towards your investment journey. Follow these simple steps:</p>
+          <p>Welcome to eToro Trust Capital! Creating an account is the first step towards your investment journey. Follow these simple steps:</p>
           <ol>
             <li>Click on the <strong>"Get Started"</strong> or "Sign Up" button on the homepage.</li>
             <li>Fill in your personal details including your full name, email address, and phone number.</li>
@@ -39,7 +39,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
             <li>Log in to your dashboard and navigate to the <strong>KYC Verification</strong> tab (or "Verify Identity").</li>
             <li>You will need to upload a valid government-issued ID (Passport, Driver's License, or National ID).</li>
             <li>Upload a clear photo of the front and back of your ID.</li>
-            <li>Take a selfie holding your ID and a piece of paper with "Cypher Vault" and today's date written on it.</li>
+            <li>Take a selfie holding your ID and a piece of paper with "eToro Trust Capital" and today's date written on it.</li>
             <li>Submit your documents. Verification typically takes 1-24 hours.</li>
           </ul>
         `
@@ -67,7 +67,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
       {
         title: 'Understanding Our Plans',
         content: `
-          <p>Cypher Vault offers a variety of investment plans designed for different goals and capital levels.</p>
+          <p>eToro Trust Capital offers a variety of investment plans designed for different goals and capital levels.</p>
           <ul>
             <li><strong>3-Day Plan (Quick Start):</strong> Perfect for beginners. Earn 10% daily for 3 days. Min: $100.</li>
             <li><strong>7-Day Plan (Weekly Growth):</strong> solid returns. Earn 3% daily for 7 days. Min: $599.</li>
@@ -100,7 +100,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   'deposit-guide': {
     id: 'deposit-guide',
     title: 'Deposit & Funding Guide',
-    subtitle: 'Securely funding your Cypher Vault account',
+    subtitle: 'Securely funding your eToro Trust Capital account',
     sections: [
       {
         title: 'Deposit Methods',
@@ -170,7 +170,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
       {
         title: 'How It Works',
         content: `
-          <p>The Cypher Vault Referral Program rewards you for bringing new investors to the platform.</p>
+          <p>The eToro Trust Capital Referral Program rewards you for bringing new investors to the platform.</p>
           <ul>
             <li>You earn a <strong>10% direct commission</strong> on every deposit made by your referrals.</li>
             <li>Commissions are credited instantly to your account balance and can be withdrawn or reinvested immediately.</li>
@@ -218,7 +218,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   'complete-guide': {
     id: 'complete-guide',
     title: 'Complete User Guide',
-    subtitle: 'Your all-in-one resource for Cypher Vault',
+    subtitle: 'Your all-in-one resource for eToro Trust Capital',
     sections: [
       {
         title: 'Introduction',
@@ -228,7 +228,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
         title: 'Getting Started',
         content: `
           <h3>Creating Your Account</h3>
-          <p>Welcome to Cypher Vault! Creating an account is the first step towards your investment journey...</p>
+          <p>Welcome to eToro Trust Capital! Creating an account is the first step towards your investment journey...</p>
           <h3>KYC Verification</h3>
           <p>To comply with financial regulations, all users must complete KYC...</p>
         `
@@ -244,7 +244,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
         title: 'Investment Strategies',
         content: `
           <h3>Choosing a Plan</h3>
-          <p>Cypher Vault offers a variety of investment plans designed for different goals...</p>
+          <p>eToro Trust Capital offers a variety of investment plans designed for different goals...</p>
         `
       },
       {
@@ -349,7 +349,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
       {
         title: 'Phishing Awareness',
         content: `
-          <p>Always ensure you are visiting the official Cypher Vault website. We will never ask for your password or 2FA code via email or Telegram.</p>
+          <p>Always ensure you are visiting the official eToro Trust Capital website. We will never ask for your password or 2FA code via email or Telegram.</p>
         `
       }
     ]

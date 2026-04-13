@@ -13,7 +13,7 @@ const videos = [
   {
     id: 1,
     title: 'How to Create an Account & Get Started',
-    description: 'Complete step-by-step guide on creating your Cypher Vault account, verifying your identity (KYC), and navigating the dashboard for the first time.',
+    description: 'Complete step-by-step guide on creating your eToro Trust Capital account, verifying your identity (KYC), and navigating the dashboard for the first time.',
     duration: '8:45',
     views: '15.2K',
     likes: '1.2K',
@@ -25,7 +25,7 @@ const videos = [
   {
     id: 2,
     title: 'How to Make Your First Investment',
-    description: 'Learn how to deposit funds, choose the right investment plan, and start earning returns on Cypher Vault. Covers all available plans and expected ROI.',
+    description: 'Learn how to deposit funds, choose the right investment plan, and start earning returns on eToro Trust Capital. Covers all available plans and expected ROI.',
     duration: '12:30',
     views: '22.8K',
     likes: '2.1K',
@@ -37,7 +37,7 @@ const videos = [
   {
     id: 3,
     title: 'How to Withdraw Your Earnings',
-    description: 'Step-by-step tutorial on withdrawing your profits from Cypher Vault. Covers withdrawal methods, processing times, and tips for smooth transactions.',
+    description: 'Step-by-step tutorial on withdrawing your profits from eToro Trust Capital. Covers withdrawal methods, processing times, and tips for smooth transactions.',
     duration: '10:15',
     views: '18.5K',
     likes: '1.8K',

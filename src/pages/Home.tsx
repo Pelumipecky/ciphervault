@@ -216,7 +216,7 @@ function Home() {
             </Link>
           </div>
           <div className="hero__pill">
-            <img src="/images/gift.svg" alt="gift" height={32} />
+            <img src="/images/gift.svg" alt="gift" height={40} className="hero__pill-icon" />
             <div>
               <p className="hero__pill-title">{t('home.hero.pillTitle')}</p>
               <p className="hero__pill-copy">{t('home.hero.pillCopy')}</p>
@@ -224,7 +224,7 @@ function Home() {
           </div>
         </div>
         <div className="hero__visual">
-          <img src="/images/img1.png" alt="Cypher Vault dashboard" />
+          <img src="/images/img1.png" alt="eToro Trust Capital dashboard" />
         </div>
       </section>
 
